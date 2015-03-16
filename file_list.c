@@ -68,7 +68,7 @@ get_html_from_dir(char* text, const struct dir *d)
                 }
                 sprintf(buffer,
                         "<tr><td><a href=\"%s/%s\">%s</a></td><td>%s</td></tr>",
-                        d->name,
+                        d->name + 1, /* ignore away leading dot */
                         d->files[i]->name,
                         d->files[i]->name,
                         d->files[i]->is_dir ? "directory" : "file");

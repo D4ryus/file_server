@@ -16,8 +16,20 @@ char* _concat(char* dst, const char* src);
  */
 int _is_directory(char*);
 
+/**
+ * prints error and quits
+ */
 void _quit(const char*);
 
+/**
+ * check if first string starts with second string
+ */
 int starts_with(const char*, const char*);
+
+/**
+ * reads in given file, saves length in given long,
+ * returns pointer to content
+ */
+void* _file_to_buf(const char*, size_t*);
 
 #endif

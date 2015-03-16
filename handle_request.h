@@ -8,6 +8,12 @@
 
 enum request_method {NON, OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT};
 
+struct response {
+        char* head;
+        char* body;
+        size_t body_length;
+};
+
 struct request {
         enum request_method method;
         char* url;
@@ -33,8 +39,10 @@ struct request {
 };
 
 void handle_request(int);
-char* generate_response(char*);
+struct response* generate_response(char*);
 struct request* parse_request(char*);
+struct response* _create_response(void);
+void _free_response(struct response*);
 struct request* _create_request(void);
 void _free_request(struct request*);
 void _parse_line(char*, struct request*);

@@ -26,7 +26,7 @@ _is_directory(char *path)
         if (stat(path,&s) == 0) {
                 if (s.st_mode & S_IFDIR) {
                         return 1;
-                } else if( s.st_mode & S_IFREG ) {
+                } else if (s.st_mode & S_IFREG) {
                         return 0;
                 } else {
                         _quit("ERROR: _is_directory() (its not a file, nor a dir)");
@@ -48,11 +48,33 @@ _quit(const char *msg)
 int
 starts_with(const char *line, const char *prefix)
 {
-    while (*prefix) {
-        if (*prefix++ != *line++) {
-            return 0;
+        while (*prefix) {
+                if (*prefix++ != *line++) {
+                        return 0;
+                }
         }
-    }
 
-    return 1;
+        return 1;
+}
+
+void*
+_file_to_buf(const char *file, size_t *length)
+{
+        FILE *fptr;
+        char *buf;
+
+        fptr = fopen(file, "rb");
+        if (!fptr) {
+                return NULL;
+        }
+        fseek(fptr, 0, SEEK_END);
+        *length = (size_t)ftell(fptr);
+        buf = (void*)malloc(*length + 1);
+        fseek(fptr, 0, SEEK_SET);
+        fread(buf, (*length), 1, fptr);
+        fclose(fptr);
+        buf[*length] = '\0';
+        printf("did read %u\n", (uint)*length);
+
+        return buf;
 }

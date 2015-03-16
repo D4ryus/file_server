@@ -1,4 +1,5 @@
 #include "handle_request.h"
+#include "content_encoding.h"
 
 void
 handle_request(int socket)
@@ -7,13 +8,14 @@ handle_request(int socket)
                 _quit("ERROR: accept()");
         }
 
-        char *response;
+        struct request *req;
+        struct response *res;
         ssize_t n;
         char *requested_path;
         size_t BUFFSIZE = 2048;
         char buffer[BUFFSIZE];
-        struct request *req;
         char *url;
+        char* response_buffer;
 
         memset(buffer, '\0', BUFFSIZE);
 
@@ -37,6 +39,7 @@ handle_request(int socket)
                 return;
         }
 
+        /* TODO: thats ugly */
         url = malloc(sizeof(char) * (strlen(req->url) + 2));
         memset(url, '\0', sizeof(char) * (strlen(req->url) + 2));
         url[0] = '.';
@@ -44,58 +47,73 @@ handle_request(int socket)
 
         requested_path = realpath(url, NULL);
 
-        response = generate_response(requested_path);
+        res = generate_response(requested_path);
 
-        n = write(socket, response, strlen(response));
-        if (n < 0) {
-                _quit("ERROR: write()");
-        }
+        response_buffer = malloc(strlen(res->head) + res->body_length);
 
-        free(response);
+        memcpy(response_buffer, res->head, strlen(res->head));
+        memcpy(response_buffer + strlen(res->head), res->body, res->body_length);
+
+        n = write(socket, response_buffer, strlen(res->head) + res->body_length);
+
+        free(response_buffer);
         free(url);
         free(requested_path);
+        _free_response(res);
         _free_request(req);
 
         close(socket);
 }
 
-char*
+struct response*
 generate_response(char* file)
 {
-        char *res = malloc(sizeof(char));
+        struct response *res = _create_response();
         char *accepted_path;
-        res[0] = '\0';
 
         accepted_path = realpath(".", NULL);
+        printf("file: %s, accpeted: %s\n", file, accepted_path);
 
         if (accepted_path == NULL) {
                 _quit("ERROR: realpath()");
         }
 
         if (file == NULL) {
-                res = _concat(res, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
-                res = _concat(res, "404 - Watcha pulling here buddy?");
+                res->head = _concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+                res->body = _concat(res->body, "404 - Watcha pulling here buddy?");
+                res->body_length = strlen(res->body);
         } else if (!starts_with(file, accepted_path)) {
-                printf("requtested forbidden file: %s\n", file);
-                res = _concat(res, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
-                res = _concat(res, "404 - U better not go down this road!");
+                printf("file: %s, accpeted: %s\n", file, accepted_path);
+                res->head = _concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+                res->body = _concat(res->body, "403 - U better not go down this road!");
+                res->body_length = strlen(res->body);
         } else if (_is_directory(file)) {
-                printf("requtested directory file: %s\n", file + strlen(accepted_path));
-                struct dir *d = get_dir(file + strlen(accepted_path));
-                res = _concat(res, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-                res = _concat(res, "<!DOCTYPE html><html><head>");
-                res = _concat(res, "<meta http-equiv=\"content-type\"content=\"text/html;charset=UTF-8\"/>");
-                res = _concat(res, "</head><body><table style=\"width:30%\">");
-                res = get_html_from_dir(res, d);
-                res = _concat(res, "</table></body></html>");
+                file[strlen(accepted_path) - 1] = '.';
+                struct dir *d = get_dir(file + strlen(accepted_path) - 1);
+                res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+                res->body = _concat(res->body, "<!DOCTYPE html><html><head>");
+                res->body = _concat(res->body, "<meta http-equiv=\"content-type\"content=\"text/html;charset=UTF-8\"/>");
+                res->body = _concat(res->body, "</head><body><table style=\"width:30%\">");
+                res->body = get_html_from_dir(res->body, d);
+                res->body = _concat(res->body, "</table></body></html>");
+                res->body_length = strlen(res->body);
                 free_dir(d);
         } else {
-                printf("requtested regular file: %s\n", file);
-                res = _concat(res, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-                res = _concat(res, "yo nigga, its a file");
+                res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
+                char* extension = strrchr(file, '.');
+                if (extension == NULL) {
+                        res->head = _concat(res->head, "text/plain");
+                } else {
+                        res->head = _concat(res->head, get_content_encoding(extension));
+                }
+                res->head = _concat(res->head, "\r\n\r\n");
+                void* file_content = _file_to_buf(file, &(res->body_length));
+                res->body = _concat(res->body, file_content);
+                free(file_content);
         }
-
         free(accepted_path);
+
+        printf("here buddy\n");
         return res;
 }
 
@@ -113,6 +131,33 @@ parse_request(char* request)
         }
 
         return res;
+}
+
+struct response*
+_create_response(void)
+{
+        struct response *res;
+
+        res = malloc(sizeof(struct response));
+        res->head = malloc(sizeof(char));
+        res->body = malloc(sizeof(char));
+        res->head[0] = '\0';
+        res->body[0] = '\0';
+        res->body_length = 0;
+
+        return res;
+}
+
+void
+_free_response(struct response *res)
+{
+        if (res->head != NULL) {
+                free(res->head);
+        }
+        if (res->body != NULL) {
+                free(res->body);
+        }
+        free(res);
 }
 
 struct request*
@@ -181,6 +226,7 @@ _parse_line(char *line, struct request *res)
                 res->url = malloc(sizeof(char) * (strlen(tmp) + 1));
                 memset(res->url, '\0', sizeof(char) * (strlen(tmp) + 1));
                 strncpy(res->url, tmp, strlen(tmp));
+        /* TODO: add other header settings here */
         } else if (starts_with(line, "Accept: ")) {
         } else if (starts_with(line, "Accept-Charset:")) {
         } else if (starts_with(line, "Accept-Encoding:")) {
