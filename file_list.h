@@ -2,10 +2,8 @@
 #define FILE_SERVER_H
 
 #include <dirent.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
+
+#include "helper.h"
 
 struct file {
         char* name; 
@@ -14,6 +12,7 @@ struct file {
 
 struct dir {
         int length;
+        char* name;
         struct file *files[]; 
 };
 
@@ -26,11 +25,6 @@ void free_dir(struct dir *d);
  * prints out dir to stdout
  */
 void print_dir(const struct dir *d);
-
-/**
- * will reallocated dst and strcat src onto it
- */
-char* _concat(char* dst, const char* src);
 
 /**
  * adds directory information to the given char*, uses realloc in text
@@ -46,10 +40,5 @@ struct dir* _add_file_to_dir(struct dir *d, struct dirent *dp);
  * creates a dir stuct with from given directory
  */
 struct dir* get_dir(char*);
-
-/**
- * checks if given string is a directory, if its a file 0 is returned
- */
-int _is_directory(char*);
 
 #endif

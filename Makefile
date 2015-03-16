@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJECT_FILES = content_encoding.o file_list.o handle_request.o
+OBJECT_FILES = content_encoding.o file_list.o handle_request.o helper.o
 
 EXECUTABLE = main
 
@@ -43,7 +43,7 @@ CFLAGS = -Wall \
          -ggdb \
          -pg \
          -g3 \
-       # -Wpadded \
+       # -Wpadded
        # -Wdeclaration-after-statement
        # -Werror
 
@@ -52,7 +52,7 @@ LFLAGS = -lbsd
 # targets to compile
 
 %.o : %.c %.h
-	$(CC) -c -o $@ $< $(CFLAGS) $(GLLIB)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(EXECUTABLE) : main.c $(OBJECT_FILES)
 	$(CC) -o $@ $< $(OBJECT_FILES) $(CFLAGS) $(LFLAGS)

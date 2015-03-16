@@ -7,6 +7,10 @@ free_dir(struct dir *d)
                 return;
         }
 
+        if (d->name != NULL) {
+                free(d->name);
+        }
+
         int i;
         for (i = 0; i < d->length; i++) {
                 if (d->files[i] == NULL) {
@@ -27,6 +31,7 @@ void
 print_dir(const struct dir *d)
 {
         int i;
+        printf("dir: %s\n", d->name);
         for (i = 0; i < d->length; i++) {
                 if (d->files[i] == NULL) {
                         continue;
@@ -38,22 +43,6 @@ print_dir(const struct dir *d)
                                 d->files[i]->is_dir ? "directory" : "file",
                                 d->files[i]->name);
         }
-}
-
-/**
- * will reallocated dst and strcat src onto it
- */
-char*
-_concat(char* dst, const char* src)
-{
-        dst = realloc(dst, (sizeof(char) * strlen(dst)) + (sizeof(char) * strlen(src)) + 1);
-        if (dst == NULL) {
-                printf("ERROR! Could not allocate memory, exiting.\n");
-                exit(1);
-        }
-        strncat(dst, src, strlen(src));
-
-        return dst;
 }
 
 /**
@@ -78,7 +67,8 @@ get_html_from_dir(char* text, const struct dir *d)
                         continue;
                 }
                 sprintf(buffer,
-                        "<tr><td><a href=\"/%s\">%s</a></td><td>%s</td></tr>",
+                        "<tr><td><a href=\"%s/%s\">%s</a></td><td>%s</td></tr>",
+                        d->name,
                         d->files[i]->name,
                         d->files[i]->name,
                         d->files[i]->is_dir ? "directory" : "file");
@@ -112,31 +102,21 @@ get_dir(char *directory)
 {
         DIR *dirp = opendir(directory);
         if (dirp == NULL) {
-                printf("not found\n");
-                return NULL;
+                _quit("ERROR: get_dir()");
         }
 
         struct dirent *dp;
         struct dir *result = (struct dir*)malloc(sizeof(struct dir));
         result->length = 0;
+        result->name = malloc(sizeof(char) * (strlen(directory) + 1));
+        strncpy(result->name, directory, sizeof(char) * (strlen(directory) + 1));
 
         int i;
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
                 result = _add_file_to_dir(result, dp);
         }
 
-        (void)closedir(dirp);
+        closedir(dirp);
 
         return result;
-}
-
-/**
- * checks if given string is a directory, if its a file 0 is returned
- */
-int
-_is_directory(char *f)
-{
-        struct stat st;
-        lstat(f, &st);
-        return (S_ISDIR(st.st_mode));
 }

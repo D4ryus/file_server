@@ -1,14 +1,9 @@
 #ifndef HANDLE_REQUEST_H
 #define HANDLE_REQUEST_H
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <string.h>
 
+#include "helper.h"
 #include "file_list.h"
 
 enum request_method {NON, OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT};
@@ -38,8 +33,7 @@ struct request {
 };
 
 void handle_request(int);
-void error(const char*);
-int starts_with(const char*, const char*);
+char* generate_response(char*);
 struct request* parse_request(char*);
 struct request* _create_request(void);
 void _free_request(struct request*);

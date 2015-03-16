@@ -1,6 +1,6 @@
 #ifndef CONTENT_ENCODING_H
 #define CONTENT_ENCODING_H
-#include <stdlib.h>
+
 #include <stdio.h>
 #include <string.h>
 

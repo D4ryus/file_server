@@ -4,85 +4,99 @@ void
 handle_request(int socket)
 {
         if (socket < 0) {
-                error("ERROR on accept");
+                _quit("ERROR: accept()");
         }
 
-        int n;
+        char *response;
+        ssize_t n;
+        char *requested_path;
         size_t BUFFSIZE = 2048;
         char buffer[BUFFSIZE];
-        struct dir *d;
         struct request *req;
         char *url;
-        char *result;
 
         memset(buffer, '\0', BUFFSIZE);
 
         n = read(socket, buffer, BUFFSIZE - 1);
         if (n < 0) {
-                error("ERROR reading from socket");
+                printf("encounterd a error on read(), will ignore request.\n");
+                close(socket);
+                return;
+        }
+        if (n == 0) {
+                printf("empty request, will ignore request\n");
+                close(socket);
+                return;
         }
 
         printf("%s\n", buffer);
         req = parse_request(buffer);
+        if (req->url == NULL) {
+                printf("requested with non valid http request, abort.\n");
+                close(socket);
+                return;
+        }
 
         url = malloc(sizeof(char) * (strlen(req->url) + 2));
         memset(url, '\0', sizeof(char) * (strlen(req->url) + 2));
         url[0] = '.';
         strncat(url, req->url, strlen(req->url));
 
-        result = malloc(sizeof(char));
-        result[0] = '\0';
+        requested_path = realpath(url, NULL);
 
-        if (_is_directory(url)) {
-                d = get_dir(url);
-                result = _concat(result, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-                result = _concat(result, "<!DOCTYPE html><html><head>");
-                result = _concat(result, "<meta http-equiv=\"content-type\"content=\"text/html;charset=UTF-8\"/>");
-                result = _concat(result, "</head><body><table style=\"width:30%\">");
-                result = get_html_from_dir(result, d);
-                result = _concat(result, "</table></body></html>");
-                free_dir(d);
-        } else {
-                result = _concat(result, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
-                result = _concat(result, "yo nigga, its a file");
-        }
-        free(url);
+        response = generate_response(requested_path);
 
-        n = write(socket, result, strlen(result));
+        n = write(socket, response, strlen(response));
         if (n < 0) {
-                error("ERROR writing to socket");
+                _quit("ERROR: write()");
         }
 
+        free(response);
+        free(url);
+        free(requested_path);
         _free_request(req);
-        free(result);
 
         close(socket);
-        /* char buffer[123]; */
-        /* printf("%s -> %s\n", ".", realpath(".", buffer)); */
-        /* printf("%s -> %s\n", "..", realpath("..", buffer)); */
-        /* printf("%s -> %s\n", "blub/../../", realpath("blub/../../", buffer)); */
-
-        /* printf("%s -> %s\n", ".", _is_directory(".") ? "Dir" : "File"); */
-        /* printf("%s -> %s\n", "test.html", _is_directory("test.html") ? "Dir" : "File"); */
 }
 
-void
-error(const char *msg)
+char*
+generate_response(char* file)
 {
-        perror(msg);
-        exit(1);
-}
+        char *res = malloc(sizeof(char));
+        char *accepted_path;
+        res[0] = '\0';
 
-int
-starts_with(const char *line, const char *prefix)
-{
-    while (*prefix) {
-        if (*prefix++ != *line++) {
-            return 0;
+        accepted_path = realpath(".", NULL);
+
+        if (accepted_path == NULL) {
+                _quit("ERROR: realpath()");
         }
-    }
 
-    return 1;
+        if (file == NULL) {
+                res = _concat(res, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+                res = _concat(res, "404 - Watcha pulling here buddy?");
+        } else if (!starts_with(file, accepted_path)) {
+                printf("requtested forbidden file: %s\n", file);
+                res = _concat(res, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+                res = _concat(res, "404 - U better not go down this road!");
+        } else if (_is_directory(file)) {
+                printf("requtested directory file: %s\n", file + strlen(accepted_path));
+                struct dir *d = get_dir(file + strlen(accepted_path));
+                res = _concat(res, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+                res = _concat(res, "<!DOCTYPE html><html><head>");
+                res = _concat(res, "<meta http-equiv=\"content-type\"content=\"text/html;charset=UTF-8\"/>");
+                res = _concat(res, "</head><body><table style=\"width:30%\">");
+                res = get_html_from_dir(res, d);
+                res = _concat(res, "</table></body></html>");
+                free_dir(d);
+        } else {
+                printf("requtested regular file: %s\n", file);
+                res = _concat(res, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+                res = _concat(res, "yo nigga, its a file");
+        }
+
+        free(accepted_path);
+        return res;
 }
 
 struct request*
