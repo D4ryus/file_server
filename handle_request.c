@@ -55,6 +55,7 @@ handle_request(int socket)
         memcpy(response_buffer + strlen(res->head), res->body, res->body_length);
 
         n = write(socket, response_buffer, strlen(res->head) + res->body_length);
+        printf("did send: %u\n", n);
 
         free(response_buffer);
         free(url);
@@ -101,19 +102,15 @@ generate_response(char* file)
         } else {
                 res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
                 char* extension = strrchr(file, '.');
-                if (extension == NULL) {
-                        res->head = _concat(res->head, "text/plain");
-                } else {
-                        res->head = _concat(res->head, get_content_encoding(extension));
-                }
+                res->head = _concat(res->head, get_content_encoding(extension));
                 res->head = _concat(res->head, "\r\n\r\n");
-                void* file_content = _file_to_buf(file, &(res->body_length));
-                res->body = _concat(res->body, file_content);
-                free(file_content);
+                if (res->body != NULL) {
+                        free(res->body);
+                }
+                res->body = _file_to_buf(file, &(res->body_length));
         }
         free(accepted_path);
 
-        printf("here buddy\n");
         return res;
 }
 
