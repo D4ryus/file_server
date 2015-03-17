@@ -56,6 +56,9 @@ get_html_from_dir(char* text, const struct dir *d)
         }
         if (text == NULL) {
                 text = malloc(sizeof(char));
+                if (text == NULL) {
+                        mem_error("get_html_from_dir()", "text", sizeof(char));
+                }
                 text[0] = '\0';
         }
 
@@ -86,7 +89,14 @@ _add_file_to_dir(struct dir *d, struct dirent *dp)
         d = (struct dir *)realloc(d, sizeof(struct dir) + (ulong)((d->length + 1) * (int)sizeof(struct file*)));
 
         d->files[d->length] = malloc(sizeof(struct file));
+        if (d->files[d->length] == NULL) {
+                mem_error("_add_file_to_dir()", "d->files[d->length]", sizeof(struct file));
+        }
         d->files[d->length]->name = malloc(sizeof(char) * strlen(dp->d_name) + 1);
+        if (d->files[d->length]->name == NULL) {
+                mem_error("_add_file_to_dir()", "d->files[d->length]->name",
+                                sizeof(char) * strlen(dp->d_name) + 1);
+        }
         strncpy(d->files[d->length]->name, dp->d_name, strlen(dp->d_name) + 1);
         d->files[d->length]->is_dir = dp->d_type == 4 ? 1 : 0;
         d->length++;
@@ -107,8 +117,15 @@ get_dir(char *directory)
 
         struct dirent *dp;
         struct dir *result = (struct dir*)malloc(sizeof(struct dir));
+        if (result == NULL) {
+                mem_error("get_dir()", "result", sizeof(struct  dir));
+        }
         result->length = 0;
         result->name = malloc(sizeof(char) * (strlen(directory) + 1));
+        if (result->name == NULL) {
+                mem_error("get_dir()", "result->name",
+                                sizeof(char) * (strlen(directory) + 1));
+        }
         strncpy(result->name, directory, sizeof(char) * (strlen(directory) + 1));
 
         int i;

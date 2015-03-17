@@ -16,6 +16,7 @@ handle_request(int socket)
         char buffer[BUFFSIZE];
         char *url;
         char* response_buffer;
+        size_t response_length;
 
         memset(buffer, '\0', BUFFSIZE);
 
@@ -30,61 +31,66 @@ handle_request(int socket)
                 close(socket);
                 return;
         }
-
-        printf("%s\n", buffer);
         req = parse_request(buffer);
         if (req->url == NULL) {
                 printf("requested with non valid http request, abort.\n");
                 close(socket);
                 return;
         }
-
         /* TODO: thats ugly */
         url = malloc(sizeof(char) * (strlen(req->url) + 2));
+        if (url == NULL) {
+                mem_error("handle_request()", "url",
+                                sizeof(char) * (strlen(req->url) + 2));
+        }
         memset(url, '\0', sizeof(char) * (strlen(req->url) + 2));
         url[0] = '.';
         strncat(url, req->url, strlen(req->url));
-
         requested_path = realpath(url, NULL);
-
         res = generate_response(requested_path);
-
-        response_buffer = malloc(strlen(res->head) + res->body_length);
-
+        response_length = strlen(res->head) + res->body_length;
+        response_buffer = malloc(sizeof(char) * response_length);
+        if (response_buffer == NULL) {
+                mem_error("handle_request()", "response_buffer",
+                                sizeof(char) * response_length);
+        }
         memcpy(response_buffer, res->head, strlen(res->head));
         memcpy(response_buffer + strlen(res->head), res->body, res->body_length);
-
-        n = write(socket, response_buffer, strlen(res->head) + res->body_length);
-        printf("did send: %u\n", n);
-
+        n = write(socket, response_buffer, response_length);
+        if (n < 0) {
+                printf("encounterd a error on write(), will ignore request.\n");
+        } else if (n == 0) {
+                printf("0 bytes have been written, will ignore request\n");
+        } else if ((size_t)n != response_length) {
+                printf("write should have written %u bytes, but instead only %u have been written.\n",
+                                (uint)response_length, (uint)n);
+        }
         free(response_buffer);
         free(url);
         free(requested_path);
-        _free_response(res);
         _free_request(req);
-
+        _free_response(res);
         close(socket);
+
+        return;
 }
 
 struct response*
 generate_response(char* file)
 {
-        struct response *res = _create_response();
+        struct response *res;
         char *accepted_path;
 
+        res = _create_response();
         accepted_path = realpath(".", NULL);
-        printf("file: %s, accpeted: %s\n", file, accepted_path);
-
         if (accepted_path == NULL) {
                 _quit("ERROR: realpath()");
         }
-
         if (file == NULL) {
                 res->head = _concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
                 res->body = _concat(res->body, "404 - Watcha pulling here buddy?");
                 res->body_length = strlen(res->body);
         } else if (!starts_with(file, accepted_path)) {
-                printf("file: %s, accpeted: %s\n", file, accepted_path);
                 res->head = _concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
                 res->body = _concat(res->body, "403 - U better not go down this road!");
                 res->body_length = strlen(res->body);
@@ -101,8 +107,7 @@ generate_response(char* file)
                 free_dir(d);
         } else {
                 res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
-                char* extension = strrchr(file, '.');
-                res->head = _concat(res->head, get_content_encoding(extension));
+                res->head = _concat(res->head, get_content_encoding(strrchr(file, '.')));
                 res->head = _concat(res->head, "\r\n\r\n");
                 if (res->body != NULL) {
                         free(res->body);
@@ -119,8 +124,9 @@ parse_request(char* request)
 {
         char *tmp;
         int length;
-        struct request* res = _create_request();
+        struct request* res;
 
+        res = _create_request();
         tmp = strtok(request, "\n");
         for (length = 0; tmp != NULL; length++) {
                 _parse_line(tmp, res);
@@ -136,8 +142,17 @@ _create_response(void)
         struct response *res;
 
         res = malloc(sizeof(struct response));
+        if (res == NULL) {
+                mem_error("_create_response()", "res", sizeof(struct response));
+        }
         res->head = malloc(sizeof(char));
+        if (res->head == NULL) {
+                mem_error("_create_response()", "res->head", sizeof(char));
+        }
         res->body = malloc(sizeof(char));
+        if (res->body == NULL) {
+                mem_error("_create_response()", "res->body", sizeof(char));
+        }
         res->head[0] = '\0';
         res->body[0] = '\0';
         res->body_length = 0;
@@ -155,74 +170,87 @@ _free_response(struct response *res)
                 free(res->body);
         }
         free(res);
+
+        return;
 }
 
 struct request*
 _create_request(void)
 {
-        struct request *res = malloc(sizeof(struct request));
+        struct request *req;
 
-        res->method = NON;
-        res->url = NULL;
-        res->Accept = NULL;
-        res->Accept_Charset = NULL;
-        res->Accept_Encoding = NULL;
-        res->Accept_Language = NULL;
-        res->Authorization = NULL;
-        res->Expect = NULL;
-        res->From = NULL;
-        res->Host = NULL;
-        res->If_Match = NULL;
-        res->If_Modified_Since = NULL;
-        res->If_None_Match = NULL;
-        res->If_Range = NULL;
-        res->If_Unmodified_Since = NULL;
-        res->Max_Forwards = NULL;
-        res->Proxy_Authorization = NULL;
-        res->Range = NULL;
-        res->Referer = NULL;
-        res->TE = NULL;
-        res->User_Agent = NULL;
+        req = malloc(sizeof(struct request));
+        if (req == NULL) {
+                mem_error("_create_request()", "req", sizeof(char));
+        }
+        req->method = NON;
+        req->url = NULL;
+        req->Accept = NULL;
+        req->Accept_Charset = NULL;
+        req->Accept_Encoding = NULL;
+        req->Accept_Language = NULL;
+        req->Authorization = NULL;
+        req->Expect = NULL;
+        req->From = NULL;
+        req->Host = NULL;
+        req->If_Match = NULL;
+        req->If_Modified_Since = NULL;
+        req->If_None_Match = NULL;
+        req->If_Range = NULL;
+        req->If_Unmodified_Since = NULL;
+        req->Max_Forwards = NULL;
+        req->Proxy_Authorization = NULL;
+        req->Range = NULL;
+        req->Referer = NULL;
+        req->TE = NULL;
+        req->User_Agent = NULL;
 
-        return res;
+        return req;
 }
 
 void
-_free_request(struct request *res)
+_free_request(struct request *req)
 {
-        if (res->url != NULL) free(res->url);
-        if (res->Accept != NULL) free(res->Accept);
-        if (res->Accept_Charset != NULL) free(res->Accept_Charset);
-        if (res->Accept_Encoding != NULL) free(res->Accept_Encoding);
-        if (res->Accept_Language != NULL) free(res->Accept_Language);
-        if (res->Authorization != NULL) free(res->Authorization);
-        if (res->Expect != NULL) free(res->Expect);
-        if (res->From != NULL) free(res->From);
-        if (res->Host != NULL) free(res->Host);
-        if (res->If_Match != NULL) free(res->If_Match);
-        if (res->If_Modified_Since != NULL) free(res->If_Modified_Since);
-        if (res->If_None_Match != NULL) free(res->If_None_Match);
-        if (res->If_Range != NULL) free(res->If_Range);
-        if (res->If_Unmodified_Since != NULL) free(res->If_Unmodified_Since);
-        if (res->Max_Forwards != NULL) free(res->Max_Forwards);
-        if (res->Proxy_Authorization != NULL) free(res->Proxy_Authorization);
-        if (res->Range != NULL) free(res->Range);
-        if (res->Referer != NULL) free(res->Referer);
-        if (res->TE != NULL) free(res->TE);
-        if (res->User_Agent != NULL) free(res->User_Agent);
+        if (req->url != NULL) free(req->url);
+        if (req->Accept != NULL) free(req->Accept);
+        if (req->Accept_Charset != NULL) free(req->Accept_Charset);
+        if (req->Accept_Encoding != NULL) free(req->Accept_Encoding);
+        if (req->Accept_Language != NULL) free(req->Accept_Language);
+        if (req->Authorization != NULL) free(req->Authorization);
+        if (req->Expect != NULL) free(req->Expect);
+        if (req->From != NULL) free(req->From);
+        if (req->Host != NULL) free(req->Host);
+        if (req->If_Match != NULL) free(req->If_Match);
+        if (req->If_Modified_Since != NULL) free(req->If_Modified_Since);
+        if (req->If_None_Match != NULL) free(req->If_None_Match);
+        if (req->If_Range != NULL) free(req->If_Range);
+        if (req->If_Unmodified_Since != NULL) free(req->If_Unmodified_Since);
+        if (req->Max_Forwards != NULL) free(req->Max_Forwards);
+        if (req->Proxy_Authorization != NULL) free(req->Proxy_Authorization);
+        if (req->Range != NULL) free(req->Range);
+        if (req->Referer != NULL) free(req->Referer);
+        if (req->TE != NULL) free(req->TE);
+        if (req->User_Agent != NULL) free(req->User_Agent);
 
-        free(res);
+        free(req);
+
+        return;
 }
 
 void
-_parse_line(char *line, struct request *res)
+_parse_line(char *line, struct request *req)
 {
         if (starts_with(line, "GET ")) {
                 char* tmp = strtok(line, " ");
                 tmp = strtok(NULL, " ");
-                res->url = malloc(sizeof(char) * (strlen(tmp) + 1));
-                memset(res->url, '\0', sizeof(char) * (strlen(tmp) + 1));
-                strncpy(res->url, tmp, strlen(tmp));
+                req->url = malloc(sizeof(char) * (strlen(tmp) + 1));
+                if (req->url == NULL) {
+                        mem_error("_parse_line()", "req->url",
+                                        sizeof(char) * (strlen(tmp) + 1));
+                }
+
+                memset(req->url, '\0', sizeof(char) * (strlen(tmp) + 1));
+                strncpy(req->url, tmp, strlen(tmp));
         /* TODO: add other header settings here */
         } else if (starts_with(line, "Accept: ")) {
         } else if (starts_with(line, "Accept-Charset:")) {
@@ -245,4 +273,6 @@ _parse_line(char *line, struct request *res)
         } else if (starts_with(line, "User-Agent:")) {
         } else {
         }
+
+        return;
 }

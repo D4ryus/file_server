@@ -8,8 +8,7 @@ _concat(char* dst, const char* src)
 {
         dst = realloc(dst, (sizeof(char) * strlen(dst)) + (sizeof(char) * strlen(src)) + 1);
         if (dst == NULL) {
-                printf("ERROR! Could not allocate memory, exiting.\n");
-                exit(1);
+                _quit("ERROR! Could not allocate memory");
         }
         strncat(dst, src, strlen(src));
 
@@ -70,11 +69,22 @@ _file_to_buf(const char *file, size_t *length)
         fseek(fptr, 0, SEEK_END);
         *length = (size_t)ftell(fptr);
         buf = (void*)malloc(*length + 1);
+        if (buf == NULL) {
+                mem_error("_file_to_buf()", "buf", *length + 1);
+        }
         fseek(fptr, 0, SEEK_SET);
         fread(buf, (*length), 1, fptr);
         fclose(fptr);
         buf[*length] = '\0';
-        printf("did read %u\n", (uint)*length);
 
         return buf;
+}
+
+void
+mem_error(const char* func, const char* var, const ulong size)
+{
+        fprintf(stderr, "ERROR: could not malloc. func: %s, variable: %s, size: %lu",
+                        func, var, size);
+        perror(NULL);
+        exit(1);
 }

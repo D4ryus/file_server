@@ -32,4 +32,9 @@ int starts_with(const char*, const char*);
  */
 void* _file_to_buf(const char*, size_t*);
 
+/**
+ * prints out formatted error and errorcode and exit's
+ */
+void mem_error(const char*, const char*, const ulong);
+
 #endif

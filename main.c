@@ -42,8 +42,8 @@ main(int argc, const char *argv[])
                                 inet_ntoa(cli_addr.sin_addr),
                                 ntohs(cli_addr.sin_port));
                 handle_request(client);
+                close(client);
         }
 
         close(sockfd);
-
 }
