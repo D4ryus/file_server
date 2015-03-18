@@ -58,7 +58,7 @@ $(EXECUTABLE) : main.c $(OBJECT_FILES)
 	$(CC) -o $@ $< $(OBJECT_FILES) $(CFLAGS) $(LFLAGS)
 
 clean :
-	rm $(OBJECT_FILES)
+	rm $(OBJECT_FILES) $(EXECUTABLE)
 
 # targets to run
 run_$(EXECUTABLE) : $(EXECUTABLE)

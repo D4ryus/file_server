@@ -1,8 +1,10 @@
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "file_list.h"
+#include "helper.h"
 #include "handle_request.h"
 
 int main(int, const char**);
@@ -17,12 +19,12 @@ main(int argc, const char *argv[])
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-                _quit("ERROR: socket()");
+                quit("ERROR: socket()");
         }
 
         int on = 1;
         if (-1 == setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &on, sizeof(on))) {
-                _quit("ERROR: setsockopt() SO_REUSEADDR");
+                quit("ERROR: setsockopt() SO_REUSEADDR");
         }
 
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
@@ -30,7 +32,7 @@ main(int argc, const char *argv[])
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
         if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-                _quit("ERROR: bind()");
+                quit("ERROR: bind()");
         }
 
         listen(sockfd, 5);

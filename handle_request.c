@@ -1,11 +1,18 @@
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <stdio.h>
+
 #include "handle_request.h"
 #include "content_encoding.h"
+#include "helper.h"
+#include "file_list.h"
 
 void
 handle_request(int socket)
 {
         if (socket < 0) {
-                _quit("ERROR: accept()");
+                quit("ERROR: accept()");
         }
 
         struct request *req;
@@ -19,7 +26,6 @@ handle_request(int socket)
         size_t response_length;
 
         memset(buffer, '\0', BUFFSIZE);
-
         n = read(socket, buffer, BUFFSIZE - 1);
         if (n < 0) {
                 printf("encounterd a error on read(), will ignore request.\n");
@@ -68,8 +74,8 @@ handle_request(int socket)
         free(response_buffer);
         free(url);
         free(requested_path);
-        _free_request(req);
-        _free_response(res);
+        free_request(req);
+        free_response(res);
         close(socket);
 
         return;
@@ -81,38 +87,40 @@ generate_response(char* file)
         struct response *res;
         char *accepted_path;
 
-        res = _create_response();
+        res = create_response();
         accepted_path = realpath(".", NULL);
         if (accepted_path == NULL) {
-                _quit("ERROR: realpath()");
+                quit("ERROR: realpath()");
         }
         if (file == NULL) {
-                res->head = _concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
-                res->body = _concat(res->body, "404 - Watcha pulling here buddy?");
+                res->head = concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+                res->body = concat(res->body, "404 - Watcha pulling here buddy?");
                 res->body_length = strlen(res->body);
         } else if (!starts_with(file, accepted_path)) {
-                res->head = _concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
-                res->body = _concat(res->body, "403 - U better not go down this road!");
+                res->head = concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+                res->body = concat(res->body, "403 - U better not go down this road!");
                 res->body_length = strlen(res->body);
-        } else if (_is_directory(file)) {
+        } else if (is_directory(file)) {
                 file[strlen(accepted_path) - 1] = '.';
                 struct dir *d = get_dir(file + strlen(accepted_path) - 1);
-                res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-                res->body = _concat(res->body, "<!DOCTYPE html><html><head>");
-                res->body = _concat(res->body, "<meta http-equiv=\"content-type\"content=\"text/html;charset=UTF-8\"/>");
-                res->body = _concat(res->body, "</head><body><table style=\"width:30%\">");
-                res->body = get_html_from_dir(res->body, d);
-                res->body = _concat(res->body, "</table></body></html>");
+                res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+                res->body = concat(res->body, "<!DOCTYPE html><html><head>");
+                res->body = concat(res->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
+                res->body = concat(res->body, "<meta http-equiv='content-type'content='text/html;charset=UTF-8'/>");
+                res->body = concat(res->body, "</head>");
+                res->body = concat(res->body, "<body>");
+                res->body = dir_to_html_table(res->body, d);
+                res->body = concat(res->body, "</body></html>");
                 res->body_length = strlen(res->body);
                 free_dir(d);
         } else {
-                res->head = _concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
-                res->head = _concat(res->head, get_content_encoding(strrchr(file, '.')));
-                res->head = _concat(res->head, "\r\n\r\n");
+                res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
+                res->head = concat(res->head, get_content_encoding(strrchr(file, '.')));
+                res->head = concat(res->head, "\r\n\r\n");
                 if (res->body != NULL) {
                         free(res->body);
                 }
-                res->body = _file_to_buf(file, &(res->body_length));
+                res->body = file_to_buf(file, &(res->body_length));
         }
         free(accepted_path);
 
@@ -126,10 +134,10 @@ parse_request(char* request)
         int length;
         struct request* res;
 
-        res = _create_request();
+        res = create_request();
         tmp = strtok(request, "\n");
         for (length = 0; tmp != NULL; length++) {
-                _parse_line(tmp, res);
+                parse_line(tmp, res);
                 tmp = strtok(NULL, "\n");
         }
 
@@ -137,21 +145,21 @@ parse_request(char* request)
 }
 
 struct response*
-_create_response(void)
+create_response(void)
 {
         struct response *res;
 
         res = malloc(sizeof(struct response));
         if (res == NULL) {
-                mem_error("_create_response()", "res", sizeof(struct response));
+                mem_error("create_response()", "res", sizeof(struct response));
         }
         res->head = malloc(sizeof(char));
         if (res->head == NULL) {
-                mem_error("_create_response()", "res->head", sizeof(char));
+                mem_error("create_response()", "res->head", sizeof(char));
         }
         res->body = malloc(sizeof(char));
         if (res->body == NULL) {
-                mem_error("_create_response()", "res->body", sizeof(char));
+                mem_error("create_response()", "res->body", sizeof(char));
         }
         res->head[0] = '\0';
         res->body[0] = '\0';
@@ -161,7 +169,7 @@ _create_response(void)
 }
 
 void
-_free_response(struct response *res)
+free_response(struct response *res)
 {
         if (res->head != NULL) {
                 free(res->head);
@@ -175,13 +183,13 @@ _free_response(struct response *res)
 }
 
 struct request*
-_create_request(void)
+create_request(void)
 {
         struct request *req;
 
         req = malloc(sizeof(struct request));
         if (req == NULL) {
-                mem_error("_create_request()", "req", sizeof(char));
+                mem_error("create_request()", "req", sizeof(char));
         }
         req->method = NON;
         req->url = NULL;
@@ -209,7 +217,7 @@ _create_request(void)
 }
 
 void
-_free_request(struct request *req)
+free_request(struct request *req)
 {
         if (req->url != NULL) free(req->url);
         if (req->Accept != NULL) free(req->Accept);
@@ -238,14 +246,14 @@ _free_request(struct request *req)
 }
 
 void
-_parse_line(char *line, struct request *req)
+parse_line(char *line, struct request *req)
 {
         if (starts_with(line, "GET ")) {
                 char* tmp = strtok(line, " ");
                 tmp = strtok(NULL, " ");
                 req->url = malloc(sizeof(char) * (strlen(tmp) + 1));
                 if (req->url == NULL) {
-                        mem_error("_parse_line()", "req->url",
+                        mem_error("parse_line()", "req->url",
                                         sizeof(char) * (strlen(tmp) + 1));
                 }
 

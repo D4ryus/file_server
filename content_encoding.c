@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <string.h>
+
 #include "content_encoding.h"
 
 /* returns content type of given file type
@@ -251,45 +254,4 @@ get_content_encoding(char* type)
         } else {
                 return "text/plain";
         }
-}
-
-int
-_get_content_encoding_test(int silent)
-{
-        if (!silent) printf("testing content_encoding...\n");
-
-        if (!silent) printf("testing html... ");
-        if (!strcmp(get_content_encoding("html"), "text/html")) {
-                if (!silent) printf("passed.\n");
-        } else {
-                if (!silent) printf("error!\n");
-                return -1;
-        }
-
-        if (!silent) printf("testing tar... ");
-        if (!strcmp(get_content_encoding("tar"), "application/x-tar")) {
-                if (!silent) printf("passed.\n");
-        } else {
-                if (!silent) printf("error!\n");
-                return -1;
-        }
-
-        if (!silent) printf("testing txt... ");
-        if (!strcmp(get_content_encoding("txt"), "text/plain")) {
-                if (!silent) printf("passed.\n");
-        } else {
-                if (!silent) printf("error!\n");
-                return -1;
-        }
-
-        if (!silent) printf("testing ThisShouldReturnNull... ");
-        if (get_content_encoding("ThisShouldReturnNull") == NULL) {
-                if (!silent) printf("passed.\n");
-        } else {
-                if (!silent) printf("error!\n");
-                return -1;
-        }
-
-        if (!silent) printf("all tests passed\n");
-        return 0;
 }

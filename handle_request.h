@@ -1,10 +1,7 @@
 #ifndef HANDLE_REQUEST_H
 #define HANDLE_REQUEST_H
 
-#include <unistd.h>
-
-#include "helper.h"
-#include "file_list.h"
+#include <sys/types.h>
 
 enum request_method {NON, OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT};
 
@@ -41,10 +38,10 @@ struct request {
 void handle_request(int);
 struct response* generate_response(char*);
 struct request* parse_request(char*);
-struct response* _create_response(void);
-void _free_response(struct response*);
-struct request* _create_request(void);
-void _free_request(struct request*);
-void _parse_line(char*, struct request*);
+struct response* create_response(void);
+void free_response(struct response*);
+struct request* create_request(void);
+void free_request(struct request*);
+void parse_line(char*, struct request*);
 
 #endif

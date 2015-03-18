@@ -1,5 +1,5 @@
-#ifndef FILE_SERVER_H
-#define FILE_SERVER_H
+#ifndef FILE_LIST_H
+#define FILE_LIST_H
 
 #include <dirent.h>
 
@@ -29,16 +29,18 @@ void print_dir(const struct dir *d);
 /**
  * adds directory information to the given char*, uses realloc in text
  */
-char* get_html_from_dir(char* text, const struct dir *d);
+char* dir_to_html_table(char* text, const struct dir *d);
 
 /**
  * adds a file to the given dir struct, usses realloc
  */
-struct dir* _add_file_to_dir(struct dir *d, struct dirent *dp);
+struct dir* add_file_to_dir(struct dir *d, struct dirent *dp);
 
 /**
  * creates a dir stuct with from given directory
  */
 struct dir* get_dir(char*);
+
+int comp(const void*, const void*);
 
 #endif

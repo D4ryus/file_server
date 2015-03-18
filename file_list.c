@@ -1,3 +1,7 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "file_list.h"
 
 void
@@ -49,7 +53,7 @@ print_dir(const struct dir *d)
  * adds directory information to the given char*, uses realloc in text
  */
 char*
-get_html_from_dir(char* text, const struct dir *d)
+dir_to_html_table(char* text, const struct dir *d)
 {
         if (d->files == NULL) {
                 return NULL;
@@ -57,26 +61,32 @@ get_html_from_dir(char* text, const struct dir *d)
         if (text == NULL) {
                 text = malloc(sizeof(char));
                 if (text == NULL) {
-                        mem_error("get_html_from_dir()", "text", sizeof(char));
+                        mem_error("dir_to_html_table()", "text", sizeof(char));
                 }
                 text[0] = '\0';
         }
 
         int i;
         char buffer[512];
-
+        text = concat(text, "<style>");
+        text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:140%;}");
+        text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
+        text = concat(text, "</style><table style='width:30%' sortable>");
+        text = concat(text, "<tbody>");
+        text = concat(text, "<thead><tr><th>Filename</th><th>Type</th></tr></thead>");
         for (i = 0; i < d->length; i++) {
                 if (d->files[i]->name == NULL) {
                         continue;
                 }
                 sprintf(buffer,
-                        "<tr><td><a href=\"%s/%s\">%s</a></td><td>%s</td></tr>",
+                        "<tr><td><a href='%s/%s'>%s</a></td><td>%s</td></tr>",
                         d->name + 1, /* ignore away leading dot */
                         d->files[i]->name,
                         d->files[i]->name,
                         d->files[i]->is_dir ? "directory" : "file");
-                text = _concat(text, buffer);
+                text = concat(text, buffer);
         }
+        text = concat(text, "</tbody></table>");
         return text;
 }
 
@@ -84,17 +94,17 @@ get_html_from_dir(char* text, const struct dir *d)
  * adds a file to the given dir struct, usses realloc
  */
 struct dir*
-_add_file_to_dir(struct dir *d, struct dirent *dp)
+add_file_to_dir(struct dir *d, struct dirent *dp)
 {
         d = (struct dir *)realloc(d, sizeof(struct dir) + (ulong)((d->length + 1) * (int)sizeof(struct file*)));
 
         d->files[d->length] = malloc(sizeof(struct file));
         if (d->files[d->length] == NULL) {
-                mem_error("_add_file_to_dir()", "d->files[d->length]", sizeof(struct file));
+                mem_error("add_file_to_dir()", "d->files[d->length]", sizeof(struct file));
         }
         d->files[d->length]->name = malloc(sizeof(char) * strlen(dp->d_name) + 1);
         if (d->files[d->length]->name == NULL) {
-                mem_error("_add_file_to_dir()", "d->files[d->length]->name",
+                mem_error("add_file_to_dir()", "d->files[d->length]->name",
                                 sizeof(char) * strlen(dp->d_name) + 1);
         }
         strncpy(d->files[d->length]->name, dp->d_name, strlen(dp->d_name) + 1);
@@ -112,7 +122,7 @@ get_dir(char *directory)
 {
         DIR *dirp = opendir(directory);
         if (dirp == NULL) {
-                _quit("ERROR: get_dir()");
+                quit("ERROR: get_dir()");
         }
 
         struct dirent *dp;
@@ -130,10 +140,21 @@ get_dir(char *directory)
 
         int i;
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
-                result = _add_file_to_dir(result, dp);
+                result = add_file_to_dir(result, dp);
         }
 
         closedir(dirp);
 
+        qsort(result->files, (size_t)result->length, sizeof(struct file *), comp);
+
         return result;
+}
+
+int
+comp(const void *elem1, const void *elem2) 
+{
+        const struct file *file1 = *(struct file * const *)elem1;
+        const struct file *file2 = *(struct file * const *)elem2;
+
+        return strcmp(file1->name, file2->name);
 }
