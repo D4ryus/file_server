@@ -17,7 +17,7 @@ struct request {
 };
 
 void handle_request(int);
-struct response* generate_response(char*);
+struct response* generate_response(struct request*);
 struct request* parse_request(char*);
 struct response* create_response(void);
 void free_response(struct response*);

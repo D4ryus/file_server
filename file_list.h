@@ -6,14 +6,16 @@
 #include "helper.h"
 
 struct file {
-        char* name; 
-        int is_dir;
+        char* name;
+        char type[17];
+        char time[20];
+        off_t size;
 };
 
 struct dir {
         int length;
         char* name;
-        struct file *files[]; 
+        struct file *files[];
 };
 
 /**

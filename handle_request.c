@@ -18,10 +18,8 @@ handle_request(int socket)
         struct request *req;
         struct response *res;
         ssize_t n;
-        char *requested_path;
         size_t BUFFSIZE = 2048;
         char buffer[BUFFSIZE];
-        char *url;
         char* response_buffer;
         size_t response_length;
 
@@ -43,17 +41,7 @@ handle_request(int socket)
                 close(socket);
                 return;
         }
-        /* TODO: thats ugly */
-        url = malloc(sizeof(char) * (strlen(req->url) + 2));
-        if (url == NULL) {
-                mem_error("handle_request()", "url",
-                                sizeof(char) * (strlen(req->url) + 2));
-        }
-        memset(url, '\0', sizeof(char) * (strlen(req->url) + 2));
-        url[0] = '.';
-        strncat(url, req->url, strlen(req->url));
-        requested_path = realpath(url, NULL);
-        res = generate_response(requested_path);
+        res = generate_response(req);
         response_length = strlen(res->head) + res->body_length;
         response_buffer = malloc(sizeof(char) * response_length);
         if (response_buffer == NULL) {
@@ -72,8 +60,6 @@ handle_request(int socket)
                                 (uint)response_length, (uint)n);
         }
         free(response_buffer);
-        free(url);
-        free(requested_path);
         free_request(req);
         free_response(res);
         close(socket);
@@ -82,27 +68,28 @@ handle_request(int socket)
 }
 
 struct response*
-generate_response(char* file)
+generate_response(struct request *req)
 {
         struct response *res;
-        char *accepted_path;
+        char* real_path;
+        char* accepted_path;
 
         res = create_response();
+        real_path = realpath(req->url, NULL);
         accepted_path = realpath(".", NULL);
         if (accepted_path == NULL) {
                 quit("ERROR: realpath()");
         }
-        if (file == NULL) {
+        if (req->url == NULL) {
                 res->head = concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
                 res->body = concat(res->body, "404 - Watcha pulling here buddy?");
                 res->body_length = strlen(res->body);
-        } else if (!starts_with(file, accepted_path)) {
+        } else if (!starts_with(real_path, accepted_path)) {
                 res->head = concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
                 res->body = concat(res->body, "403 - U better not go down this road!");
                 res->body_length = strlen(res->body);
-        } else if (is_directory(file)) {
-                file[strlen(accepted_path) - 1] = '.';
-                struct dir *d = get_dir(file + strlen(accepted_path) - 1);
+        } else if (is_directory(req->url)) {
+                struct dir *d = get_dir(req->url);
                 res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
                 res->body = concat(res->body, "<!DOCTYPE html><html><head>");
                 res->body = concat(res->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
@@ -115,12 +102,12 @@ generate_response(char* file)
                 free_dir(d);
         } else {
                 res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
-                res->head = concat(res->head, get_content_encoding(strrchr(file, '.')));
+                res->head = concat(res->head, get_content_encoding(strrchr(req->url, '.')));
                 res->head = concat(res->head, "\r\n\r\n");
                 if (res->body != NULL) {
                         free(res->body);
                 }
-                res->body = file_to_buf(file, &(res->body_length));
+                res->body = file_to_buf(req->url, &(res->body_length));
         }
         free(accepted_path);
 
@@ -135,16 +122,24 @@ parse_request(char* request)
         size_t length;
 
         req = create_request();
-        tmp = strtok(request, "\n");
+        tmp = strtok(request, "\n"); /* get first line */
 
         if (!starts_with(tmp, "GET ")) {
                 req->url = malloc(sizeof(char) * 2);
-                strncpy(req->url, "/", 2);
+                strncpy(req->url, ".", 2);
                 req->type = PLAIN;
                 return req;
         }
-        tmp = strtok(tmp, " ");
+        tmp = strtok(tmp, " ");  /* split first line */
+        /* get requested url */
         tmp = strtok(NULL, " ");
+
+        /* if asked for root directory */
+        if (strcmp(tmp, "/") == 0) {
+                tmp = ".";
+        } else { /* remove leading / to have a relative path */
+                tmp = tmp + 1;
+        }
         length = strlen(tmp);
         req->url = malloc(sizeof(char) * (length + 1));
         if (req->url == NULL) {
@@ -153,6 +148,7 @@ parse_request(char* request)
         memset(req->url, '\0', sizeof(char) * (length + 1));
         strncpy(req->url, tmp, length);
 
+        /* get requested type */
         tmp = strtok(NULL, " ");
         if (strcmp(tmp, "HTTP/1.1") == 0 || strcmp(tmp, "HTTP/1.0") == 0) {
                 req->type = HTTP;

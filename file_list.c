@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <time.h>
+#include <stdlib.h>
 
 #include "file_list.h"
 
@@ -44,7 +48,7 @@ print_dir(const struct dir *d)
                         continue;
                 }
                 printf("(%9s) - %s\n",
-                                d->files[i]->is_dir ? "directory" : "file",
+                                d->files[i]->type,
                                 d->files[i]->name);
         }
 }
@@ -69,21 +73,23 @@ dir_to_html_table(char* text, const struct dir *d)
         int i;
         char buffer[512];
         text = concat(text, "<style>");
-        text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:140%;}");
+        text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:130%; text-align: right;}");
         text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
-        text = concat(text, "</style><table style='width:30%' sortable>");
+        text = concat(text, "</style><table style='width:50%'>");
         text = concat(text, "<tbody>");
-        text = concat(text, "<thead><tr><th>Filename</th><th>Type</th></tr></thead>");
+        text = concat(text, "<thead><tr><th>Filename</th><th>Type</th><th>Last modified</th><th>Size</th></tr></thead>");
         for (i = 0; i < d->length; i++) {
                 if (d->files[i]->name == NULL) {
                         continue;
                 }
                 sprintf(buffer,
-                        "<tr><td><a href='%s/%s'>%s</a></td><td>%s</td></tr>",
+                        "<tr><td><a href='%s/%s'>%s</a></td><td>%s</td><td>%s</td><td>%d</td></tr>",
                         d->name + 1, /* ignore away leading dot */
                         d->files[i]->name,
                         d->files[i]->name,
-                        d->files[i]->is_dir ? "directory" : "file");
+                        d->files[i]->type,
+                        d->files[i]->time,
+                        d->files[i]->size);
                 text = concat(text, buffer);
         }
         text = concat(text, "</tbody></table>");
@@ -96,20 +102,40 @@ dir_to_html_table(char* text, const struct dir *d)
 struct dir*
 add_file_to_dir(struct dir *d, struct dirent *dp)
 {
+        struct stat sb;
+        struct file* tmp;
+
         d = (struct dir *)realloc(d, sizeof(struct dir) + (ulong)((d->length + 1) * (int)sizeof(struct file*)));
 
         d->files[d->length] = malloc(sizeof(struct file));
         if (d->files[d->length] == NULL) {
                 mem_error("add_file_to_dir()", "d->files[d->length]", sizeof(struct file));
         }
-        d->files[d->length]->name = malloc(sizeof(char) * strlen(dp->d_name) + 1);
-        if (d->files[d->length]->name == NULL) {
-                mem_error("add_file_to_dir()", "d->files[d->length]->name",
+        tmp = d->files[d->length];
+        d->length++;
+        tmp->name = malloc(sizeof(char) * strlen(dp->d_name) + 1);
+        if (tmp->name == NULL) {
+                mem_error("add_file_to_dir()", "tmp->name",
                                 sizeof(char) * strlen(dp->d_name) + 1);
         }
-        strncpy(d->files[d->length]->name, dp->d_name, strlen(dp->d_name) + 1);
-        d->files[d->length]->is_dir = dp->d_type == 4 ? 1 : 0;
-        d->length++;
+        strcpy(tmp->name, dp->d_name);
+
+        if (stat(realpath(dp->d_name, NULL), &sb) == -1) {
+                quit("ERROR: add_file_to_dir()");
+        }
+
+        switch (sb.st_mode & S_IFMT) {
+                case S_IFREG:  strcpy(tmp->type, "regular file"    ); break;
+                case S_IFDIR:  strcpy(tmp->type, "directory"       ); break;
+                case S_IFLNK:  strcpy(tmp->type, "symlink"         ); break;
+                case S_IFBLK:  strcpy(tmp->type, "block device"    ); break;
+                case S_IFCHR:  strcpy(tmp->type, "character device"); break;
+                case S_IFIFO:  strcpy(tmp->type, "fifo/pipe"       ); break;
+                case S_IFSOCK: strcpy(tmp->type, "socket"          ); break;
+                default:       strcpy(tmp->type, "unknown"         ); break;
+        }
+        strftime(tmp->time, 20, "%Y-%m-%d %H:%M:%S", localtime(&sb.st_mtime));
+        tmp->size = sb.st_size;
 
         return d;
 }
@@ -120,13 +146,16 @@ add_file_to_dir(struct dir *d, struct dirent *dp)
 struct dir*
 get_dir(char *directory)
 {
-        DIR *dirp = opendir(directory);
+        DIR *dirp;
+        struct dirent *dp;
+        struct dir *result;
+
+        dirp = opendir(directory);
         if (dirp == NULL) {
                 quit("ERROR: get_dir()");
         }
 
-        struct dirent *dp;
-        struct dir *result = (struct dir*)malloc(sizeof(struct dir));
+        result = (struct dir*)malloc(sizeof(struct dir));
         if (result == NULL) {
                 mem_error("get_dir()", "result", sizeof(struct  dir));
         }
