@@ -9,8 +9,9 @@
 #include "file_list.h"
 
 void
-handle_request(int socket)
+handle_request(int *sock)
 {
+        int socket = *sock;
         if (socket < 0) {
                 quit("ERROR: accept()");
         }
@@ -71,45 +72,125 @@ struct response*
 generate_response(struct request *req)
 {
         struct response *res;
-        char* real_path;
+        char* requested_path;
         char* accepted_path;
 
-        res = create_response();
-        real_path = realpath(req->url, NULL);
-        accepted_path = realpath(".", NULL);
-        if (accepted_path == NULL) {
-                quit("ERROR: realpath()");
+        if (strcmp(req->url, "/") == 0) {
+                if (req->type == PLAIN) {
+                        res = generate_200_directory_plain(".");
+                } else {
+                        res = generate_200_directory(".");
+                }
+                return res;
         }
         if (req->url == NULL) {
-                res->head = concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
-                res->body = concat(res->body, "404 - Watcha pulling here buddy?");
-                res->body_length = strlen(res->body);
-        } else if (!starts_with(real_path, accepted_path)) {
-                res->head = concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
-                res->body = concat(res->body, "403 - U better not go down this road!");
-                res->body_length = strlen(res->body);
-        } else if (is_directory(req->url)) {
-                struct dir *d = get_dir(req->url);
-                res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
-                res->body = concat(res->body, "<!DOCTYPE html><html><head>");
-                res->body = concat(res->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
-                res->body = concat(res->body, "<meta http-equiv='content-type'content='text/html;charset=UTF-8'/>");
-                res->body = concat(res->body, "</head>");
-                res->body = concat(res->body, "<body>");
-                res->body = dir_to_html_table(res->body, d);
-                res->body = concat(res->body, "</body></html>");
-                res->body_length = strlen(res->body);
-                free_dir(d);
-        } else {
-                res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
-                res->head = concat(res->head, get_content_encoding(strrchr(req->url, '.')));
-                res->head = concat(res->head, "\r\n\r\n");
-                if (res->body != NULL) {
-                        free(res->body);
-                }
-                res->body = file_to_buf(req->url, &(res->body_length));
+                res = generate_404();
+                return res;
         }
+
+        accepted_path = realpath(".", NULL);
+        if (accepted_path == NULL) {
+                quit("ERROR: realpath(accepted_path)");
+        }
+
+        requested_path = realpath(req->url + 1, NULL);
+        if (requested_path == NULL) {
+                quit("ERROR: realpath(requested_path)");
+        }
+
+        if (!starts_with(requested_path, accepted_path)) {
+                res = generate_403();
+        } else if (is_directory(req->url + 1)) {
+                if (req->type == PLAIN) {
+                        res = generate_200_directory_plain(req->url + 1);
+                } else {
+                        res = generate_200_directory(req->url + 1);
+                }
+        } else {
+                res = generate_200_file(req->url + 1);
+        }
+
+        free(requested_path);
         free(accepted_path);
+
+        return res;
+}
+
+struct response*
+generate_200_file(char* file)
+{
+        struct response *res;
+
+        res = create_response();
+        res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
+        res->head = concat(res->head, get_content_encoding(strrchr(file, '.')));
+        res->head = concat(res->head, "\r\n\r\n");
+        if (res->body != NULL) {
+                free(res->body);
+        }
+        res->body = file_to_buf(file, &(res->body_length));
+
+        return res;
+}
+
+struct response*
+generate_200_directory_plain(char* directory)
+{
+        struct response *res;
+
+        res = create_response();
+        struct dir *d = get_dir(directory);
+        res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+        res->body = dir_to_plain_table(res->body, d);
+        res->body_length = strlen(res->body);
+        free_dir(d);
+
+        return res;
+}
+
+struct response*
+generate_200_directory(char* directory)
+{
+        struct response *res;
+
+        res = create_response();
+        struct dir *d = get_dir(directory);
+        res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+        res->body = concat(res->body, "<!DOCTYPE html><html><head>");
+        res->body = concat(res->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
+        res->body = concat(res->body, "<meta http-equiv='content-type'content='text/html;charset=UTF-8'/>");
+        res->body = concat(res->body, "</head>");
+        res->body = concat(res->body, "<body>");
+        res->body = dir_to_html_table(res->body, d);
+        res->body = concat(res->body, "</body></html>");
+        res->body_length = strlen(res->body);
+        free_dir(d);
+
+        return res;
+}
+
+struct response*
+generate_404(void)
+{
+        struct response *res;
+
+        res = create_response();
+        res->head = concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+        res->body = concat(res->body, "404 - Watcha pulling here buddy?");
+        res->body_length = strlen(res->body);
+
+        return res;
+}
+
+struct response*
+generate_403(void)
+{
+        struct response *res;
+
+        res = create_response();
+        res->head = concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+        res->body = concat(res->body, "403 - U better not go down this road!");
+        res->body_length = strlen(res->body);
 
         return res;
 }
@@ -125,21 +206,13 @@ parse_request(char* request)
         tmp = strtok(request, "\n"); /* get first line */
 
         if (!starts_with(tmp, "GET ")) {
-                req->url = malloc(sizeof(char) * 2);
-                strncpy(req->url, ".", 2);
+                req->url = NULL;
                 req->type = PLAIN;
                 return req;
         }
         tmp = strtok(tmp, " ");  /* split first line */
-        /* get requested url */
-        tmp = strtok(NULL, " ");
+        tmp = strtok(NULL, " "); /* get requested url */
 
-        /* if asked for root directory */
-        if (strcmp(tmp, "/") == 0) {
-                tmp = ".";
-        } else { /* remove leading / to have a relative path */
-                tmp = tmp + 1;
-        }
         length = strlen(tmp);
         req->url = malloc(sizeof(char) * (length + 1));
         if (req->url == NULL) {
@@ -150,7 +223,12 @@ parse_request(char* request)
 
         /* get requested type */
         tmp = strtok(NULL, " ");
-        if (strcmp(tmp, "HTTP/1.1") == 0 || strcmp(tmp, "HTTP/1.0") == 0) {
+        /* if none given go with PLAIN and return */
+        if (tmp == NULL) {
+                req->type = PLAIN;
+                return req;
+        }
+        if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
                 req->type = HTTP;
         } else {
                 req->type = PLAIN;

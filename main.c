@@ -1,8 +1,10 @@
+#include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "helper.h"
 #include "handle_request.h"
@@ -12,10 +14,12 @@ int main(int, const char**);
 int
 main(int argc, const char *argv[])
 {
+        pthread_t thread;
         int sockfd;
         socklen_t clilen;
         struct sockaddr_in serv_addr, cli_addr;
         int portno = 8283;
+        int client_socket;
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -39,12 +43,16 @@ main(int argc, const char *argv[])
         clilen = sizeof(cli_addr);
 
         while (1) {
-                int client = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+                client_socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+                if (pthread_create(&thread, NULL, &handle_request, &client_socket) != 0) {
+                        quit("wasn't able to create Thread!");
+                }
+
                 printf("Accpepted - [IP: %s, Connected on PORT: %i]\n",
                                 inet_ntoa(cli_addr.sin_addr),
                                 ntohs(cli_addr.sin_port));
-                handle_request(client);
-                close(client);
+
+                pthread_setname_np(thread, inet_ntoa(cli_addr.sin_addr));
         }
 
         close(sockfd);

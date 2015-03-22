@@ -26,7 +26,7 @@ void free_dir(struct dir*);
 /**
  * prints out dir to stdout
  */
-void print_dir(const struct dir*);
+char* dir_to_plain_table(char*, const struct dir*);
 
 /**
  * adds directory information to the given char*, uses realloc in text

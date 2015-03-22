@@ -16,8 +16,13 @@ struct request {
         enum request_type type;
 };
 
-void handle_request(int);
+void handle_request(int*);
 struct response* generate_response(struct request*);
+struct response* generate_200_file(char*);
+struct response* generate_200_directory(char*);
+struct response* generate_200_directory_plain(char*);
+struct response* generate_404(void);
+struct response* generate_403(void);
 struct request* parse_request(char*);
 struct response* create_response(void);
 void free_response(struct response*);

@@ -35,22 +35,46 @@ free_dir(struct dir *d)
 /**
  * prints out dir to stdout
  */
-void
-print_dir(const struct dir *d)
+char*
+dir_to_plain_table(char* text, const struct dir *d)
 {
-        int i;
-        printf("dir: %s\n", d->name);
-        for (i = 0; i < d->length; i++) {
-                if (d->files[i] == NULL) {
-                        continue;
+        if (d->files == NULL) {
+                return NULL;
+        }
+        if (text == NULL) {
+                text = malloc(sizeof(char));
+                if (text == NULL) {
+                        mem_error("dir_to_plain_table()", "text", sizeof(char));
                 }
+                text[0] = '\0';
+        }
+
+        int i;
+        char buffer[512];
+
+        sprintf(buffer,
+                "%-19s %-17s %-12s %s\n",
+                "Last modified",
+                "Type",
+                "Size",
+                "Filename");
+        text = concat(text, buffer);
+        for (i = 0; i < d->length; i++) {
                 if (d->files[i]->name == NULL) {
                         continue;
                 }
-                printf("(%9s) - %s\n",
-                                d->files[i]->type,
-                                d->files[i]->name);
+                sprintf(buffer,
+                        "%19s %17s %12li /%s%s%s\n",
+                        d->files[i]->time,
+                        d->files[i]->type,
+                        (long)d->files[i]->size,
+                        strcmp(d->name, ".") == 0 ? "" : d->name,
+                        strcmp(d->name, ".") == 0 ? "" : "/",
+                        d->files[i]->name);
+                text = concat(text, buffer);
         }
+
+        return text;
 }
 
 /**
@@ -75,7 +99,7 @@ dir_to_html_table(char* text, const struct dir *d)
         text = concat(text, "<style>");
         text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:130%; text-align: right;}");
         text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
-        text = concat(text, "</style><table>");
+        text = concat(text, "</style><table style size='100%'>");
         text = concat(text, "<tbody>");
         text = concat(text, "<thead><tr><th>Filename</th><th>Type</th><th>Last modified</th><th>Size</th></tr></thead>");
         for (i = 0; i < d->length; i++) {
@@ -83,17 +107,18 @@ dir_to_html_table(char* text, const struct dir *d)
                         continue;
                 }
                 sprintf(buffer,
-                        "<tr><td><a href='/%s%s%s'>%s</a></td><td>%s</td><td>%s</td><td>%d</td></tr>",
+                        "<tr><td><a href='/%s%s%s'>%s</a></td><td>%s</td><td>%s</td><td>%12li</td></tr>",
                         strcmp(d->name, ".") == 0 ? "" : d->name,
                         strcmp(d->name, ".") == 0 ? "" : "/",
                         d->files[i]->name,
                         d->files[i]->name,
                         d->files[i]->type,
                         d->files[i]->time,
-                        (int)d->files[i]->size);
+                        (long)d->files[i]->size);
                 text = concat(text, buffer);
         }
         text = concat(text, "</tbody></table>");
+
         return text;
 }
 
