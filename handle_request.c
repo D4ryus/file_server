@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/stat.h>
-
+#include <time.h>
 
 #include "handle_request.h"
 #include "content_encoding.h"
@@ -96,6 +96,8 @@ send_file(int socket, struct response *res)
         FILE *f;
         size_t buffsize = 8192;
         char buffer[8192];
+        int last_time;
+        int current_time;
 
         ip = malloc(sizeof(char) * 16);
         if (ip == NULL) {
@@ -108,6 +110,7 @@ send_file(int socket, struct response *res)
 
         pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
 
+        last_time = 0;
         sending = 1;
         written = 0;
         while (sending) {
@@ -120,13 +123,17 @@ send_file(int socket, struct response *res)
                         sent = sent + (size_t)write(socket, buffer + sent, read - sent);
                 }
                 written += sent;
-                printf("ip: %s requested: %s size: %lu written: %lu remaining: %lu %lu\%\n",
-                                     ip,
-                                     res->body, /* contains filename */
-                                     res->body_length,
-                                     written,
-                                     res->body_length - written,
-                                     written * 100 / res->body_length);
+                current_time = time(NULL);
+                if ((current_time - last_time) > 1 || !sending) {
+                        last_time = current_time;
+                        printf("ip: %s requested: %s size: %lu written: %lu remaining: %lu %lu\%\n",
+                                             ip,
+                                             res->body, /* contains filename */
+                                             res->body_length,
+                                             written,
+                                             res->body_length - written,
+                                             written * 100 / res->body_length);
+                }
         }
 
         fclose(f);
