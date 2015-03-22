@@ -21,22 +21,22 @@ struct dir {
 /**
  * free's dir struct + file list + file names
  */
-void free_dir(struct dir *d);
+void free_dir(struct dir*);
 
 /**
  * prints out dir to stdout
  */
-void print_dir(const struct dir *d);
+void print_dir(const struct dir*);
 
 /**
  * adds directory information to the given char*, uses realloc in text
  */
-char* dir_to_html_table(char* text, const struct dir *d);
+char* dir_to_html_table(char*, const struct dir*);
 
 /**
  * adds a file to the given dir struct, usses realloc
  */
-struct dir* add_file_to_dir(struct dir *d, struct dirent *dp);
+struct dir* add_file_to_dir(struct dir*, char*, char*);
 
 /**
  * creates a dir stuct with from given directory

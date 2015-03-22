@@ -75,7 +75,7 @@ dir_to_html_table(char* text, const struct dir *d)
         text = concat(text, "<style>");
         text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:130%; text-align: right;}");
         text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
-        text = concat(text, "</style><table style='width:50%'>");
+        text = concat(text, "</style><table>");
         text = concat(text, "<tbody>");
         text = concat(text, "<thead><tr><th>Filename</th><th>Type</th><th>Last modified</th><th>Size</th></tr></thead>");
         for (i = 0; i < d->length; i++) {
@@ -83,13 +83,14 @@ dir_to_html_table(char* text, const struct dir *d)
                         continue;
                 }
                 sprintf(buffer,
-                        "<tr><td><a href='%s/%s'>%s</a></td><td>%s</td><td>%s</td><td>%d</td></tr>",
-                        d->name + 1, /* ignore away leading dot */
+                        "<tr><td><a href='/%s%s%s'>%s</a></td><td>%s</td><td>%s</td><td>%d</td></tr>",
+                        strcmp(d->name, ".") == 0 ? "" : d->name,
+                        strcmp(d->name, ".") == 0 ? "" : "/",
                         d->files[i]->name,
                         d->files[i]->name,
                         d->files[i]->type,
                         d->files[i]->time,
-                        d->files[i]->size);
+                        (int)d->files[i]->size);
                 text = concat(text, buffer);
         }
         text = concat(text, "</tbody></table>");
@@ -100,12 +101,18 @@ dir_to_html_table(char* text, const struct dir *d)
  * adds a file to the given dir struct, usses realloc
  */
 struct dir*
-add_file_to_dir(struct dir *d, struct dirent *dp)
+add_file_to_dir(struct dir *d, char *file, char* directory)
 {
+        if (file == NULL) {
+                printf("file is null, dunno\n");
+                return d;
+        }
+
         struct stat sb;
         struct file* tmp;
+        char* combined_path;
 
-        d = (struct dir *)realloc(d, sizeof(struct dir) + (ulong)((d->length + 1) * (int)sizeof(struct file*)));
+        d = (struct dir *)realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
 
         d->files[d->length] = malloc(sizeof(struct file));
         if (d->files[d->length] == NULL) {
@@ -113,14 +120,19 @@ add_file_to_dir(struct dir *d, struct dirent *dp)
         }
         tmp = d->files[d->length];
         d->length++;
-        tmp->name = malloc(sizeof(char) * strlen(dp->d_name) + 1);
+        tmp->name = malloc(sizeof(char) * strlen(file) + 1);
         if (tmp->name == NULL) {
                 mem_error("add_file_to_dir()", "tmp->name",
-                                sizeof(char) * strlen(dp->d_name) + 1);
+                                sizeof(char) * strlen(file) + 1);
         }
-        strcpy(tmp->name, dp->d_name);
+        strcpy(tmp->name, file);
 
-        if (stat(realpath(dp->d_name, NULL), &sb) == -1) {
+        combined_path = malloc(strlen(directory) + strlen(file) + 2);
+        combined_path[0] = '\0';
+        memcpy(combined_path, directory, strlen(directory) + 1);
+        combined_path[strlen(directory)] = '/';
+        memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
+        if (stat(combined_path, &sb) == -1) {
                 quit("ERROR: add_file_to_dir()");
         }
 
@@ -169,7 +181,7 @@ get_dir(char *directory)
 
         int i;
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
-                result = add_file_to_dir(result, dp);
+                result = add_file_to_dir(result, dp->d_name, directory);
         }
 
         closedir(dirp);
