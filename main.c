@@ -47,11 +47,9 @@ main(int argc, const char *argv[])
                 if (pthread_create(&thread, NULL, &handle_request, &client_socket) != 0) {
                         quit("wasn't able to create Thread!");
                 }
-
                 printf("Accpepted - [IP: %s, Connected on PORT: %i]\n",
                                 inet_ntoa(cli_addr.sin_addr),
                                 ntohs(cli_addr.sin_port));
-
                 pthread_setname_np(thread, inet_ntoa(cli_addr.sin_addr));
         }
 

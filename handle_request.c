@@ -1,7 +1,10 @@
+#include <pthread.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <sys/stat.h>
+
 
 #include "handle_request.h"
 #include "content_encoding.h"
@@ -18,14 +21,12 @@ handle_request(int *sock)
 
         struct request *req;
         struct response *res;
+        size_t buffsize = 2048;
+        char read_buffer[buffsize];
         ssize_t n;
-        size_t BUFFSIZE = 2048;
-        char buffer[BUFFSIZE];
-        char* response_buffer;
-        size_t response_length;
 
-        memset(buffer, '\0', BUFFSIZE);
-        n = read(socket, buffer, BUFFSIZE - 1);
+        memset(read_buffer, '\0', buffsize);
+        n = read(socket, read_buffer, buffsize - 1);
         if (n < 0) {
                 printf("encounterd a error on read(), will ignore request.\n");
                 close(socket);
@@ -36,36 +37,100 @@ handle_request(int *sock)
                 close(socket);
                 return;
         }
-        req = parse_request(buffer);
+        req = parse_request(read_buffer);
         if (req->url == NULL) {
                 printf("requested with non valid http request, abort.\n");
                 close(socket);
                 return;
         }
         res = generate_response(req);
-        response_length = strlen(res->head) + res->body_length;
-        response_buffer = malloc(sizeof(char) * response_length);
-        if (response_buffer == NULL) {
-                mem_error("handle_request()", "response_buffer",
-                                sizeof(char) * response_length);
+        write(socket, res->head, res->head_length);
+        if (res->type == TEXT) {
+                send_text(socket, res);
+        } else {
+                send_file(socket, res);
         }
-        memcpy(response_buffer, res->head, strlen(res->head));
-        memcpy(response_buffer + strlen(res->head), res->body, res->body_length);
-        n = write(socket, response_buffer, response_length);
-        if (n < 0) {
-                printf("encounterd a error on write(), will ignore request.\n");
-        } else if (n == 0) {
-                printf("0 bytes have been written, will ignore request\n");
-        } else if ((size_t)n != response_length) {
-                printf("write should have written %u bytes, but instead only %u have been written.\n",
-                                (uint)response_length, (uint)n);
-        }
-        free(response_buffer);
         free_request(req);
         free_response(res);
         close(socket);
 
         return;
+}
+
+void
+send_text(int socket, struct response *res)
+{
+        char* ip;
+        int sending;
+        ssize_t n;
+
+        ip = malloc(sizeof(char) * 16);
+        if (ip == NULL) {
+                mem_error("send_text()", "ip", sizeof(char) * 16);
+        }
+        n = 0;
+        sending = 1;
+        while (sending) {
+                n = n + write(socket, res->body + (size_t)n, res->body_length - (size_t)n);
+                pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
+                if (n < 0) {
+                        printf("encounterd a error on write(), will ignore request.\n");
+                } else if (n == 0) {
+                        printf("0 bytes have been written, will ignore request\n");
+                } else if ((size_t)n != res->body_length) {
+                        continue;
+                }
+                sending = 0;
+        }
+        free(ip);
+}
+
+void
+send_file(int socket, struct response *res)
+{
+        char* ip;
+        int sending;
+        size_t read;
+        size_t sent;
+        size_t written;
+        FILE *f;
+        size_t buffsize = 8192;
+        char buffer[8192];
+
+        ip = malloc(sizeof(char) * 16);
+        if (ip == NULL) {
+                mem_error("send_file()", "ip", sizeof(char) * 16);
+        }
+        f = fopen(res->body, "rb");
+        if (!f) {
+                quit("ERROR: send_file()");
+        }
+
+        pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
+
+        sending = 1;
+        written = 0;
+        while (sending) {
+                sent = 0;
+                read = fread(buffer, 1, buffsize, f);
+                if (read < buffsize) {
+                        sending = 0;
+                }
+                while (sent < read) {
+                        sent = sent + (size_t)write(socket, buffer + sent, read - sent);
+                }
+                written += sent;
+                printf("ip: %s requested: %s size: %lu written: %lu remaining: %lu %lu\%\n",
+                                     ip,
+                                     res->body, /* contains filename */
+                                     res->body_length,
+                                     written,
+                                     res->body_length - written,
+                                     written * 100 / res->body_length);
+        }
+
+        fclose(f);
+        free(ip);
 }
 
 struct response*
@@ -95,7 +160,8 @@ generate_response(struct request *req)
 
         requested_path = realpath(req->url + 1, NULL);
         if (requested_path == NULL) {
-                quit("ERROR: realpath(requested_path)");
+                res = generate_404();
+                return res;
         }
 
         if (!starts_with(requested_path, accepted_path)) {
@@ -120,15 +186,19 @@ struct response*
 generate_200_file(char* file)
 {
         struct response *res;
+        struct stat sb;
 
         res = create_response();
         res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
         res->head = concat(res->head, get_content_encoding(strrchr(file, '.')));
         res->head = concat(res->head, "\r\n\r\n");
-        if (res->body != NULL) {
-                free(res->body);
+        res->head_length = strlen(res->head);
+        if (stat(file, &sb) == -1) {
+                quit("ERROR: generate_200_file()");
         }
-        res->body = file_to_buf(file, &(res->body_length));
+        res->body_length = (size_t)sb.st_size;
+        res->body = concat(res->body, file);
+        res->type = DATA;
 
         return res;
 }
@@ -141,9 +211,11 @@ generate_200_directory_plain(char* directory)
         res = create_response();
         struct dir *d = get_dir(directory);
         res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+        res->head_length = strlen(res->head);
         res->body = dir_to_plain_table(res->body, d);
         res->body_length = strlen(res->body);
         free_dir(d);
+        res->type = TEXT;
 
         return res;
 }
@@ -152,10 +224,14 @@ struct response*
 generate_200_directory(char* directory)
 {
         struct response *res;
+        struct dir *d;
 
         res = create_response();
-        struct dir *d = get_dir(directory);
+        d = get_dir(directory);
+
         res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+        res->head_length = strlen(res->head);
+
         res->body = concat(res->body, "<!DOCTYPE html><html><head>");
         res->body = concat(res->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
         res->body = concat(res->body, "<meta http-equiv='content-type'content='text/html;charset=UTF-8'/>");
@@ -164,6 +240,8 @@ generate_200_directory(char* directory)
         res->body = dir_to_html_table(res->body, d);
         res->body = concat(res->body, "</body></html>");
         res->body_length = strlen(res->body);
+        res->type = TEXT;
+
         free_dir(d);
 
         return res;
@@ -176,8 +254,10 @@ generate_404(void)
 
         res = create_response();
         res->head = concat(res->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+        res->head_length = strlen(res->head);
         res->body = concat(res->body, "404 - Watcha pulling here buddy?");
         res->body_length = strlen(res->body);
+        res->type = TEXT;
 
         return res;
 }
@@ -189,8 +269,11 @@ generate_403(void)
 
         res = create_response();
         res->head = concat(res->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+        res->head_length = strlen(res->head);
+        res->body = concat(res->body, "404 - Watcha pulling here buddy?");
         res->body = concat(res->body, "403 - U better not go down this road!");
         res->body_length = strlen(res->body);
+        res->type = TEXT;
 
         return res;
 }
@@ -255,8 +338,10 @@ create_response(void)
                 mem_error("create_response()", "res->body", sizeof(char));
         }
         res->head[0] = '\0';
+        res->head_length = 0;
         res->body[0] = '\0';
         res->body_length = 0;
+        res->type = TEXT;
 
         return res;
 }

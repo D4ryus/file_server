@@ -4,11 +4,14 @@
 #include <sys/types.h>
 
 enum request_type {PLAIN, HTTP};
+enum body_type {TEXT, DATA};
 
 struct response {
         char* head;
         char* body;
+        enum body_type type;
         size_t body_length;
+        size_t head_length;
 };
 
 struct request {
@@ -17,6 +20,8 @@ struct request {
 };
 
 void handle_request(int*);
+void send_text(int, struct response*);
+void send_file(int, struct response*);
 struct response* generate_response(struct request*);
 struct response* generate_200_file(char*);
 struct response* generate_200_directory(char*);

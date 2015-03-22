@@ -97,7 +97,7 @@ dir_to_html_table(char* text, const struct dir *d)
         int i;
         char buffer[512];
         text = concat(text, "<style>");
-        text = concat(text, "table, td, th { font-family: 'Iceland', cursive; font-size:130%; text-align: right;}");
+        text = concat(text, "table, td, th { text-align: right;}");
         text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
         text = concat(text, "</style><table style size='100%'>");
         text = concat(text, "<tbody>");
