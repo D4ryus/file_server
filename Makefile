@@ -43,6 +43,7 @@ CFLAGS = -Wall \
          -ggdb \
          -pg \
          -g3 \
+         -g \
        # -Wpadded
        # -Wdeclaration-after-statement
        # -Werror
