@@ -93,6 +93,7 @@ send_file(int socket, struct response *res)
         size_t read;
         size_t sent;
         size_t written;
+        size_t last_written;
         FILE *f;
         size_t buffsize = 8192;
         char buffer[8192];
@@ -113,6 +114,7 @@ send_file(int socket, struct response *res)
         last_time = 0;
         sending = 1;
         written = 0;
+        last_written = 0;
         while (sending) {
                 sent = 0;
                 read = fread(buffer, 1, buffsize, f);
@@ -121,18 +123,24 @@ send_file(int socket, struct response *res)
                 }
                 while (sent < read) {
                         sent = sent + (size_t)write(socket, buffer + sent, read - sent);
+                        if (sent == 0) {
+                                sending = 0;
+                                printf("0 bytes written, abort sending.\n");
+                        }
                 }
                 written += sent;
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1 || !sending) {
-                        last_time = current_time;
-                        printf("ip: %s requested: %s size: %lu written: %lu remaining: %lu %lu\%\n",
+                        printf("ip: %s requested: %s size: %lukb written: %lukb remaining: %lukb %lu%% %lukb/s\n",
                                              ip,
                                              res->body, /* contains filename */
-                                             res->body_length,
+                                             res->body_length >> 8,
                                              written,
                                              res->body_length - written,
-                                             written * 100 / res->body_length);
+                                             written * 100 / res->body_length,
+                                             (written - last_written) / (current_time - last_time));
+                        last_time = current_time;
+                        last_written = written;
                 }
         }
 
