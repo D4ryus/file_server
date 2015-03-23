@@ -11,9 +11,9 @@
 char*
 concat(char* dst, const char* src)
 {
-        dst = realloc(dst, (sizeof(char) * strlen(dst)) + (sizeof(char) * strlen(src)) + 1);
+        dst = realloc(dst, strlen(dst) + strlen(src) + 1);
         if (dst == NULL) {
-                quit("ERROR! Could not allocate memory");
+                mem_error("concat()", "dst", strlen(dst) + strlen(src) + 1);
         }
         strncat(dst, src, strlen(src));
 
@@ -24,10 +24,11 @@ concat(char* dst, const char* src)
  * checks if given string is a directory, if its a file 0 is returned
  */
 int
-is_directory(char *path)
+is_directory(const char *path)
 {
         struct stat s;
-        if (stat(path,&s) == 0) {
+
+        if (stat(path, &s) == 0) {
                 if (s.st_mode & S_IFDIR) {
                         return 1;
                 } else if (s.st_mode & S_IFREG) {
