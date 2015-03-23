@@ -88,18 +88,25 @@ send_text(int socket, struct response *res)
 void
 send_file(int socket, struct response *res)
 {
-        char* ip;
-        int sending;
+        char   *ip;
+        int    sending;
         size_t read;
         size_t sent;
         size_t written;
-        FILE *f;
-        size_t buffsize = 8192;
-        char buffer[8192];
-        int last_time;
-        int current_time;
+        size_t last_written;
+        size_t buffsize;
+        char   *buffer;
+        FILE   *f;
+        int    last_time;
+        int    current_time;
 
-        ip = malloc(16);
+        buffsize = 8 << 20; /* 8MB */
+
+        buffer = malloc(buffsize);
+        if (buffer == NULL) {
+                mem_error("send_file()", "buffer", buffsize);
+        }
+        ip = malloc(sizeof(char) * 16);
         if (ip == NULL) {
                 mem_error("send_file()", "ip", 16);
         }
@@ -113,6 +120,7 @@ send_file(int socket, struct response *res)
         last_time = 0;
         sending = 1;
         written = 0;
+        last_written = 0;
         while (sending) {
                 sent = 0;
                 read = fread(buffer, 1, buffsize, f);
@@ -121,18 +129,24 @@ send_file(int socket, struct response *res)
                 }
                 while (sent < read) {
                         sent = sent + (size_t)write(socket, buffer + sent, read - sent);
+                        if (sent == 0) {
+                                sending = 0;
+                                printf("0 bytes written, abort sending.\n");
+                        }
                 }
                 written += sent;
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1 || !sending) {
-                        last_time = current_time;
-                        printf("ip: %s requested: %s size: %lu written: %lu remaining: %lu %lu\%\n",
+                        printf("ip: %s requested: %s size: %8lukb written: %8lukb remaining: %8lukb %3lu%% %8lukb/s\n",
                                              ip,
                                              res->body, /* contains filename */
-                                             res->body_length,
-                                             written,
-                                             res->body_length - written,
-                                             written * 100 / res->body_length);
+                                             res->body_length >> 10,
+                                             written >> 10,
+                                             (res->body_length - written) >> 10,
+                                             written * 100 / res->body_length,
+                                             ((written - last_written) / (!sending ? 1 : (current_time - last_time))) >> 10);
+                        last_time = current_time;
+                        last_written = written;
                 }
         }
 
@@ -194,15 +208,19 @@ generate_200_file(char* file)
 {
         struct response *res;
         struct stat sb;
+        char length[32];
+
+        if (stat(file, &sb) == -1) {
+                quit("ERROR: generate_200_file()");
+        }
 
         res = create_response();
         res->head = concat(res->head, "HTTP/1.1 200 OK\r\nContent-Type: ");
         res->head = concat(res->head, get_content_encoding(strrchr(file, '.')));
-        res->head = concat(res->head, "\r\n\r\n");
+        res->head = concat(res->head, "\r\nContent-Length: ");
+        sprintf(length, "%lu\r\n\r\n", (size_t)sb.st_size);
+        res->head = concat(res->head, length);
         res->head_length = strlen(res->head);
-        if (stat(file, &sb) == -1) {
-                quit("ERROR: generate_200_file()");
-        }
         res->body_length = (size_t)sb.st_size;
         res->body = concat(res->body, file);
         res->type = DATA;
