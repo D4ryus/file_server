@@ -64,15 +64,15 @@ send_text(int socket, struct response *res)
         int sending;
         ssize_t n;
 
-        ip = malloc(16);
+        ip = malloc(sizeof(char) * 16);
         if (ip == NULL) {
-                mem_error("send_text()", "ip", 16);
+                mem_error("send_text()", "ip", sizeof(char) * 16);
         }
+        pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
         n = 0;
         sending = 1;
         while (sending) {
                 n = n + write(socket, res->body + (size_t)n, res->body_length - (size_t)n);
-                pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
                 if (n < 0) {
                         printf("encounterd a error on write(), will ignore request.\n");
                 } else if (n == 0) {
@@ -100,7 +100,7 @@ send_file(int socket, struct response *res)
         time_t last_time;
         time_t current_time;
 
-        buffsize = 8 << 20; /* 8MB */
+        buffsize = 8 << 10; /* 8kB */
 
         buffer = malloc(buffsize);
         if (buffer == NULL) {
@@ -108,7 +108,7 @@ send_file(int socket, struct response *res)
         }
         ip = malloc(sizeof(char) * 16);
         if (ip == NULL) {
-                mem_error("send_file()", "ip", 16);
+                mem_error("send_file()", "ip", sizeof(char) * 16);
         }
         f = fopen(res->body, "rb");
         if (!f) {
@@ -313,7 +313,7 @@ parse_request(char* request)
         req = create_request();
         tmp = strtok(request, "\n"); /* get first line */
 
-        if (!starts_with(tmp, "GET ")) {
+        if (tmp == NULL || !starts_with(tmp, "GET ")) {
                 req->url = NULL;
                 req->type = PLAIN;
                 return req;
@@ -322,11 +322,11 @@ parse_request(char* request)
         tmp = strtok(NULL, " "); /* get requested url */
 
         length = strlen(tmp);
-        req->url = malloc(length + 1);
+        req->url = malloc(sizeof(char) * (length + 1));
         if (req->url == NULL) {
-                mem_error("parse_line()", "req->url", length + 1);
+                mem_error("parse_line()", "req->url", sizeof(char) * (length + 1));
         }
-        memset(req->url, '\0', length + 1);
+        memset(req->url, '\0', sizeof(char) * (length + 1));
         strncpy(req->url, tmp, length);
 
         /* get requested type */
