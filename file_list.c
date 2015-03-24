@@ -145,14 +145,17 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         }
         tmp = d->files[d->length];
         d->length++;
-        tmp->name = malloc(sizeof(char) * strlen(file) + 1);
+        tmp->name = malloc(strlen(file) + 1);
         if (tmp->name == NULL) {
                 mem_error("add_file_to_dir()", "tmp->name",
-                                sizeof(char) * strlen(file) + 1);
+                                strlen(file) + 1);
         }
         strcpy(tmp->name, file);
 
         combined_path = malloc(strlen(directory) + strlen(file) + 2);
+        if (combined_path == NULL) {
+                mem_error("add_file_to_dir()", "combined_path", strlen(directory) + strlen(file) + 2);
+        }
         combined_path[0] = '\0';
         memcpy(combined_path, directory, strlen(directory) + 1);
         combined_path[strlen(directory)] = '/';
@@ -160,6 +163,7 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         if (stat(combined_path, &sb) == -1) {
                 quit("ERROR: add_file_to_dir()");
         }
+        free(combined_path);
 
         switch (sb.st_mode & S_IFMT) {
                 case S_IFREG:  strcpy(tmp->type, "regular file"    ); break;
@@ -197,12 +201,12 @@ get_dir(char *directory)
                 mem_error("get_dir()", "result", sizeof(struct  dir));
         }
         result->length = 0;
-        result->name = malloc(sizeof(char) * (strlen(directory) + 1));
+        result->name = malloc(strlen(directory) + 1);
         if (result->name == NULL) {
                 mem_error("get_dir()", "result->name",
-                                sizeof(char) * (strlen(directory) + 1));
+                                strlen(directory) + 1);
         }
-        strncpy(result->name, directory, sizeof(char) * (strlen(directory) + 1));
+        strncpy(result->name, directory, strlen(directory) + 1);
 
         int i;
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {

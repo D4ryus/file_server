@@ -11,7 +11,7 @@ char* concat(char* dst, const char* src);
 /**
  * checks if given string is a directory, if its a file 0 is returned
  */
-int is_directory(char*);
+int is_directory(const char*);
 
 /**
  * prints error and quits
