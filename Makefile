@@ -48,7 +48,7 @@ CFLAGS = -Wall \
        # -Wdeclaration-after-statement
        # -Werror
 
-LFLAGS = -lbsd -lpthread
+LFLAGS = -lpthread
 
 # targets to compile
 

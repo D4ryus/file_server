@@ -97,8 +97,8 @@ send_file(int socket, struct response *res)
         size_t buffsize;
         char   *buffer;
         FILE   *f;
-        int    last_time;
-        int    current_time;
+        time_t last_time;
+        time_t current_time;
 
         buffsize = 8 << 20; /* 8MB */
 
@@ -144,7 +144,7 @@ send_file(int socket, struct response *res)
                                              written >> 10,
                                              (res->body_length - written) >> 10,
                                              written * 100 / res->body_length,
-                                             ((written - last_written) / (!sending ? 1 : (current_time - last_time))) >> 10);
+                                             ((written - last_written) / (!sending ? 1 : (ulong)(current_time - last_time))) >> 10);
                         last_time = current_time;
                         last_written = written;
                 }
