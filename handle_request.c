@@ -12,12 +12,18 @@
 #include "file_list.h"
 
 void
-handle_request(int *sock)
+handle_request(struct thread_info* info)
 {
-        int socket = *sock;
-        if (socket < 0) {
+        if (info->socket < 0) {
                 quit("ERROR: accept()");
         }
+
+        info->thread_id = (unsigned long)pthread_self();
+        printf("Accpepted - [IP: %15s, Port: %5i, Thread ID: %12lu, Socket ID: %5i]\n",
+                        info->ip,
+                        info->port,
+                        info->thread_id,
+                        info->socket);
 
         struct request *req;
         struct response *res;
@@ -26,79 +32,78 @@ handle_request(int *sock)
         ssize_t n;
 
         memset(read_buffer, '\0', buffsize);
-        n = read(socket, read_buffer, buffsize - 1);
+        n = read(info->socket, read_buffer, buffsize - 1);
         if (n < 0) {
                 printf("encounterd a error on read(), will ignore request.\n");
-                close(socket);
+                close(info->socket);
                 return;
         }
         if (n == 0) {
                 printf("empty request, will ignore request\n");
-                close(socket);
+                close(info->socket);
                 return;
         }
         req = parse_request(read_buffer);
         if (req->url == NULL) {
                 printf("requested with non valid http request, abort.\n");
-                close(socket);
+                close(info->socket);
                 return;
         }
         res = generate_response(req);
-        write(socket, res->head, res->head_length);
+        write(info->socket, res->head, res->head_length);
         if (res->type == TEXT) {
-                send_text(socket, res);
+                send_text(info, res);
         } else {
-                send_file(socket, res);
+                send_file(info, res);
         }
         free_request(req);
         free_response(res);
-        close(socket);
+        close(info->socket);
+        free(info);
 
         return;
 }
 
 void
-send_text(int socket, struct response *res)
+send_text(struct thread_info *info, struct response *res)
 {
-        char* ip;
+        ssize_t write_res;
         int sending;
-        ssize_t n;
+        size_t sent;
 
-        ip = malloc(sizeof(char) * 16);
-        if (ip == NULL) {
-                mem_error("send_text()", "ip", sizeof(char) * 16);
-        }
-        pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
-        n = 0;
+        write_res = 0;
+        sent = 0;
         sending = 1;
         while (sending) {
-                n = n + write(socket, res->body + (size_t)n, res->body_length - (size_t)n);
-                if (n < 0) {
-                        printf("encounterd a error on write(), will ignore request.\n");
-                } else if (n == 0) {
-                        printf("0 bytes have been written, will ignore request\n");
-                } else if ((size_t)n != res->body_length) {
+                write_res = write(info->socket, res->body + sent, res->body_length - sent);
+                if (write_res == -1) {
+                        printf("encounterd a error on write(), client closed connection.\n");
+                        return;
+                } else if (write_res == 0) {
+                        printf("0 bytes written, ignoring request.\n");
+                }
+                sent = sent + (size_t)write_res;
+                if (sent != res->body_length) {
                         continue;
                 }
                 sending = 0;
         }
-        free(ip);
 }
 
 void
-send_file(int socket, struct response *res)
+send_file(struct thread_info *info, struct response *res)
 {
-        char   *ip;
-        int    sending;
-        size_t read;
-        size_t sent;
-        size_t written;
-        size_t last_written;
-        size_t buffsize;
-        char   *buffer;
-        FILE   *f;
-        time_t last_time;
-        time_t current_time;
+        ssize_t write_res;
+        int     sending;
+        size_t  read;
+        size_t  sent;
+        size_t  written;
+        size_t  last_written;
+        size_t  buffsize;
+        char    *buffer;
+        FILE    *f;
+        time_t  last_time;
+        time_t  current_time;
 
         buffsize = 8 << 10; /* 8kB */
 
@@ -106,17 +111,12 @@ send_file(int socket, struct response *res)
         if (buffer == NULL) {
                 mem_error("send_file()", "buffer", buffsize);
         }
-        ip = malloc(sizeof(char) * 16);
-        if (ip == NULL) {
-                mem_error("send_file()", "ip", sizeof(char) * 16);
-        }
         f = fopen(res->body, "rb");
         if (!f) {
                 quit("ERROR: send_file()");
         }
 
-        pthread_getname_np(pthread_self(), ip, 16); /* threadname is set to ip adress */
-
+        write_res = 0;
         last_time = 0;
         sending = 1;
         written = 0;
@@ -128,17 +128,21 @@ send_file(int socket, struct response *res)
                         sending = 0;
                 }
                 while (sent < read) {
-                        sent = sent + (size_t)write(socket, buffer + sent, read - sent);
-                        if (sent == 0) {
+                        write_res = write(info->socket, buffer + sent, read - sent);
+                        if (write_res == -1) {
+                                printf("encounterd a error on write(), client closed connection.\n");
                                 sending = 0;
-                                printf("0 bytes written, abort sending.\n");
+                        } else if (write_res == 0) {
+                                printf("0 bytes written, ignoring request.\n");
+                                sending = 0;
                         }
+                        sent = sent + (size_t)write;
                 }
                 written += sent;
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1 || !sending) {
-                        printf("ip: %s requested: %s size: %8lukb written: %8lukb remaining: %8lukb %3lu%% %8lukb/s\n",
-                                             ip,
+                        printf("ip: %15s requested: %s size: %8lukb written: %8lukb remaining: %8lukb %3lu%% %8lukb/s\n",
+                                             info->ip,
                                              res->body, /* contains filename */
                                              res->body_length >> 10,
                                              written >> 10,
@@ -151,7 +155,6 @@ send_file(int socket, struct response *res)
         }
 
         fclose(f);
-        free(ip);
 }
 
 struct response*

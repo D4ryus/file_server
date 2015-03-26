@@ -1,6 +1,7 @@
 #ifndef HANDLE_REQUEST_H
 #define HANDLE_REQUEST_H
 
+#include <pthread.h>
 #include <sys/types.h>
 
 enum request_type {PLAIN, HTTP};
@@ -19,9 +20,16 @@ struct request {
         enum request_type type;
 };
 
-void handle_request(int*);
-void send_text(int, struct response*);
-void send_file(int, struct response*);
+struct thread_info {
+        char ip[16];
+        int port;
+        int socket;
+        unsigned long thread_id;
+};
+
+void handle_request(struct thread_info*);
+void send_text(struct thread_info*, struct response*);
+void send_file(struct thread_info*, struct response*);
 struct response* generate_response(struct request*);
 struct response* generate_200_file(char*);
 struct response* generate_200_directory(char*);

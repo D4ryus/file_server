@@ -1,0 +1,2 @@
+[ ] - options (port, verbose, path, ...)
+[X] - fix pipe singal

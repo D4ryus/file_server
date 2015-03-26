@@ -2,8 +2,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <stdlib.h>
 
 #include "helper.h"
@@ -19,7 +19,7 @@ main(int argc, const char *argv[])
         socklen_t clilen;
         struct sockaddr_in serv_addr, cli_addr;
         int portno = 8283;
-        int client_socket;
+        struct thread_info *info;
 
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
@@ -42,15 +42,20 @@ main(int argc, const char *argv[])
         listen(sockfd, 5);
         clilen = sizeof(cli_addr);
 
+        // ignore sigpipe singla on write, since i cant catch it inside the threads
+        signal(SIGPIPE, SIG_IGN);
         while (1) {
-                client_socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-                if (pthread_create(&thread, NULL, &handle_request, &client_socket) != 0) {
+                info = malloc(sizeof(struct thread_info));
+                if (info == NULL) {
+                        mem_error("main()", "info", sizeof(struct thread_info));
+                }
+                info->socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+                strncpy(info->ip, inet_ntoa(cli_addr.sin_addr), 16);
+                info->port = ntohs(cli_addr.sin_port);
+
+                if (pthread_create(&thread, NULL, &handle_request, info) != 0) {
                         quit("wasn't able to create Thread!");
                 }
-                printf("Accpepted - [IP: %s, Connected on PORT: %i]\n",
-                                inet_ntoa(cli_addr.sin_addr),
-                                ntohs(cli_addr.sin_port));
-                pthread_setname_np(thread, inet_ntoa(cli_addr.sin_addr));
         }
 
         close(sockfd);
