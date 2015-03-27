@@ -21,9 +21,6 @@ free_dir(struct dir *d)
 
         int i;
         for (i = 0; i < d->length; i++) {
-                if (d->files[i] == NULL) {
-                        continue;
-                }
                 if (d->files[i]->name != NULL) {
                         free(d->files[i]->name);
                 }
