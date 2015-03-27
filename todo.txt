@@ -1,2 +1,3 @@
 [ ] - options (port, verbose, path, ...)
 [X] - fix pipe singal
+[ ] - fix pthread_create memory leak

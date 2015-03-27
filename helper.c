@@ -85,7 +85,7 @@ file_to_buf(const char *file, size_t *length)
 
         return buf;
 }
-
+  
 void
 mem_error(const char* func, const char* var, const ulong size)
 {

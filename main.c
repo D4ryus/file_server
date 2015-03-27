@@ -14,23 +14,26 @@ int main(int, const char**);
 int
 main(int argc, const char *argv[])
 {
-        pthread_t thread;
         int sockfd;
+        int portno;
+        int on;
+        pthread_t thread;
         socklen_t clilen;
-        struct sockaddr_in serv_addr, cli_addr;
-        int portno = 8283;
+        struct sockaddr_in serv_addr;
+        struct sockaddr_in cli_addr;
         struct thread_info *info;
-
+ 
+        portno = 8283;
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
                 quit("ERROR: socket()");
         }
 
-        int on = 1;
+        on = 1;
         if (-1 == setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &on, sizeof(on))) {
                 quit("ERROR: setsockopt() SO_REUSEADDR");
         }
-
+ 
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -42,8 +45,9 @@ main(int argc, const char *argv[])
         listen(sockfd, 5);
         clilen = sizeof(cli_addr);
 
-        // ignore sigpipe singla on write, since i cant catch it inside the threads
+        // ignore sigpipe singla on write, since i cant catch it inside a thread
         signal(SIGPIPE, SIG_IGN);
+
         while (1) {
                 info = malloc(sizeof(struct thread_info));
                 if (info == NULL) {
@@ -54,8 +58,9 @@ main(int argc, const char *argv[])
                 info->port = ntohs(cli_addr.sin_port);
 
                 if (pthread_create(&thread, NULL, &handle_request, info) != 0) {
-                        quit("wasn't able to create Thread!");
+                        quit("ERROR: pthread_create() could not create Thread!");
                 }
+                pthread_setname_np(thread, info->ip);
         }
 
         close(sockfd);

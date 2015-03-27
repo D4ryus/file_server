@@ -11,6 +11,12 @@
 #include "helper.h"
 #include "file_list.h"
 
+// BUFFSIZE_READ - 1 bytes are read from socket
+#define BUFFSIZE_READ 2048
+
+// BUFFSIZE_WRITE bytes are written to socket
+#define BUFFSIZE_WRITE 8192
+
 void
 handle_request(struct thread_info* info)
 {
@@ -19,20 +25,18 @@ handle_request(struct thread_info* info)
         }
 
         info->thread_id = (unsigned long)pthread_self();
-        printf("Accpepted - [IP: %15s, Port: %5i, Thread ID: %12lu, Socket ID: %5i]\n",
+        printf("Accpepted - [IP: %15s, Port: %5i, Socket ID: %5i]\n",
                         info->ip,
                         info->port,
-                        info->thread_id,
                         info->socket);
 
-        struct request *req;
+        struct request  *req;
         struct response *res;
-        size_t buffsize = 2048;
-        char read_buffer[buffsize];
+        char    read_buffer[BUFFSIZE_READ];
         ssize_t n;
 
-        memset(read_buffer, '\0', buffsize);
-        n = read(info->socket, read_buffer, buffsize - 1);
+        memset(read_buffer, '\0', BUFFSIZE_READ);
+        n = read(info->socket, read_buffer, BUFFSIZE_READ - 1);
         if (n < 0) {
                 printf("encounterd a error on read(), will ignore request.\n");
                 close(info->socket);
@@ -99,17 +103,15 @@ send_file(struct thread_info *info, struct response *res)
         size_t  sent;
         size_t  written;
         size_t  last_written;
-        size_t  buffsize;
         char    *buffer;
         FILE    *f;
         time_t  last_time;
         time_t  current_time;
 
-        buffsize = 8 << 10; /* 8kB */
 
-        buffer = malloc(buffsize);
+        buffer = malloc(BUFFSIZE_WRITE);
         if (buffer == NULL) {
-                mem_error("send_file()", "buffer", buffsize);
+                mem_error("send_file()", "buffer", BUFFSIZE_WRITE);
         }
         f = fopen(res->body, "rb");
         if (!f) {
@@ -121,10 +123,11 @@ send_file(struct thread_info *info, struct response *res)
         sending = 1;
         written = 0;
         last_written = 0;
+
         while (sending) {
                 sent = 0;
-                read = fread(buffer, 1, buffsize, f);
-                if (read < buffsize) {
+                read = fread(buffer, 1, BUFFSIZE_WRITE, f);
+                if (read < BUFFSIZE_WRITE) {
                         sending = 0;
                 }
                 while (sent < read) {
@@ -143,26 +146,27 @@ send_file(struct thread_info *info, struct response *res)
                 if ((current_time - last_time) > 1 || !sending) {
                         printf("ip: %15s requested: %s size: %8lukb written: %8lukb remaining: %8lukb %3lu%% %8lukb/s\n",
                                              info->ip,
-                                             res->body, /* contains filename */
-                                             res->body_length >> 10,
-                                             written >> 10,
-                                             (res->body_length  >> 10) - (written >> 10),
+                                             res->body,
+                                             res->body_length,
+                                             written,
+                                             res->body_length - written,
                                              written * 100 / res->body_length,
-                                             (written >> 10) - (last_written >> 10) / (!sending ? 1 : (size_t)((current_time  >> 10) - (last_time >> 10))));
+                                             written - last_written / (!sending ? 1 : (size_t)(current_time - last_time)));
                         last_time = current_time;
                         last_written = written;
                 }
         }
-
         fclose(f);
+
+        return;
 }
 
 struct response*
 generate_response(struct request *req)
 {
         struct response *res;
-        char* requested_path;
-        char* accepted_path;
+        char*  requested_path;
+        char*  accepted_path;
 
         if (strcmp(req->url, "/") == 0) {
                 if (req->type == PLAIN) {
@@ -211,7 +215,7 @@ generate_200_file(char* file)
 {
         struct response *res;
         struct stat sb;
-        char length[32];
+        char   length[32];
 
         if (stat(file, &sb) == -1) {
                 quit("ERROR: generate_200_file()");
@@ -309,7 +313,7 @@ generate_403(void)
 struct request*
 parse_request(char* request)
 {
-        char *tmp;
+        char   *tmp;
         struct request* req;
         size_t length;
 

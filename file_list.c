@@ -49,7 +49,7 @@ dir_to_plain_table(char* text, const struct dir *d)
                 text[0] = '\0';
         }
 
-        int i;
+        int  i;
         char buffer[512];
 
         sprintf(buffer,
@@ -63,8 +63,7 @@ dir_to_plain_table(char* text, const struct dir *d)
                 if (d->files[i]->name == NULL) {
                         continue;
                 }
-                sprintf(buffer,
-                        "%19s %17s %12li /%s%s%s\n",
+                sprintf(buffer, "%19s %17s %12li /%s%s%s\n",
                         d->files[i]->time,
                         d->files[i]->type,
                         (long)d->files[i]->size,
@@ -94,14 +93,16 @@ dir_to_html_table(char* text, const struct dir *d)
                 text[0] = '\0';
         }
 
-        int i;
+        int  i;
         char buffer[512];
+
         text = concat(text, "<style>");
         text = concat(text, "table, td, th { text-align: right;}");
         text = concat(text, "tbody tr:nth-child(odd) { background: #eee; }");
         text = concat(text, "</style><table style size='100%'>");
         text = concat(text, "<tbody>");
         text = concat(text, "<thead><tr><th>Filename</th><th>Type</th><th>Last modified</th><th>Size</th></tr></thead>");
+
         for (i = 0; i < d->length; i++) {
                 if (d->files[i]->name == NULL) {
                         continue;
@@ -134,8 +135,8 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         }
 
         struct stat sb;
-        struct file* tmp;
-        char* combined_path;
+        struct file *tmp;
+        char        *combined_path;
 
         d = (struct dir *)realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
 
@@ -187,9 +188,10 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
 struct dir*
 get_dir(char *directory)
 {
-        DIR *dirp;
+        DIR           *dirp;
         struct dirent *dp;
-        struct dir *result;
+        struct dir    *result;
+        int           i;
 
         dirp = opendir(directory);
         if (dirp == NULL) {
@@ -208,7 +210,6 @@ get_dir(char *directory)
         }
         strncpy(result->name, directory, strlen(directory) + 1);
 
-        int i;
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
                 result = add_file_to_dir(result, dp->d_name, directory);
         }
