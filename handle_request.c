@@ -136,7 +136,7 @@ send_file(struct thread_info *info, struct response *res)
                                 printf("0 bytes written, ignoring request.\n");
                                 sending = 0;
                         }
-                        sent = sent + (size_t)write;
+                        sent = sent + (size_t)write_res;
                 }
                 written += sent;
                 current_time = time(NULL);
@@ -146,9 +146,9 @@ send_file(struct thread_info *info, struct response *res)
                                              res->body, /* contains filename */
                                              res->body_length >> 10,
                                              written >> 10,
-                                             (res->body_length - written) >> 10,
+                                             (res->body_length  >> 10) - (written >> 10),
                                              written * 100 / res->body_length,
-                                             ((written - last_written) / (!sending ? 1 : (ulong)(current_time - last_time))) >> 10);
+                                             (written >> 10) - (last_written >> 10) / (!sending ? 1 : (size_t)((current_time  >> 10) - (last_time >> 10))));
                         last_time = current_time;
                         last_written = written;
                 }
