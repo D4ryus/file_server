@@ -2,3 +2,9 @@
 [X] - fix pipe singal
 [ ] - fix pthread_create memory leak
 [ ] - fix high virt mem
+
+[ ] - color (optional)
+[ ] - verbose (optional)
+[ ] - messages (optional)
+
+[ ] - ncurses?

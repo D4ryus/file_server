@@ -8,7 +8,7 @@ enum request_type {PLAIN, HTTP};
 enum body_type {TEXT, DATA};
 
 struct response {
-        char* head;
+        char  head[254];
         char* body;
         enum body_type type;
         size_t body_length;
@@ -27,9 +27,10 @@ struct thread_info {
         unsigned long thread_id;
 };
 
+void print_info(struct thread_info*, char*, char*);
 void handle_request(struct thread_info*);
-void send_text(struct thread_info*, struct response*);
-void send_file(struct thread_info*, struct response*);
+int send_text(struct thread_info*, struct response*);
+int send_file(struct thread_info*, struct response*);
 struct response* generate_response(struct request*);
 struct response* generate_200_file(char*);
 struct response* generate_200_directory(char*);
