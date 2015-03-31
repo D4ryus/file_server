@@ -6,6 +6,7 @@
 [ ] - color (optional)
 [ ] - verbose (optional)
 [ ] - messages (optional)
+[ ] - main/root folder (option)
 
 [ ] - ncurses?
 [ ] - config.h with CONST values (try const for filename_length inside
