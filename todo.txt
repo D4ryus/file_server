@@ -8,3 +8,6 @@
 [ ] - messages (optional)
 
 [ ] - ncurses?
+[ ] - config.h with CONST values (try const for filename_length inside
+      printf(%filenamelengths))
+[ ] - renaming of variables
