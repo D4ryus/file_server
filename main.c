@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -21,7 +22,7 @@ main(int argc, const char *argv[])
         socklen_t clilen;
         struct sockaddr_in serv_addr;
         struct sockaddr_in cli_addr;
-        struct thread_info *info;
+        struct data_store *data;
  
         portno = 8283;
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -49,18 +50,18 @@ main(int argc, const char *argv[])
         signal(SIGPIPE, SIG_IGN);
 
         while (1) {
-                info = malloc(sizeof(struct thread_info));
-                if (info == NULL) {
-                        mem_error("main()", "info", sizeof(struct thread_info));
+                data = create_data_store();
+                if (data == NULL) {
+                        mem_error("main()", "data", sizeof(struct data_store));
                 }
-                info->socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
-                strncpy(info->ip, inet_ntoa(cli_addr.sin_addr), 16);
-                info->port = ntohs(cli_addr.sin_port);
+                data->socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+                strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
+                data->port = ntohs(cli_addr.sin_port);
 
-                if (pthread_create(&thread, NULL, &handle_request, info) != 0) {
+                if (pthread_create(&thread, NULL, &handle_request, data) != 0) {
                         quit("ERROR: pthread_create() could not create Thread!");
                 }
-                pthread_setname_np(thread, info->ip);
+                pthread_setname_np(thread, data->ip);
         }
 
         close(sockfd);

@@ -42,7 +42,7 @@ CFLAGS = -Wall \
          -Waddress \
          -ggdb \
          -pg \
-         -g3 \
+       # -g3 \
          -g \
        # -Wpadded
        # -Wdeclaration-after-statement

@@ -53,6 +53,9 @@ quit(const char *msg)
 int
 starts_with(const char *line, const char *prefix)
 {
+        if (line == NULL || prefix == NULL) {
+                return 0;
+        }
         while (*prefix) {
                 if (*prefix++ != *line++) {
                         return 0;

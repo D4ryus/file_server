@@ -12,5 +12,10 @@
 [ ] - config.h with CONST values (try const for filename_length inside
       printf(%filenamelengths))
 [ ] - renaming of variables
-[ ] - req, res, thread data and socket data into one struct, so data is
+[X] - req, res, thread data and socket data into one struct, so data is
       everywhere
+
+
+[ ] - try strings "" "" ""
+[ ] - cross plattform
+[ ] - try forking
