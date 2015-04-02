@@ -24,14 +24,9 @@ struct dir {
 void free_dir(struct dir*);
 
 /**
- * prints out dir to stdout
+ * opens given directory and adds data to given data_store
  */
-char* dir_to_plain_table(char*, const struct dir*);
-
-/**
- * adds directory information to the given char*, uses realloc in text
- */
-char* dir_to_html_table(char*, const struct dir*);
+void dir_to_table(struct data_store*, char*);
 
 /**
  * adds a file to the given dir struct, usses realloc

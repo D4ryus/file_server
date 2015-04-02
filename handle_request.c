@@ -8,7 +8,6 @@
 
 #include "handle_request.h"
 #include "content_encoding.h"
-#include "helper.h"
 #include "file_list.h"
 
 // BUFFSIZE_READ - 1 bytes are read from socket
@@ -229,11 +228,7 @@ generate_response(struct data_store *data)
         char*  accepted_path;
 
         if (strcmp(data->url, "/") == 0) {
-                if (data->req_type == PLAIN) {
-                        generate_200_directory_plain(data, ".");
-                } else {
-                        generate_200_directory(data, ".");
-                }
+                generate_200_directory(data, ".");
                 return;
         }
         if (data->url == NULL) {
@@ -255,11 +250,7 @@ generate_response(struct data_store *data)
         if (!starts_with(requested_path, accepted_path)) {
                 generate_403(data);
         } else if (is_directory(data->url + 1)) {
-                if (data->req_type == PLAIN) {
-                        generate_200_directory_plain(data, data->url + 1);
-                } else {
-                        generate_200_directory(data, data->url + 1);
-                }
+                generate_200_directory(data, data->url + 1);
         } else {
                 generate_200_file(data, data->url + 1);
         }
@@ -295,46 +286,35 @@ generate_200_file(struct data_store *data, char* file)
 }
 
 void
-generate_200_directory_plain(struct data_store *data, char* directory)
-{
-        struct dir *d = get_dir(directory);
-        strcat(data->head, "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: text/plain\r\n\r\n");
-        data->head_length = strlen(data->head);
-        data->body = dir_to_plain_table(data->body, d);
-        data->body_length = strlen(data->body);
-        free_dir(d);
-        data->body_type = TEXT;
-
-        return;
-}
-
-void
 generate_200_directory(struct data_store *data, char* directory)
 {
-        struct dir *d;
+        if (data->req_type == HTTP) {
+                strcat(data->head, "HTTP/1.1 200 OK\r\n"
+                                   "Content-Type: text/html\r\n\r\n");
+                data->body = concat(data->body, "<!DOCTYPE html><html><head>"
+                               "<link href='http://fonts.googleapis.com/css?family=Iceland'"
+                                     "rel='stylesheet'"
+                                     "type='text/css'>"
+                               "<meta http-equiv='content-type'"
+                                     "content='text/html;"
+                                     "charset=UTF-8'/>"
+                               "</head>"
+                               "<body>");
+        } else {
+                strcat(data->head, "HTTP/1.1 200 OK\r\n"
+                                   "Content-Type: text/plain\r\n\r\n");
+        }
 
-        d = get_dir(directory);
+        dir_to_table(data, directory);
 
-        strcat(data->head, "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: text/html\r\n\r\n");
+        if (data->req_type == HTTP) {
+                data->body = concat(data->body, "</body></html>");
+        }
+
         data->head_length = strlen(data->head);
-
-        data->body = concat(data->body, "<!DOCTYPE html><html><head>"
-                       "<link href='http://fonts.googleapis.com/css?family=Iceland'"
-                             "rel='stylesheet'"
-                             "type='text/css'>"
-                       "<meta http-equiv='content-type'"
-                             "content='text/html;"
-                             "charset=UTF-8'/>"
-                       "</head>"
-                       "<body>");
-        data->body = dir_to_html_table(data->body, d);
-        data->body = concat(data->body, "</body></html>");
         data->body_length = strlen(data->body);
-        data->body_type = TEXT;
 
-        free_dir(d);
+        data->body_type = TEXT;
 
         return;
 }

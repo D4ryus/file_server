@@ -29,117 +29,95 @@ free_dir(struct dir *d)
         free(d);
 }
 
-/**
- * prints out dir to stdout
- */
-char*
-dir_to_plain_table(char* text, const struct dir *d)
+void
+dir_to_table(struct data_store *data, char* directory)
 {
-        if (d->files == NULL) {
-                return NULL;
-        }
-        if (text == NULL) {
-                text = malloc(sizeof(char));
-                if (text == NULL) {
-                        mem_error("dir_to_plain_table()", "text", sizeof(char));
-                }
-                text[0] = '\0';
-        }
-
         int  i;
         char buffer[512];
+        struct dir *d;
 
-        sprintf(buffer,
-                "%-19s %-17s %-12s %s\n",
-                "Last modified",
-                "Type",
-                "Size",
-                "Filename");
-        text = concat(text, buffer);
-        for (i = 0; i < d->length; i++) {
-                if (d->files[i]->name == NULL) {
-                        continue;
-                }
-                sprintf(buffer, "%19s %17s %12li /%s%s%s\n",
-                        d->files[i]->time,
-                        d->files[i]->type,
-                        (long)d->files[i]->size,
-                        strcmp(d->name, ".") == 0 ? "" : d->name,
-                        strcmp(d->name, ".") == 0 ? "" : "/",
-                        d->files[i]->name);
-                text = concat(text, buffer);
-        }
+        d = get_dir(directory);
 
-        return text;
-}
-
-/**
- * adds directory information to the given char*, uses realloc in text
- */
-char*
-dir_to_html_table(char* text, const struct dir *d)
-{
         if (d->files == NULL) {
-                return NULL;
+                quit("ERROR: user requested a dir which is NULL");
         }
-        if (text == NULL) {
-                text = malloc(sizeof(char));
-                if (text == NULL) {
-                        mem_error("dir_to_html_table()", "text", sizeof(char));
+        if (data->body == NULL) {
+                data->body = malloc(sizeof(char));
+                if (data->body == NULL) {
+                        mem_error("dir_to_html_table()", "data->body", sizeof(char));
                 }
-                text[0] = '\0';
+                data->body[0] = '\0';
         }
 
-        int  i;
-        char buffer[512];
-
-        text = concat(text, "<style>"
-                "table, td, th {"
-                                "text-align: right;"
-                        "}"
-                "tbody tr:nth-child(odd) {"
-                                "background: #eee;"
-                        "}"
-        "</style>"
-        "<table style size='100%'>"
-                "<tbody>"
-                "<thead>"
-                        "<tr>"
-                                "<th>Filename</th>"
-                                "<th>Type</th>"
-                                "<th>Last modified</th>"
-                                "<th>Size</th>"
-                        "</tr>"
-                "</thead>");
-
-        for (i = 0; i < d->length; i++) {
-                if (d->files[i]->name == NULL) {
-                        continue;
-                }
+        if (data->req_type == HTTP) {
+                data->body = concat(data->body, "<style>"
+                        "table, td, th {"
+                                        "text-align: right;"
+                                "}"
+                        "tbody tr:nth-child(odd) {"
+                                        "background: #eee;"
+                                "}"
+                "</style>"
+                "<table style size='100%'>"
+                        "<tbody>"
+                        "<thead>"
+                                "<tr>"
+                                        "<th>Filename</th>"
+                                        "<th>Type</th>"
+                                        "<th>Last modified</th>"
+                                        "<th>Size</th>"
+                                "</tr>"
+                        "</thead>");
+        } else {
                 sprintf(buffer,
-                        "<tr>"
-                                "<td><a href='/%s%s%s'>%s</a></td>"
-                                "<td>%s</td>"
-                                "<td>%s</td>"
-                                "<td>%12li</td>"
-                        "</tr>",
-                        strcmp(d->name, ".") == 0 ? "" : d->name,
-                        strcmp(d->name, ".") == 0 ? "" : "/",
-                        d->files[i]->name,
-                        d->files[i]->name,
-                        d->files[i]->type,
-                        d->files[i]->time,
-                        (long)d->files[i]->size);
-                text = concat(text, buffer);
+                        "%-19s %-17s %-12s %s\n",
+                        "Last modified",
+                        "Type",
+                        "Size",
+                        "Filename");
+                data->body = concat(data->body, buffer);
         }
-        text = concat(text, "</tbody></table>");
 
-        return text;
+        for (i = 0; i < d->length; i++) {
+                if (d->files[i]->name == NULL) {
+                        continue;
+                }
+                if (data->req_type == HTTP) {
+                        sprintf(buffer,
+                                "<tr>"
+                                        "<td><a href='/%s%s%s'>%s</a></td>"
+                                        "<td>%s</td>"
+                                        "<td>%s</td>"
+                                        "<td>%12li</td>"
+                                "</tr>",
+                                strcmp(d->name, ".") == 0 ? "" : d->name,
+                                strcmp(d->name, ".") == 0 ? "" : "/",
+                                d->files[i]->name,
+                                d->files[i]->name,
+                                d->files[i]->type,
+                                d->files[i]->time,
+                                (long)d->files[i]->size);
+                } else {
+                        sprintf(buffer, "%19s %17s %12li /%s%s%s\n",
+                                d->files[i]->time,
+                                d->files[i]->type,
+                                (long)d->files[i]->size,
+                                strcmp(d->name, ".") == 0 ? "" : d->name,
+                                strcmp(d->name, ".") == 0 ? "" : "/",
+                                d->files[i]->name);
+                }
+
+                data->body = concat(data->body, buffer);
+        }
+        if (data->req_type == HTTP) {
+                data->body = concat(data->body, "</tbody></table>");
+        }
+
+        free_dir(d);
+
+        return;
 }
 
-/**
- * adds a file to the given dir struct, usses realloc
- */
 struct dir*
 add_file_to_dir(struct dir *d, char *file, char* directory)
 {
@@ -197,9 +175,6 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         return d;
 }
 
-/**
- * creates a dir stuct from given directory
- */
 struct dir*
 get_dir(char *directory)
 {
