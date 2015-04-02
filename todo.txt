@@ -21,3 +21,5 @@
 [-] - try forking
 
 [ ] - strncat
+[ ] - documentation and comments
+[ ] - only print if there was a real transfer

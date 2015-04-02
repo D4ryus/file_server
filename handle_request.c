@@ -146,7 +146,7 @@ send_file(struct data_store *data)
         FILE    *f;
         time_t  last_time;
         time_t  current_time;
-        char    message_buffer[128];
+        char    message_buffer[256];
         int     ret_status;
 
         f = fopen(data->body, "rb");
@@ -155,18 +155,18 @@ send_file(struct data_store *data)
         }
 
         write_res = 0;
-        last_time = 0;
+        last_time = time(NULL);
         sending = 1;
         written = 0;
         last_written = 0;
         ret_status = 0;
 
         while (sending) {
-                sent = 0;
                 read = fread(buffer, 1, BUFFSIZE_WRITE, f);
                 if (read < BUFFSIZE_WRITE) {
                         sending = 0;
                 }
+                sent = 0;
                 while (sent < read) {
                         write_res = write(data->socket, buffer + sent, read - sent);
                         if (write_res == -1) {
@@ -182,7 +182,7 @@ send_file(struct data_store *data)
                 }
                 written += sent;
                 current_time = time(NULL);
-                if ((current_time - last_time) > 1 || !sending) {
+                if ((current_time - last_time) > 1) {
                         sprintf(message_buffer, "/%-19s size: %12lub written: %12lub remaining: %12lub %12lub/s %3lu%%",
                                              data->body,
                                              data->body_length,
