@@ -1,7 +1,7 @@
 [ ] - options (port, verbose, path, ...)
 [X] - fix pipe singal
-[ ] - fix pthread_create memory leak
-[ ] - fix high virt mem
+[X] - fix pthread_create memory leak
+[X] - fix high virt mem
 
 [ ] - color (optional)
 [ ] - verbose (optional)
@@ -16,6 +16,6 @@
       everywhere
 
 
-[ ] - try strings "" "" ""
+[X] - try strings "" "" ""
 [ ] - cross plattform
-[ ] - try forking
+[-] - try forking

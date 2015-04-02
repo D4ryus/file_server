@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <pthread.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -18,7 +17,9 @@ main(int argc, const char *argv[])
         int sockfd;
         int portno;
         int on;
+        int error;
         pthread_t thread;
+        pthread_attr_t attr;
         socklen_t clilen;
         struct sockaddr_in serv_addr;
         struct sockaddr_in cli_addr;
@@ -31,8 +32,20 @@ main(int argc, const char *argv[])
         }
 
         on = 1;
-        if (-1 == setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &on, sizeof(on))) {
+        error = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &on, sizeof(on));
+        if (error == -1) {
                 quit("ERROR: setsockopt() SO_REUSEADDR");
+        }
+
+        error = pthread_attr_init(&attr);
+        if (error != 0) {
+                quit("ERROR: pthread_attr_init()");
+        }
+
+        /* set threads to be detached, so they dont need to be joined */
+        error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+        if (error != 0) {
+                quit("ERROR: pthread_attr_setdetachstate()");
         }
  
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
@@ -58,11 +71,16 @@ main(int argc, const char *argv[])
                 strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
                 data->port = ntohs(cli_addr.sin_port);
 
-                if (pthread_create(&thread, NULL, &handle_request, data) != 0) {
+                error = pthread_create(&thread, &attr, &handle_request, data);
+                if (error != 0) {
                         quit("ERROR: pthread_create() could not create Thread!");
                 }
-                pthread_setname_np(thread, data->ip);
         }
+
+        /* error = pthread_attr_destory(&attr); */
+        /* if (error != 0) { */
+        /*         quit("ERROR: pthread_attr_destroy()"); */
+        /* } */
 
         close(sockfd);
 }

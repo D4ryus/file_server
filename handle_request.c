@@ -261,11 +261,12 @@ generate_200_file(struct data_store *data, char* file)
         if (stat(file, &sb) == -1) {
                 quit("ERROR: generate_200_file()");
         }
+        sprintf(length, "%lu\r\n\r\n", (size_t)sb.st_size);
 
-        strcat(data->head, "HTTP/1.1 200 OK\rContent-Type: ");
+        strcat(data->head, "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: ");
         strcat(data->head, get_content_encoding(strrchr(file, '.')));
         strcat(data->head, "\r\nContent-Length: ");
-        sprintf(length, "%lu\r\n\r\n", (size_t)sb.st_size);
         strcat(data->head, length);
         data->head_length = strlen(data->head);
         data->body_length = (size_t)sb.st_size;
@@ -279,7 +280,8 @@ void
 generate_200_directory_plain(struct data_store *data, char* directory)
 {
         struct dir *d = get_dir(directory);
-        strcat(data->head, "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n");
+        strcat(data->head, "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/plain\r\n\r\n");
         data->head_length = strlen(data->head);
         data->body = dir_to_plain_table(data->body, d);
         data->body_length = strlen(data->body);
@@ -296,14 +298,19 @@ generate_200_directory(struct data_store *data, char* directory)
 
         d = get_dir(directory);
 
-        strcat(data->head, "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n");
+        strcat(data->head, "HTTP/1.1 200 OK\r\n"
+                           "Content-Type: text/html\r\n\r\n");
         data->head_length = strlen(data->head);
 
-        data->body = concat(data->body, "<!DOCTYPE html><html><head>");
-        data->body = concat(data->body, "<link href='http://fonts.googleapis.com/css?family=Iceland' rel='stylesheet' type='text/css'>");
-        data->body = concat(data->body, "<meta http-equiv='content-type'content='text/html;charset=UTF-8'/>");
-        data->body = concat(data->body, "</head>");
-        data->body = concat(data->body, "<body>");
+        data->body = concat(data->body, "<!DOCTYPE html><html><head>"
+                       "<link href='http://fonts.googleapis.com/css?family=Iceland'"
+                             "rel='stylesheet'"
+                             "type='text/css'>"
+                       "<meta http-equiv='content-type'"
+                             "content='text/html;"
+                             "charset=UTF-8'/>"
+                       "</head>"
+                       "<body>");
         data->body = dir_to_html_table(data->body, d);
         data->body = concat(data->body, "</body></html>");
         data->body_length = strlen(data->body);
@@ -317,7 +324,8 @@ generate_200_directory(struct data_store *data, char* directory)
 void
 generate_404(struct data_store *data)
 {
-        strcat(data->head, "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n");
+        strcat(data->head, "HTTP/1.1 404 Not Found\r\n"
+                           "Content-Type: text/plain\r\n\r\n");
         data->head_length = strlen(data->head);
         data->body = concat(data->body, "404 - Watcha pulling here buddy?");
         data->body_length = strlen(data->body);
@@ -329,9 +337,9 @@ generate_404(struct data_store *data)
 void
 generate_403(struct data_store *data)
 {
-        strcat(data->head, "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\n");
+        strcat(data->head, "HTTP/1.1 403 Forbidden\r\n"
+                           "Content-Type: text/plain\r\n\r\n");
         data->head_length = strlen(data->head);
-        data->body = concat(data->body, "404 - Watcha pulling here buddy?");
         data->body = concat(data->body, "403 - U better not go down this road!");
         data->body_length = strlen(data->body);
         data->body_type = TEXT;
