@@ -66,16 +66,38 @@ void
         }
         generate_response(data);
         write(data->socket, data->head, data->head_length);
-        if (data->body_type == TEXT) {
-                status = send_text(data);
-        } else {
-                status = send_file(data);
+        status = 0;
+
+        switch (data->body_type) {
+                case DATA:
+                        status = send_file(data);
+                        break;
+                case TEXT:
+                case ERR_404:
+                case ERR_403:
+                default:
+                        status = send_text(data);
         }
 
         if (status == 0) {
-                sprintf(message_buffer, "%-20s size: %12lub",
-                                     data->url,
-                                     data->body_length);
+                switch (data->body_type) {
+                        case DATA:
+                        case TEXT:
+                                sprintf(message_buffer, "%-20s size: %12lub",
+                                                     data->url,
+                                                     data->body_length);
+                                break;
+                        case ERR_404:
+                                sprintf(message_buffer, "404 requested: %-20s",
+                                                     data->url);
+                                break;
+                        case ERR_403:
+                                sprintf(message_buffer, "403 requested: %-20s",
+                                                     data->url);
+                                break;
+                        default:
+                                strncpy(message_buffer, "no body_type set", 17);
+                }
                 print_info(data, "sent", message_buffer);
         } else if (status == -1) {
                 print_info(data, "error", "could not write(), client closed connection");
@@ -252,7 +274,7 @@ void
 generate_200_file(struct data_store *data, char* file)
 {
         struct stat sb;
-        char   length[32];
+        char length[32];
 
         if (stat(file, &sb) == -1) {
                 quit("ERROR: generate_200_file()");
@@ -325,7 +347,7 @@ generate_404(struct data_store *data)
         data->head_length = strlen(data->head);
         data->body = concat(data->body, "404 - Watcha pulling here buddy?");
         data->body_length = strlen(data->body);
-        data->body_type = TEXT;
+        data->body_type = ERR_404;
 
         return;
 }
@@ -338,7 +360,7 @@ generate_403(struct data_store *data)
         data->head_length = strlen(data->head);
         data->body = concat(data->body, "403 - U better not go down this road!");
         data->body_length = strlen(data->body);
-        data->body_type = TEXT;
+        data->body_type = ERR_403;
 
         return;
 }

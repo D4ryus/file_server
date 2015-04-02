@@ -5,7 +5,7 @@
 #include <sys/types.h>
 
 enum request_type {PLAIN, HTTP};
-enum body_type {TEXT, DATA};
+enum body_type {DATA, TEXT, ERR_404, ERR_403};
 
 /**
  * per request a data store is generated and then during execution filed

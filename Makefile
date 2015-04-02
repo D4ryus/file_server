@@ -41,7 +41,7 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
-         -pg \
+       # -pg \
        # -g3 \
          -g \
        # -Wpadded
@@ -65,7 +65,7 @@ clean :
 run_$(EXECUTABLE) : $(EXECUTABLE)
 	./$<
 
-perf : clean run_$(EXECUTABLE)
+perf : clean $(EXECUTABLE)
 	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
 	$(EDITOR) $(GPROF_FILE)
 
