@@ -22,4 +22,4 @@
 
 [ ] - strncat
 [ ] - documentation and comments
-[ ] - only print if there was a real transfer
+[X] - only print if there was a real transfer
