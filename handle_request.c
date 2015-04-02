@@ -142,17 +142,13 @@ send_file(struct data_store *data)
         size_t  sent;
         size_t  written;
         size_t  last_written;
-        char    *buffer;
+        char    buffer[BUFFSIZE_WRITE];
         FILE    *f;
         time_t  last_time;
         time_t  current_time;
         char    message_buffer[128];
         int     ret_status;
 
-        buffer = malloc(BUFFSIZE_WRITE);
-        if (buffer == NULL) {
-                mem_error("send_file()", "buffer", BUFFSIZE_WRITE);
-        }
         f = fopen(data->body, "rb");
         if (!f) {
                 quit("ERROR: send_file()");
