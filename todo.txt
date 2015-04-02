@@ -19,3 +19,5 @@
 [X] - try strings "" "" ""
 [ ] - cross plattform
 [-] - try forking
+
+[ ] - strncat
