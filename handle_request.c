@@ -362,6 +362,10 @@ parse_request(struct data_store *data, char *request)
         tmp = strtok(NULL, " "); /* get requested url */
 
         length = strlen(tmp);
+        /* remove a trailing / from request */
+        if (length > 1 && tmp[length - 1] == '/') {
+                tmp[length - 1] = '\0';
+        }
         data->url = malloc(sizeof(char) * (length + 1));
         if (data->url == NULL) {
                 mem_error("parse_line()", "data->url", sizeof(char) * (length + 1));
