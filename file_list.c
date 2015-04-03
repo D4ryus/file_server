@@ -186,13 +186,13 @@ get_dir(char *directory)
 
         closedir(dirp);
 
-        qsort(result->files, (size_t)result->length, sizeof(struct file *), comp);
+        qsort(result->files, (size_t)result->length, sizeof(struct file *), compare_files);
 
         return result;
 }
 
 int
-comp(const void *elem1, const void *elem2) 
+compare_files(const void *elem1, const void *elem2) 
 {
         const struct file *file1 = *(struct file * const *)elem1;
         const struct file *file2 = *(struct file * const *)elem2;

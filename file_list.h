@@ -38,6 +38,9 @@ struct dir* add_file_to_dir(struct dir*, char*, char*);
  */
 struct dir* get_dir(char*);
 
-int comp(const void*, const void*);
+/**
+ * compare function to compare file structs, used for qsort
+ */
+int compare_files(const void*, const void*);
 
 #endif
