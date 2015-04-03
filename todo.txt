@@ -22,6 +22,7 @@
 [X] - better malloc with integrated err check
 [X] - move content_encoding
 [ ] - implement max connections
+[ ] - templates for http tables
 
 config.h:
 
