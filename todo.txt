@@ -23,3 +23,5 @@
 [ ] - strncat
 [ ] - documentation and comments
 [X] - only print if there was a real transfer
+[ ] - better error messages
+[ ] - better malloc with integrated err check
