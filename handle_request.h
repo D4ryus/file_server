@@ -12,10 +12,21 @@
 void *handle_request(void*);
 
 /**
- * parses given request and returns the requested url, type of request
- * will be stored inside the given enum request_type
+ * reads from socket size bytes and write them to buffer
+ * if negative number is returned, error occured
+ * OK            ( 0) : everything went fine.
+ * READ_CLOSED   (-3) : client closed connection
+ * EMPTY_MESSAGE (-4) : nothing was read from socket
  */
-char *parse_request(char*, enum request_type*);
+int read_request(int, char*, size_t);
+
+/**
+ * parses given request and writes size bytes to url
+ * if negative number is returned, error occured
+ * OK            ( 0) : everything went fine.
+ * INV_GET       (-5) : parse error
+ */
+int parse_request(char*, enum request_type*, char*, size_t);
 
 /**
  * generates a response and saves it inside the data_store

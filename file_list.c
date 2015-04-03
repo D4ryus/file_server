@@ -99,7 +99,6 @@ dir_to_table(struct data_store *data, char* directory)
                                 strcmp(d->name, ".") == 0 ? "" : "/",
                                 d->files[i]->name);
                 }
-
                 data->body = concat(data->body, buffer);
         }
 

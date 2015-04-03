@@ -4,7 +4,14 @@
 #include <sys/types.h>
 
 enum request_type {PLAIN, HTTP};
-enum body_type {DATA, TEXT, ERR_404, ERR_403};
+enum body_type {DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
+enum err_status {OK            =  0,
+                 WRITE_CLOSED  = -1,
+                 ZERO_WRITTEN  = -2,
+                 READ_CLOSED   = -3,
+                 EMPTY_MESSAGE = -4,
+                 INV_GET       = -5};
+
 
 /**
  * per request a data store is generated and then during execution filed
@@ -13,7 +20,7 @@ struct data_store {
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
-        char   *url;                  /* requested file */
+        char   url[256];              /* requested file */
         char   head[254];             /* response header */
         char   *body;                 /* response body, if file filename */
         size_t body_length;           /* length of response body */
@@ -33,17 +40,17 @@ void free_data_store(struct data_store*);
 
 /**
  * if negative number is return, error occured
- *  0 : everything went fine.
- * -1 : could not write, client closed connection
- * -2 : could not write, 0 bytes written
+ * OK           ( 0) : everything went fine.
+ * WRITE_CLOSED (-1) : could not write, client closed connection
+ * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
 int send_text(int, char*, size_t);
 
 /**
  * if negative number is return, error occured
- *  0 : everything went fine.
- * -1 : could not write, client closed connection
- * -2 : could not write, 0 bytes written
+ * OK           ( 0) : everything went fine.
+ * WRITE_CLOSED (-1) : could not write, client closed connection
+ * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
 int send_file(struct data_store *data);
 

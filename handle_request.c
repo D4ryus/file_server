@@ -23,32 +23,28 @@ void
 
         print_info(data, "accepted", "");
 
-        char    read_buffer[BUFFSIZE_READ];
-        ssize_t n;
-        char    message_buffer[64];
-        int     status;
+        char read_buffer[BUFFSIZE_READ];
+        char message_buffer[64];
+        enum err_status status;
 
-        memset(read_buffer, '\0', BUFFSIZE_READ);
-        n = read(data->socket, read_buffer, BUFFSIZE_READ - 1);
-        if (n < 0) {
-                print_info(data, "error", "could not read(), request ignored");
-                close(data->socket);
-                return NULL;
+        status = OK;
+
+        status = read_request(data->socket, read_buffer, BUFFSIZE_READ);
+        if (status != OK) {
+                goto exit;
         }
-        if (n == 0) {
-                print_info(data, "error", "empty message, request ignored");
-                close(data->socket);
-                return NULL;
+
+        status = parse_request(read_buffer, &(data->req_type), data->url, 255);
+        if (status != OK) {
+                goto exit;
         }
-        data->url = parse_request(read_buffer, &(data->req_type));
-        if (data->url == NULL) {
-                print_info(data, "error", "invalid GET, request ignored");
-                close(data->socket);
-                return NULL;
-        }
+
         generate_response(data);
-        write(data->socket, data->head, strlen(data->head));
-        status = 0;
+
+        status = send_text(data->socket, data->head, strlen(data->head));
+        if (status != OK) {
+                goto exit;
+        }
 
         switch (data->body_type) {
                 case DATA:
@@ -59,32 +55,56 @@ void
                 case ERR_403:
                 default:
                         status = send_text(data->socket, data->body, data->body_length);
+                        break;
+        }
+        if (status != OK) {
+                goto exit;
         }
 
-        if (status == 0) {
-                switch (data->body_type) {
-                        case DATA:
-                        case TEXT:
-                                sprintf(message_buffer, "%-20s size: %12lub",
-                                                     data->url,
-                                                     data->body_length);
-                                break;
-                        case ERR_404:
-                                sprintf(message_buffer, "404 requested: %-20s",
-                                                     data->url);
-                                break;
-                        case ERR_403:
-                                sprintf(message_buffer, "403 requested: %-20s",
-                                                     data->url);
-                                break;
-                        default:
-                                strncpy(message_buffer, "no body_type set", 17);
-                }
-                print_info(data, "sent", message_buffer);
-        } else if (status == -1) {
-                print_info(data, "error", "could not write(), client closed connection");
-        } else if (status == -2) {
-                print_info(data, "error", "could not write(), 0 bytes written");
+        switch (data->body_type) {
+                case DATA:
+                case TEXT:
+                        sprintf(message_buffer, "%-20s size: %12lub",
+                                             data->url,
+                                             data->body_length);
+                        break;
+                case ERR_404:
+                        sprintf(message_buffer, "404 requested: %-20s",
+                                             data->url);
+                        break;
+                case ERR_403:
+                        sprintf(message_buffer, "403 requested: %-20s",
+                                             data->url);
+                        break;
+                default:
+                        strncpy(message_buffer, "no body_type set", 17);
+                        break;
+        }
+        print_info(data, "sent", message_buffer);
+
+        /**
+         * thread exit point, if status was set to error it will be printed,
+         * socket will be closed and memory will be cleaned b4 thread exists
+         */
+exit:
+        switch (status) {
+                case WRITE_CLOSED:
+                        print_info(data, "error", "could not write, client closed connection");
+                        break;
+                case ZERO_WRITTEN:
+                        print_info(data, "error", "could not write, 0 bytes written");
+                        break;
+                case READ_CLOSED:
+                        print_info(data, "error", "could not read");
+                        break;
+                case EMPTY_MESSAGE:
+                        print_info(data, "error", "empty message");
+                        break;
+                case INV_GET:
+                        print_info(data, "error", "invalid GET");
+                        break;
+                default:
+                        break;
         }
 
         close(data->socket);
@@ -93,18 +113,37 @@ void
         return NULL;
 }
 
-char
-*parse_request(char *request, enum request_type *req_type)
+int
+read_request(int socket, char* buffer, size_t size)
+{
+        ssize_t n;
+
+        memset(buffer, '\0', size);
+        n = read(socket, buffer, size - 1);
+        if (n < 0) {
+                return READ_CLOSED;
+        }
+        if (n == 0) {
+                return EMPTY_MESSAGE;
+        }
+
+        return OK;
+}
+
+int
+parse_request(char *request, enum request_type *req_type, char* url, const size_t size)
 {
         char   *tmp;
-        char   *url;
         size_t length;
+
+        memset(url, '\0', size);
 
         tmp = strtok(request, "\n"); /* get first line */
 
+        /* check if GET is valid */
         if (tmp == NULL || !starts_with(tmp, "GET /")) {
                 *req_type = PLAIN;
-                return NULL;
+                return INV_GET;
         }
         tmp = strtok(tmp, " ");  /* split first line */
         tmp = strtok(NULL, " "); /* get requested url */
@@ -115,16 +154,15 @@ char
                 tmp[length - 1] = '\0';
                 length = strlen(tmp);
         }
-        url = err_malloc(sizeof(char) * (length + 1));
-        memset(url, '\0', sizeof(char) * (length + 1));
-        strncpy(url, tmp, length);
+
+        strncpy(url, tmp, size);
 
         /* get requested type */
         tmp = strtok(NULL, " ");
         /* if none given go with PLAIN and return */
         if (tmp == NULL) {
                 *req_type = PLAIN;
-                return url;
+                return OK;
         }
         if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
                 *req_type = HTTP;
@@ -132,7 +170,7 @@ char
                 *req_type = PLAIN;
         }
 
-        return url;
+        return OK;
 }
 
 void
@@ -145,7 +183,7 @@ generate_response(struct data_store *data)
                 generate_200_directory(data, ".");
                 return;
         }
-        if (data->url == NULL) {
+        if (strlen(data->url) == 0) {
                 generate_404(data);
                 return;
         }

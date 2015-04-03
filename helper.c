@@ -19,7 +19,7 @@ create_data_store(void)
 
         data->port = -1;
         data->socket = -1;
-        data->url = NULL;
+        data->url[0] = '\0';
         data->head[0] = '\0';
         data->body = err_malloc(sizeof(char));
         data->body[0] = '\0';
@@ -36,11 +36,6 @@ free_data_store(struct data_store *data)
         if (data == NULL) {
                 return;
         }
-
-        if (data->url != NULL) {
-                free(data->url);
-        }
-
         if (data->body != NULL) {
                 free(data->body);
         }
@@ -55,21 +50,17 @@ send_text(int socket, char* text, size_t length)
         ssize_t write_res;
         int     sending;
         size_t  sent;
-        int     ret_status;
 
         write_res = 0;
         sent = 0;
         sending = 1;
-        ret_status = 0;
 
         while (sending) {
                 write_res = write(socket, text + sent, length - sent);
                 if (write_res == -1) {
-                        ret_status = -1;
-                        break;
+                        return WRITE_CLOSED;
                 } else if (write_res == 0) {
-                        ret_status = -2;
-                        break;
+                        return ZERO_WRITTEN;
                 }
                 sent = sent + (size_t)write_res;
                 if (sent != length) {
@@ -78,7 +69,7 @@ send_text(int socket, char* text, size_t length)
                 sending = 0;
         }
 
-        return ret_status;
+        return OK;
 }
 
 int
@@ -95,7 +86,7 @@ send_file(struct data_store *data)
         time_t  last_time;
         time_t  current_time;
         char    message_buffer[256];
-        int     ret_status;
+        enum err_status ret_status;
 
         f = fopen(data->body, "rb");
         if (f == NULL) {
@@ -107,7 +98,7 @@ send_file(struct data_store *data)
         sending = 1;
         written = 0;
         last_written = 0;
-        ret_status = 0;
+        ret_status = OK;
 
         while (sending) {
                 read = fread(buffer, 1, BUFFSIZE_WRITE, f);
@@ -119,11 +110,11 @@ send_file(struct data_store *data)
                         write_res = write(data->socket, buffer + sent, read - sent);
                         if (write_res == -1) {
                                 sending = 0;
-                                ret_status = -1;
+                                ret_status = WRITE_CLOSED;
                                 break;
                         } else if (write_res == 0) {
                                 sending = 0;
-                                ret_status = -2;
+                                ret_status = ZERO_WRITTEN;
                                 break;
                         }
                         sent = sent + (size_t)write_res;
