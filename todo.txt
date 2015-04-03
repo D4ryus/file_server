@@ -23,5 +23,6 @@
 [ ] - strncat
 [ ] - documentation and comments
 [X] - only print if there was a real transfer
-[ ] - better error messages
-[ ] - better malloc with integrated err check
+[X] - better error messages
+[X] - better malloc with integrated err check
+[X] - move content_encoding
