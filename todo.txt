@@ -2,27 +2,35 @@
 [X] - fix pipe singal
 [X] - fix pthread_create memory leak
 [X] - fix high virt mem
-
 [ ] - color (optional)
 [ ] - verbose (optional)
 [ ] - messages (optional)
 [ ] - main/root folder (option)
-
 [ ] - ncurses?
 [ ] - config.h with CONST values (try const for filename_length inside
       printf(%filenamelengths))
-[ ] - renaming of variables
+[X] - renaming of variables
 [X] - req, res, thread data and socket data into one struct, so data is
       everywhere
-
-
 [X] - try strings "" "" ""
-[ ] - cross plattform
+[X] - cross plattform
 [-] - try forking
-
-[ ] - strncat
-[ ] - documentation and comments
+[ ] - strlcat
+[X] - documentation and comments
 [X] - only print if there was a real transfer
 [X] - better error messages
 [X] - better malloc with integrated err check
 [X] - move content_encoding
+[ ] - implement max connections
+
+config.h:
+
+      - max filename
+      - max request size (depends on max filename i guess)
+      - max header size
+      - default port
+      - ignored files!
+
+args:
+      - root folder
+      - port

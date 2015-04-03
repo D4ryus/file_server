@@ -32,6 +32,8 @@ free_dir(struct dir *d)
 void
 dir_to_table(struct data_store *data, char* directory)
 {
+        printf("directory: %s\n", directory);
+        printf("root_dir: %s\n", data->root_dir);
         int  i;
         char buffer[512];
         struct dir *d;
@@ -39,26 +41,23 @@ dir_to_table(struct data_store *data, char* directory)
         d = get_dir(directory);
 
         if (d->files == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "get_dir() retuned NULL");
+                err_quit(__FILE__, __LINE__, __func__, "get_dir()->files are NULL");
         }
 
         if (data->req_type == HTTP) {
                 data->body = concat(data->body, "<style>"
-                        "table, td, th {"
-                                        "text-align: right;"
-                                "}"
                         "tbody tr:nth-child(odd) {"
-                                        "background: #eee;"
-                                "}"
+                                "background: #eee;"
+                        "}"
                 "</style>"
                 "<table style size='100%'>"
                         "<tbody>"
                         "<thead>"
                                 "<tr>"
-                                        "<th>Filename</th>"
-                                        "<th>Type</th>"
-                                        "<th>Last modified</th>"
-                                        "<th>Size</th>"
+                                        "<th align='left'>Type</th>"
+                                        "<th align='left'>Last modified</th>"
+                                        "<th align='left'>Size</th>"
+                                        "<th align='left'>Filename</th>"
                                 "</tr>"
                         "</thead>");
         } else {
@@ -78,25 +77,24 @@ dir_to_table(struct data_store *data, char* directory)
                 if (data->req_type == HTTP) {
                         sprintf(buffer,
                                 "<tr>"
-                                        "<td><a href='/%s%s%s'>%s</a></td>"
-                                        "<td>%s</td>"
-                                        "<td>%s</td>"
-                                        "<td>%12li</td>"
+                                        "<td align='center'>%s</td>"
+                                        "<td align='center'>%s</td>"
+                                        "<td align='right'>%12li</td>"
+                                        "<td align='left'><a href='%s/%s'>%s/%s</a></td>"
                                 "</tr>",
-                                strcmp(d->name, ".") == 0 ? "" : d->name,
-                                strcmp(d->name, ".") == 0 ? "" : "/",
-                                d->files[i]->name,
-                                d->files[i]->name,
-                                d->files[i]->type,
-                                d->files[i]->time,
-                                (long)d->files[i]->size);
-                } else {
-                        sprintf(buffer, "%19s %17s %12li /%s%s%s\n",
                                 d->files[i]->time,
                                 d->files[i]->type,
                                 (long)d->files[i]->size,
-                                strcmp(d->name, ".") == 0 ? "" : d->name,
-                                strcmp(d->name, ".") == 0 ? "" : "/",
+                                directory + strlen(data->root_dir),
+                                d->files[i]->name,
+                                directory + strlen(data->root_dir),
+                                d->files[i]->name);
+                } else {
+                        sprintf(buffer, "%19s %17s %12li %s/%s\n",
+                                d->files[i]->time,
+                                d->files[i]->type,
+                                (long)d->files[i]->size,
+                                directory + strlen(data->root_dir),
                                 d->files[i]->name);
                 }
                 data->body = concat(data->body, buffer);
@@ -134,7 +132,6 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         strncpy(tmp->name, file, strlen(file) + 1);
 
         combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
-        combined_path[0] = '\0';
         memcpy(combined_path, directory, strlen(directory) + 1);
         combined_path[strlen(directory)] = '/';
         memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);

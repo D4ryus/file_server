@@ -176,11 +176,12 @@ parse_request(char *request, enum request_type *req_type, char* url, const size_
 void
 generate_response(struct data_store *data)
 {
-        char*  requested_path;
-        char*  accepted_path;
+        char *full_requested_path;
+        char *requested_path;
+        size_t length;
 
         if (strcmp(data->url, "/") == 0) {
-                generate_200_directory(data, ".");
+                generate_200_directory(data, data->root_dir);
                 return;
         }
         if (strlen(data->url) == 0) {
@@ -188,24 +189,25 @@ generate_response(struct data_store *data)
                 return;
         }
 
-        accepted_path = realpath(".", NULL);
-        if (accepted_path == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "realpath() retuned NULL");
-        }
+        length = strlen(data->root_dir) + strlen(data->url);
+        full_requested_path = err_malloc(length + 1);
+        strncpy(full_requested_path, data->root_dir, length + 1);
+        strncat(full_requested_path, data->url, strlen(data->url));
+        full_requested_path[length] = '\0';
 
-        requested_path = realpath(data->url + 1, NULL);
+        requested_path = realpath(full_requested_path, NULL);
         if (requested_path == NULL) {
                 generate_404(data);
-        } else if (!starts_with(requested_path, accepted_path)) {
+        } else if (!starts_with(requested_path, data->root_dir)) {
                 generate_403(data);
-        } else if (is_directory(data->url + 1)) {
-                generate_200_directory(data, data->url + 1);
+        } else if (is_directory(requested_path)) {
+                generate_200_directory(data, requested_path);
         } else {
-                generate_200_file(data, data->url + 1);
+                generate_200_file(data, requested_path);
         }
 
         free(requested_path);
-        free(accepted_path);
+        free(full_requested_path);
 
         return;
 }

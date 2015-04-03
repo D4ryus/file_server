@@ -17,6 +17,8 @@ create_data_store(void)
 
         data = err_malloc(sizeof(struct data_store));
 
+        data->root_dir[0] = '.';
+        data->root_dir[1] = '\0';
         data->port = -1;
         data->socket = -1;
         data->url[0] = '\0';
@@ -26,6 +28,7 @@ create_data_store(void)
         data->body_length = 0;
         data->req_type = TEXT;
         data->body_type = PLAIN;
+        data->color = NULL;
 
         return data;
 }
@@ -35,6 +38,9 @@ free_data_store(struct data_store *data)
 {
         if (data == NULL) {
                 return;
+        }
+        if (data->color != NULL) {
+                (*data->color) = 0;
         }
         if (data->body != NULL) {
                 free(data->body);
@@ -142,12 +148,22 @@ send_file(struct data_store *data)
 void
 print_info(struct data_store *data, char *type, char *message)
 {
-        printf("[%15s:%-5d - %3d]: %-10s - %s\n",
-                        data->ip,
-                        data->port,
-                        data->socket,
-                        type,
-                        message);
+        if (data->color == NULL) {
+                printf("[%15s:%-5d - %3d]: %-10s - %s\n",
+                                data->ip,
+                                data->port,
+                                data->socket,
+                                type,
+                                message);
+        } else {
+                printf("\x1b[3%dm[%15s:%-5d - %3d]: %-10s - %s\x1b[39;49m\n",
+                                (*data->color),
+                                data->ip,
+                                data->port,
+                                data->socket,
+                                type,
+                                message);
+        }
 }
 
 char*
