@@ -24,36 +24,38 @@ main(int argc, const char *argv[])
         struct sockaddr_in serv_addr;
         struct sockaddr_in cli_addr;
         struct data_store *data;
- 
+
         portno = 8283;
         sockfd = socket(AF_INET, SOCK_STREAM, 0);
         if (sockfd < 0) {
-                quit("ERROR: socket()");
+                err_quit(__FILE__, __LINE__, __func__, "socket() retuned < 0");
         }
 
         on = 1;
         error = setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, (const char *) &on, sizeof(on));
         if (error == -1) {
-                quit("ERROR: setsockopt() SO_REUSEADDR");
+                err_quit(__FILE__, __LINE__, __func__, "setsockopt() retuned -1");
         }
 
         error = pthread_attr_init(&attr);
         if (error != 0) {
-                quit("ERROR: pthread_attr_init()");
+                err_quit(__FILE__, __LINE__, __func__, "pthread_attr_init() != 0");
         }
 
         /* set threads to be detached, so they dont need to be joined */
         error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         if (error != 0) {
-                quit("ERROR: pthread_attr_setdetachstate()");
+                err_quit(__FILE__, __LINE__, __func__, "pthread_attr_setdetachstate() != 0");
         }
- 
+
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = INADDR_ANY;
         serv_addr.sin_port = htons(portno);
-        if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
-                quit("ERROR: bind()");
+
+        error = bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
+        if (error < 0) {
+                err_quit(__FILE__, __LINE__, __func__, "bind() < 0");
         }
 
         listen(sockfd, 5);
@@ -73,14 +75,9 @@ main(int argc, const char *argv[])
 
                 error = pthread_create(&thread, &attr, &handle_request, data);
                 if (error != 0) {
-                        quit("ERROR: pthread_create() could not create Thread!");
+                        err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
                 }
         }
-
-        /* error = pthread_attr_destory(&attr); */
-        /* if (error != 0) { */
-        /*         quit("ERROR: pthread_attr_destroy()"); */
-        /* } */
 
         close(sockfd);
 }

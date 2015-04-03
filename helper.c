@@ -59,8 +59,8 @@ send_file(struct data_store *data)
         int     ret_status;
 
         f = fopen(data->body, "rb");
-        if (!f) {
-                quit("ERROR: send_file() could not open file");
+        if (f == NULL) {
+                err_quit(__FILE__, __LINE__, __func__, "fopen() retuned NULL");
         }
 
         write_res = 0;
@@ -146,20 +146,13 @@ is_directory(const char *path)
                 } else if (s.st_mode & S_IFREG) {
                         return 0;
                 } else {
-                        quit("ERROR: is_directory() (its not a file, nor a dir)");
+                        err_quit(__FILE__, __LINE__, __func__, "stat() has no file nor a directory");
                 }
         } else {
-                quit("ERROR: is_directory()");
+                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
 
         return 0;
-}
-
-void
-quit(const char *msg)
-{
-        perror(msg);
-        exit(1);
 }
 
 int
@@ -207,5 +200,13 @@ mem_error(const char* func, const char* var, const ulong size)
         fprintf(stderr, "ERROR: could not malloc. func: %s, variable: %s, size: %lu",
                         func, var, size);
         perror(NULL);
+        exit(1);
+}
+
+void
+err_quit(const char *file, const int line, const char *function, const char *msg)
+{
+        fprintf(stderr, "%s:%d:%s: error: ", file, line, function);
+        perror(msg);
         exit(1);
 }

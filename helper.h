@@ -55,10 +55,9 @@ char* concat(char* dst, const char* src);
 int is_directory(const char*);
 
 /**
- * prints error and quits
+ * prints error with given information and exits
  */
-void quit(const char*);
-
+void test(const int, const char*, const char*, const char*);
 /**
  * check if first string starts with second string
  */
@@ -74,5 +73,10 @@ void* file_to_buf(const char*, size_t*);
  * prints out formatted error and errorcode and exit's
  */
 void mem_error(const char*, const char*, const ulong);
+
+/**
+ * prints out given information to stderr and exits
+ */
+void err_quit(const char*, const int, const char*, const char*);
 
 #endif

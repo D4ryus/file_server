@@ -19,7 +19,7 @@ void
 
         data = (struct data_store*)ptr;
         if (data->socket < 0) {
-                quit("ERROR: accept()");
+                err_quit(__FILE__, __LINE__, __func__, "socket in handle_request is < 0");
         }
 
         data->thread_id = (unsigned long)pthread_self();
@@ -112,7 +112,7 @@ generate_response(struct data_store *data)
 
         accepted_path = realpath(".", NULL);
         if (accepted_path == NULL) {
-                quit("ERROR: realpath(accepted_path)");
+                err_quit(__FILE__, __LINE__, __func__, "realpath() retuned NULL");
         }
 
         requested_path = realpath(data->url + 1, NULL);
@@ -142,7 +142,7 @@ generate_200_file(struct data_store *data, char* file)
         char length[32];
 
         if (stat(file, &sb) == -1) {
-                quit("ERROR: generate_200_file()");
+                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
         sprintf(length, "%lu\r\n\r\n", (size_t)sb.st_size);
 
@@ -199,7 +199,7 @@ generate_404(struct data_store *data)
         strcat(data->head, "HTTP/1.1 404 Not Found\r\n"
                            "Content-Type: text/plain\r\n\r\n");
         data->head_length = strlen(data->head);
-        data->body = concat(data->body, "404 - Watcha pulling here buddy?");
+        data->body = concat(data->body, "404 - Watcha pulling here buddy?\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_404;
 
@@ -212,7 +212,7 @@ generate_403(struct data_store *data)
         strcat(data->head, "HTTP/1.1 403 Forbidden\r\n"
                            "Content-Type: text/plain\r\n\r\n");
         data->head_length = strlen(data->head);
-        data->body = concat(data->body, "403 - U better not go down this road!");
+        data->body = concat(data->body, "403 - U better not go down this road!\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_403;
 

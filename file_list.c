@@ -39,7 +39,7 @@ dir_to_table(struct data_store *data, char* directory)
         d = get_dir(directory);
 
         if (d->files == NULL) {
-                quit("ERROR: user requested a dir which is NULL");
+                err_quit(__FILE__, __LINE__, __func__, "get_dir() retuned NULL");
         }
         if (data->body == NULL) {
                 data->body = malloc(sizeof(char));
@@ -154,7 +154,7 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         combined_path[strlen(directory)] = '/';
         memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
         if (stat(combined_path, &sb) == -1) {
-                quit("ERROR: add_file_to_dir()");
+                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
         free(combined_path);
 
@@ -185,7 +185,7 @@ get_dir(char *directory)
 
         dirp = opendir(directory);
         if (dirp == NULL) {
-                quit("ERROR: get_dir()");
+                err_quit(__FILE__, __LINE__, __func__, "opendir() returned NULL");
         }
 
         result = (struct dir*)malloc(sizeof(struct dir));
