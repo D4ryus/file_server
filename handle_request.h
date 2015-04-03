@@ -6,10 +6,7 @@
 
 #include "helper.h"
 
-void print_info(struct data_store*, char*, char*);
 void *handle_request(void*);
-int send_text(struct data_store*);
-int send_file(struct data_store*);
 void generate_response(struct data_store*);
 void generate_200_file(struct data_store*, char*);
 void generate_200_directory(struct data_store*, char*);

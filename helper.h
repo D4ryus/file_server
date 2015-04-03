@@ -24,6 +24,27 @@ struct data_store {
 };
 
 /**
+ * if negative number is return, error occured
+ *  0 : everything went fine.
+ * -1 : could not write, client closed connection
+ * -2 : could not write, 0 bytes written
+ */
+int send_text(int, char*, size_t);
+
+/**
+ * if negative number is return, error occured
+ *  0 : everything went fine.
+ * -1 : could not write, client closed connection
+ * -2 : could not write, 0 bytes written
+ */
+int send_file(struct data_store *data);
+
+/**
+ * prints info (ip port socket) + given type and message to stdout
+ */
+void print_info(struct data_store*, char*, char*);
+
+/**
  * will reallocated dst and strcat src onto it
  */
 char* concat(char* dst, const char* src);
