@@ -78,14 +78,13 @@ dir_to_table(struct data_store *data, char* directory)
                                         "<td align='center'>%s</td>"
                                         "<td align='center'>%s</td>"
                                         "<td align='right'>%12li</td>"
-                                        "<td align='left'><a href='%s/%s'>%s/%s</a></td>"
+                                        "<td align='left'><a href='%s/%s'>%s</a></td>"
                                 "</tr>",
                                 d->files[i]->time,
                                 d->files[i]->type,
                                 (long)d->files[i]->size,
                                 directory + strlen(data->root_dir),
                                 d->files[i]->name,
-                                directory + strlen(data->root_dir),
                                 d->files[i]->name);
                 } else {
                         sprintf(buffer, "%19s %17s %12li %s/%s\n",
