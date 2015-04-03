@@ -6,7 +6,6 @@
 #include <unistd.h>
 
 #include "handle_request.h"
-#include "content_encoding.h"
 #include "file_list.h"
 
 // BUFFSIZE_READ - 1 bytes are read from socket

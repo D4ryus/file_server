@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJECT_FILES = content_encoding.o file_list.o handle_request.o helper.o
+OBJECT_FILES = file_list.o handle_request.o helper.o
 
 EXECUTABLE = main
 

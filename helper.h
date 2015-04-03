@@ -89,4 +89,12 @@ void *err_realloc(void*, size_t);
  */
 void err_quit(const char*, const int, const char*, const char*);
 
+/**
+ * returns content type of given file type
+ * given "html" returns  "text/html"
+ * given "gz"   returns  "application/gzip"
+ * if type is not recognized, NULL will be returned
+ */
+char* get_content_encoding(char*);
+
 #endif
