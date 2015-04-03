@@ -66,9 +66,6 @@ main(int argc, const char *argv[])
 
         while (1) {
                 data = create_data_store();
-                if (data == NULL) {
-                        mem_error("main()", "data", sizeof(struct data_store));
-                }
                 data->socket = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
                 strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
                 data->port = ntohs(cli_addr.sin_port);

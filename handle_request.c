@@ -241,10 +241,7 @@ parse_request(struct data_store *data, char *request)
                 tmp[length - 1] = '\0';
                 length = strlen(tmp);
         }
-        data->url = malloc(sizeof(char) * (length + 1));
-        if (data->url == NULL) {
-                mem_error("parse_line()", "data->url", sizeof(char) * (length + 1));
-        }
+        data->url = err_malloc(sizeof(char) * (length + 1));
         memset(data->url, '\0', sizeof(char) * (length + 1));
         strncpy(data->url, tmp, length);
 
@@ -269,19 +266,13 @@ create_data_store(void)
 {
         struct data_store *data;
 
-        data = malloc(sizeof(struct data_store));
-        if (data == NULL) {
-                mem_error("create_data_store()", "data", sizeof(struct data_store));
-        }
+        data = err_malloc(sizeof(struct data_store));
 
         data->port = -1;
         data->socket = -1;
         data->thread_id = 0;
         data->url = NULL;
-        data->body = malloc(sizeof(char));
-        if (data->body == NULL) {
-                mem_error("create_data_store()", "data->body", sizeof(char));
-        }
+        data->body = err_malloc(sizeof(char));
         data->head[0] = '\0';
         data->head_length = 0;
         data->body[0] = '\0';

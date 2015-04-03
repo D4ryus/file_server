@@ -75,6 +75,16 @@ void* file_to_buf(const char*, size_t*);
 void mem_error(const char*, const char*, const ulong);
 
 /**
+ * mallocs given size but also checks if succeded, if not exits
+ */
+void *err_malloc(size_t);
+
+/**
+ * reallocs given size but also checks if succeded, if not exits
+ */
+void *err_realloc(void*, size_t);
+
+/**
  * prints out given information to stderr and exits
  */
 void err_quit(const char*, const int, const char*, const char*);

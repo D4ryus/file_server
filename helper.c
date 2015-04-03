@@ -123,10 +123,7 @@ print_info(struct data_store *data, char *type, char *message)
 char*
 concat(char* dst, const char* src)
 {
-        dst = realloc(dst, strlen(dst) + strlen(src) + 1);
-        if (dst == NULL) {
-                mem_error("concat()", "dst", strlen(dst) + strlen(src) + 1);
-        }
+        dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
         strncat(dst, src, strlen(src));
 
         return dst;
@@ -182,10 +179,7 @@ file_to_buf(const char *file, size_t *length)
         }
         fseek(fptr, 0, SEEK_END);
         *length = (size_t)ftell(fptr);
-        buf = (void*)malloc(*length + 1);
-        if (buf == NULL) {
-                mem_error("file_to_buf()", "buf", *length + 1);
-        }
+        buf = (void*)err_malloc(*length + 1);
         fseek(fptr, 0, SEEK_SET);
         fread(buf, (*length), 1, fptr);
         fclose(fptr);
@@ -195,12 +189,27 @@ file_to_buf(const char *file, size_t *length)
 }
 
 void
-mem_error(const char* func, const char* var, const ulong size)
+*err_malloc(size_t size)
 {
-        fprintf(stderr, "ERROR: could not malloc. func: %s, variable: %s, size: %lu",
-                        func, var, size);
-        perror(NULL);
-        exit(1);
+        void *tmp;
+
+        tmp = malloc(size);
+        if (tmp == NULL) {
+                err_quit(__FILE__, __LINE__, __func__, "could not malloc");
+        }
+
+        return tmp;
+}
+
+void
+*err_realloc(void *ptr, size_t size)
+{
+        ptr = realloc(ptr, size);
+        if (ptr == NULL) {
+                err_quit(__FILE__, __LINE__, __func__, "could not realloc");
+        }
+
+        return ptr;
 }
 
 void

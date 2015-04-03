@@ -42,10 +42,7 @@ dir_to_table(struct data_store *data, char* directory)
                 err_quit(__FILE__, __LINE__, __func__, "get_dir() retuned NULL");
         }
         if (data->body == NULL) {
-                data->body = malloc(sizeof(char));
-                if (data->body == NULL) {
-                        mem_error("dir_to_html_table()", "data->body", sizeof(char));
-                }
+                data->body = err_malloc(sizeof(char));
                 data->body[0] = '\0';
         }
 
@@ -130,25 +127,15 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
         struct file *tmp;
         char        *combined_path;
 
-        d = (struct dir *)realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
+        d = (struct dir *)err_realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
 
-        d->files[d->length] = malloc(sizeof(struct file));
-        if (d->files[d->length] == NULL) {
-                mem_error("add_file_to_dir()", "d->files[d->length]", sizeof(struct file));
-        }
+        d->files[d->length] = err_malloc(sizeof(struct file));
         tmp = d->files[d->length];
         d->length++;
-        tmp->name = malloc(strlen(file) + 1);
-        if (tmp->name == NULL) {
-                mem_error("add_file_to_dir()", "tmp->name",
-                                strlen(file) + 1);
-        }
+        tmp->name = err_malloc(strlen(file) + 1);
         strncpy(tmp->name, file, strlen(file) + 1);
 
-        combined_path = malloc(strlen(directory) + strlen(file) + 2);
-        if (combined_path == NULL) {
-                mem_error("add_file_to_dir()", "combined_path", strlen(directory) + strlen(file) + 2);
-        }
+        combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
         combined_path[0] = '\0';
         memcpy(combined_path, directory, strlen(directory) + 1);
         combined_path[strlen(directory)] = '/';
@@ -188,16 +175,9 @@ get_dir(char *directory)
                 err_quit(__FILE__, __LINE__, __func__, "opendir() returned NULL");
         }
 
-        result = (struct dir*)malloc(sizeof(struct dir));
-        if (result == NULL) {
-                mem_error("get_dir()", "result", sizeof(struct  dir));
-        }
+        result = (struct dir*)err_malloc(sizeof(struct dir));
         result->length = 0;
-        result->name = malloc(strlen(directory) + 1);
-        if (result->name == NULL) {
-                mem_error("get_dir()", "result->name",
-                                strlen(directory) + 1);
-        }
+        result->name = err_malloc(strlen(directory) + 1);
         strncpy(result->name, directory, strlen(directory) + 1);
 
         for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
