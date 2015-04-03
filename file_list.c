@@ -41,10 +41,6 @@ dir_to_table(struct data_store *data, char* directory)
         if (d->files == NULL) {
                 err_quit(__FILE__, __LINE__, __func__, "get_dir() retuned NULL");
         }
-        if (data->body == NULL) {
-                data->body = err_malloc(sizeof(char));
-                data->body[0] = '\0';
-        }
 
         if (data->req_type == HTTP) {
                 data->body = concat(data->body, "<style>"
@@ -106,9 +102,12 @@ dir_to_table(struct data_store *data, char* directory)
 
                 data->body = concat(data->body, buffer);
         }
+
         if (data->req_type == HTTP) {
                 data->body = concat(data->body, "</tbody></table>");
         }
+
+        data->body_length = strlen(data->body);
 
         free_dir(d);
 

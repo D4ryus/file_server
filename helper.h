@@ -13,12 +13,10 @@ struct data_store {
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
-        ulong  thread_id;             /* thread id */
         char   *url;                  /* requested file */
         char   head[254];             /* response header */
         char   *body;                 /* response body, if file filename */
         size_t body_length;           /* length of response body */
-        size_t head_length;           /* length of response head */
         enum  request_type req_type;  /* requested type (PLAIN or HTTP) */
         enum  body_type    body_type; /* type of body (TEXT or DATA) */
 };

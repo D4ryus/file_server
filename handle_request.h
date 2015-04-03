@@ -12,6 +12,12 @@
 void *handle_request(void*);
 
 /**
+ * parses given request and returns the requested url, type of request
+ * will be stored inside the given enum request_type
+ */
+char *parse_request(char*, enum request_type*);
+
+/**
  * generates a response and saves it inside the data_store
  */
 void generate_response(struct data_store*);
@@ -35,10 +41,5 @@ void generate_404(struct data_store*);
  * generates a 403 FORBIDDEN HTTP response and saves it inside the data_store
  */
 void generate_403(struct data_store*);
-
-/**
- * parses given request and stores info inside given data_store
- */
-void parse_request(struct data_store*, char*);
 
 #endif

@@ -19,11 +19,9 @@ create_data_store(void)
 
         data->port = -1;
         data->socket = -1;
-        data->thread_id = 0;
         data->url = NULL;
-        data->body = err_malloc(sizeof(char));
         data->head[0] = '\0';
-        data->head_length = 0;
+        data->body = err_malloc(sizeof(char));
         data->body[0] = '\0';
         data->body_length = 0;
         data->req_type = TEXT;
@@ -153,7 +151,7 @@ send_file(struct data_store *data)
 void
 print_info(struct data_store *data, char *type, char *message)
 {
-        printf("[%15s:%-5d - ID: %5d]: %-10s - %s\n",
+        printf("[%15s:%-5d - %3d]: %-10s - %s\n",
                         data->ip,
                         data->port,
                         data->socket,

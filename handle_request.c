@@ -21,7 +21,6 @@ void
                 err_quit(__FILE__, __LINE__, __func__, "socket in handle_request is < 0");
         }
 
-        data->thread_id = (unsigned long)pthread_self();
         print_info(data, "accepted", "");
 
         char    read_buffer[BUFFSIZE_READ];
@@ -41,14 +40,14 @@ void
                 close(data->socket);
                 return NULL;
         }
-        parse_request(data, read_buffer);
+        data->url = parse_request(read_buffer, &(data->req_type));
         if (data->url == NULL) {
                 print_info(data, "error", "invalid GET, request ignored");
                 close(data->socket);
                 return NULL;
         }
         generate_response(data);
-        write(data->socket, data->head, data->head_length);
+        write(data->socket, data->head, strlen(data->head));
         status = 0;
 
         switch (data->body_type) {
@@ -94,6 +93,48 @@ void
         return NULL;
 }
 
+char
+*parse_request(char *request, enum request_type *req_type)
+{
+        char   *tmp;
+        char   *url;
+        size_t length;
+
+        tmp = strtok(request, "\n"); /* get first line */
+
+        if (tmp == NULL || !starts_with(tmp, "GET /")) {
+                *req_type = PLAIN;
+                return NULL;
+        }
+        tmp = strtok(tmp, " ");  /* split first line */
+        tmp = strtok(NULL, " "); /* get requested url */
+
+        length = strlen(tmp);
+        /* remove trailing / from request */
+        while (length > 1 && tmp[length - 1] == '/') {
+                tmp[length - 1] = '\0';
+                length = strlen(tmp);
+        }
+        url = err_malloc(sizeof(char) * (length + 1));
+        memset(url, '\0', sizeof(char) * (length + 1));
+        strncpy(url, tmp, length);
+
+        /* get requested type */
+        tmp = strtok(NULL, " ");
+        /* if none given go with PLAIN and return */
+        if (tmp == NULL) {
+                *req_type = PLAIN;
+                return url;
+        }
+        if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
+                *req_type = HTTP;
+        } else {
+                *req_type = PLAIN;
+        }
+
+        return url;
+}
+
 void
 generate_response(struct data_store *data)
 {
@@ -117,10 +158,7 @@ generate_response(struct data_store *data)
         requested_path = realpath(data->url + 1, NULL);
         if (requested_path == NULL) {
                 generate_404(data);
-                return;
-        }
-
-        if (!starts_with(requested_path, accepted_path)) {
+        } else if (!starts_with(requested_path, accepted_path)) {
                 generate_403(data);
         } else if (is_directory(data->url + 1)) {
                 generate_200_directory(data, data->url + 1);
@@ -138,21 +176,20 @@ void
 generate_200_file(struct data_store *data, char* file)
 {
         struct stat sb;
-        char length[32];
+        char content_length[128];
 
         if (stat(file, &sb) == -1) {
                 err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
-        sprintf(length, "%lu\r\n\r\n", (size_t)sb.st_size);
 
         strcat(data->head, "HTTP/1.1 200 OK\r\n"
                            "Content-Type: ");
         strcat(data->head, get_content_encoding(strrchr(file, '.')));
-        strcat(data->head, "\r\nContent-Length: ");
-        strcat(data->head, length);
-        data->head_length = strlen(data->head);
-        data->body_length = (size_t)sb.st_size;
+        sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n", (size_t)sb.st_size);
+        strcat(data->head, content_length);
+
         data->body = concat(data->body, file);
+        data->body_length = (size_t)sb.st_size;
         data->body_type = DATA;
 
         return;
@@ -184,7 +221,6 @@ generate_200_directory(struct data_store *data, char* directory)
                 data->body = concat(data->body, "</body></html>");
         }
 
-        data->head_length = strlen(data->head);
         data->body_length = strlen(data->body);
 
         data->body_type = TEXT;
@@ -197,7 +233,6 @@ generate_404(struct data_store *data)
 {
         strcat(data->head, "HTTP/1.1 404 Not Found\r\n"
                            "Content-Type: text/plain\r\n\r\n");
-        data->head_length = strlen(data->head);
         data->body = concat(data->body, "404 - Watcha pulling here buddy?\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_404;
@@ -210,52 +245,9 @@ generate_403(struct data_store *data)
 {
         strcat(data->head, "HTTP/1.1 403 Forbidden\r\n"
                            "Content-Type: text/plain\r\n\r\n");
-        data->head_length = strlen(data->head);
         data->body = concat(data->body, "403 - U better not go down this road!\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_403;
-
-        return;
-}
-
-void
-parse_request(struct data_store *data, char *request)
-{
-        char   *tmp;
-        size_t length;
-
-        tmp = strtok(request, "\n"); /* get first line */
-
-        if (tmp == NULL || !starts_with(tmp, "GET /")) {
-                data->url = NULL;
-                data->req_type = PLAIN;
-                return;
-        }
-        tmp = strtok(tmp, " ");  /* split first line */
-        tmp = strtok(NULL, " "); /* get requested url */
-
-        length = strlen(tmp);
-        /* remove trailing / from request */
-        while (length > 1 && tmp[length - 1] == '/') {
-                tmp[length - 1] = '\0';
-                length = strlen(tmp);
-        }
-        data->url = err_malloc(sizeof(char) * (length + 1));
-        memset(data->url, '\0', sizeof(char) * (length + 1));
-        strncpy(data->url, tmp, length);
-
-        /* get requested type */
-        tmp = strtok(NULL, " ");
-        /* if none given go with PLAIN and return */
-        if (tmp == NULL) {
-                data->req_type = PLAIN;
-                return;
-        }
-        if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
-                data->req_type = HTTP;
-        } else {
-                data->req_type = PLAIN;
-        }
 
         return;
 }
