@@ -32,8 +32,6 @@ free_dir(struct dir *d)
 void
 dir_to_table(struct data_store *data, char* directory)
 {
-        printf("directory: %s\n", directory);
-        printf("root_dir: %s\n", data->root_dir);
         int  i;
         char buffer[512];
         struct dir *d;
