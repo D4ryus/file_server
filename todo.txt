@@ -1,11 +1,11 @@
-[ ] - options (port, verbose, path, ...)
+[X] - options (port, verbose, path, ...)
 [X] - fix pipe singal
 [X] - fix pthread_create memory leak
 [X] - fix high virt mem
-[ ] - color (optional)
+[X] - color (optional)
 [ ] - verbose (optional)
 [ ] - messages (optional)
-[ ] - main/root folder (option)
+[X] - main/root folder (option)
 [ ] - ncurses?
 [ ] - config.h with CONST values (try const for filename_length inside
       printf(%filenamelengths))
@@ -31,7 +31,3 @@ config.h:
       - max header size
       - default port
       - ignored files!
-
-args:
-      - root folder
-      - port

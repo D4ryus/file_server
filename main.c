@@ -53,10 +53,9 @@ main(int argc, const char *argv[])
         if (error != 0) {
                 err_quit(__FILE__, __LINE__, __func__, "pthread_attr_getstacksize() != 0");
         }
-        printf("stacksize: %lu\n", stack_size);
 
         stack_size = PTHREAD_STACK_MIN << 1;
-        printf("stacksize: %lu\n", stack_size);
+        printf("set pthread stacksize to %lu\n", stack_size);
         error = pthread_attr_setstacksize(&attr, stack_size);
         if (error != 0) {
                 err_quit(__FILE__, __LINE__, __func__, "pthread_attr_setstacksize() != 0");
