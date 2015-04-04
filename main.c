@@ -6,17 +6,25 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "helper.h"
 #include "handle_request.h"
 
+char* root_dir;
+int port = 8283;
+int use_color = 0;
+int current_color = 0;
+int colors[] = {0, 0, 0, 0, 0, 0, 0, 0};
+
 int main(int, const char**);
+int *get_color(void);
+void parse_arguments(int, const char**);
 
 int
 main(int argc, const char *argv[])
 {
         int server_socket;
-        int port;
         int on;
         int error;
         pthread_t thread;
@@ -25,40 +33,8 @@ main(int argc, const char *argv[])
         struct sockaddr_in serv_addr;
         struct sockaddr_in cli_addr;
         struct data_store *data;
-        int current_color;
-        int colors[] = {0, 0, 0, 0, 0, 0, 0};
-        int i;
-        char root_dir[256];
-        char* rp = NULL;
 
-        root_dir[0] = '\0';
-
-        for (i = 1; i < argc; i++) {
-                if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--path") == 0)) {
-                        i++;
-                        if (argc < i) {
-                                err_quit(__FILE__, __LINE__, __func__,
-                                                "user specified -p/--path "
-                                                "without a path");
-                        }
-                        strncpy(root_dir, argv[i], 255);
-                        if (strlen(root_dir) == 1 && root_dir[0] == '/') {
-                                err_quit(__FILE__, __LINE__, __func__, "you tried to share /, no sir, thats not happening");
-                        }
-                        while (root_dir[strlen(root_dir) - 1] == '/') {
-                                root_dir[strlen(root_dir) - 1] = '\0';
-                        }
-                }
-        }
-
-        if (strlen(root_dir) == 0) {
-                rp = realpath(".", NULL);
-                if (rp == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "realpath on . returned NULL");
-                }
-                strncpy(root_dir, rp, strlen(rp));
-                root_dir[strlen(rp)] = '\0';
-        }
+        parse_arguments(argc, argv);
 
         /* init a pthread attribute struct */
         error = pthread_attr_init(&attr);
@@ -72,10 +48,23 @@ main(int argc, const char *argv[])
                 err_quit(__FILE__, __LINE__, __func__, "pthread_attr_setdetachstate() != 0");
         }
 
+        size_t stack_size;
+        error =  pthread_attr_getstacksize(&attr, &stack_size);
+        if (error != 0) {
+                err_quit(__FILE__, __LINE__, __func__, "pthread_attr_getstacksize() != 0");
+        }
+        printf("stacksize: %lu\n", stack_size);
+
+        stack_size = PTHREAD_STACK_MIN << 1;
+        printf("stacksize: %lu\n", stack_size);
+        error = pthread_attr_setstacksize(&attr, stack_size);
+        if (error != 0) {
+                err_quit(__FILE__, __LINE__, __func__, "pthread_attr_setstacksize() != 0");
+        }
+
         /* ignore sigpipe singal on write, since i cant catch it inside a thread */
         signal(SIGPIPE, SIG_IGN);
 
-        port = 8283;
         /* get a socket */
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (server_socket < 0) {
@@ -105,19 +94,12 @@ main(int argc, const char *argv[])
         clilen = sizeof(cli_addr);
 
         /* put each connection in a new detached thread with its own data_store */
-        current_color = 1;
         while (1) {
                 data = create_data_store();
-                strncpy(data->root_dir, root_dir, 255);
+                data->root_dir = root_dir;
                 data->socket = accept(server_socket, (struct sockaddr *) &cli_addr, &clilen);
-                current_color = current_color % 7 + 1;
-                for (;current_color < 7; current_color++) {
-                        if (colors[current_color] == 0) {
-                                colors[current_color] = current_color;
-                                data->color = &(colors[current_color]);
-                                current_color++;
-                                break;
-                        }
+                if (use_color) {
+                        data->color = get_color();
                 }
                 strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
                 data->port = ntohs(cli_addr.sin_port);
@@ -128,5 +110,67 @@ main(int argc, const char *argv[])
                 }
         }
 
+        free(root_dir);
         close(server_socket);
 }
+
+int
+*get_color(void)
+{
+        int i;
+        int *ret_color = NULL;
+
+        for (i = 0; i < 8; i++, current_color++) {
+                current_color = current_color % 8;
+                if (current_color == 0) { /* ignore black */
+                        continue;
+                }
+                if (colors[current_color] == 0) {
+                        colors[current_color] = current_color;
+                        ret_color = &(colors[current_color]);
+                        current_color++;
+                        break;
+                }
+        }
+
+        return ret_color;
+}
+
+void
+parse_arguments(int argc, const char *argv[])
+{
+        int i;
+
+        for (i = 1; i < argc; i++) {
+                if ((strcmp(argv[i], "-d") == 0) || (strcmp(argv[i], "--dir") == 0)) {
+                        i++;
+                        if (argc < i) {
+                                err_quit(__FILE__, __LINE__, __func__,
+                                                "user specified -d/--dir "
+                                                "without a path");
+                        }
+                        root_dir = realpath(argv[i], NULL);
+                } else if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--port") == 0)) {
+                        i++;
+                        if (argc < i) {
+                                err_quit(__FILE__, __LINE__, __func__,
+                                                "user specified -p/--port "
+                                                "without a port");
+                        }
+                        port = atoi(argv[i]);
+                } else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--color") == 0)) {
+                        use_color = 1;
+                }
+        }
+
+        if (root_dir == NULL) {
+                root_dir = realpath(".", NULL);
+                if (root_dir == NULL) {
+                        err_quit(__FILE__, __LINE__, __func__, "realpath on . returned NULL");
+                }
+        }
+        if (strlen(root_dir) == 1 && root_dir[0] == '/') {
+                err_quit(__FILE__, __LINE__, __func__, "you tried to share /, no sir, thats not happening");
+        }
+}
+

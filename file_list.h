@@ -34,7 +34,8 @@ void dir_to_table(struct data_store*, char*);
 struct dir* add_file_to_dir(struct dir*, char*, char*);
 
 /**
- * creates a dir stuct with from given directory
+ * creates a dir stuct with from given directory.
+ * returns NULL if permission is denied.
  */
 struct dir* get_dir(char*);
 

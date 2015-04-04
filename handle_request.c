@@ -222,11 +222,11 @@ generate_200_file(struct data_store *data, char* file)
                 err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
 
-        strcat(data->head, "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: ");
-        strcat(data->head, get_content_encoding(strrchr(file, '.')));
+        data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
+                                        "Content-Type: ");
+        data->head = concat(data->head, get_content_encoding(strrchr(file, '.')));
         sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n", (size_t)sb.st_size);
-        strcat(data->head, content_length);
+        data->head = concat(data->head, content_length);
 
         data->body = concat(data->body, file);
         data->body_length = (size_t)sb.st_size;
@@ -239,8 +239,8 @@ void
 generate_200_directory(struct data_store *data, char* directory)
 {
         if (data->req_type == HTTP) {
-                strcat(data->head, "HTTP/1.1 200 OK\r\n"
-                                   "Content-Type: text/html\r\n\r\n");
+                data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
+                                                "Content-Type: text/html\r\n\r\n");
                 data->body = concat(data->body, "<!DOCTYPE html><html><head>"
                                "<link href='http://fonts.googleapis.com/css?family=Iceland'"
                                      "rel='stylesheet'"
@@ -251,8 +251,8 @@ generate_200_directory(struct data_store *data, char* directory)
                                "</head>"
                                "<body>");
         } else {
-                strcat(data->head, "HTTP/1.1 200 OK\r\n"
-                                   "Content-Type: text/plain\r\n\r\n");
+                data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
+                                                "Content-Type: text/plain\r\n\r\n");
         }
 
         dir_to_table(data, directory);
@@ -271,8 +271,8 @@ generate_200_directory(struct data_store *data, char* directory)
 void
 generate_404(struct data_store *data)
 {
-        strcat(data->head, "HTTP/1.1 404 Not Found\r\n"
-                           "Content-Type: text/plain\r\n\r\n");
+        data->head = concat(data->head, "HTTP/1.1 404 Not Found\r\n"
+                                        "Content-Type: text/plain\r\n\r\n");
         data->body = concat(data->body, "404 - Watcha pulling here buddy?\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_404;
@@ -283,8 +283,8 @@ generate_404(struct data_store *data)
 void
 generate_403(struct data_store *data)
 {
-        strcat(data->head, "HTTP/1.1 403 Forbidden\r\n"
-                           "Content-Type: text/plain\r\n\r\n");
+        data->head = concat(data->head, "HTTP/1.1 403 Forbidden\r\n"
+                                        "Content-Type: text/plain\r\n\r\n");
         data->body = concat(data->body, "403 - U better not go down this road!\r\n");
         data->body_length = strlen(data->body);
         data->body_type = ERR_403;

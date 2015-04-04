@@ -5,6 +5,8 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdlib.h>
+#include <errno.h>
+
 
 #include "file_list.h"
 
@@ -38,6 +40,12 @@ dir_to_table(struct data_store *data, char* directory)
 
         d = get_dir(directory);
 
+        if (d == NULL) {
+                data->body = concat(data->body, "Cannot open this directory, permission denied.");
+                data->body_length = strlen(data->body);
+                return;
+        }
+
         if (d->files == NULL) {
                 err_quit(__FILE__, __LINE__, __func__, "get_dir()->files are NULL");
         }
@@ -60,7 +68,7 @@ dir_to_table(struct data_store *data, char* directory)
                         "</thead>");
         } else {
                 sprintf(buffer,
-                        "%-19s %-17s %-12s %s\n",
+                        "%-20s %-17s %-12s %s\n",
                         "Last modified",
                         "Type",
                         "Size",
@@ -87,7 +95,7 @@ dir_to_table(struct data_store *data, char* directory)
                                 d->files[i]->name,
                                 d->files[i]->name);
                 } else {
-                        sprintf(buffer, "%19s %17s %12li %s/%s\n",
+                        sprintf(buffer, "%20s %17s %12li %s/%s\n",
                                 d->files[i]->time,
                                 d->files[i]->type,
                                 (long)d->files[i]->size,
@@ -164,6 +172,9 @@ get_dir(char *directory)
 
         dirp = opendir(directory);
         if (dirp == NULL) {
+                if (errno == EACCES) {
+                        return NULL;
+                }
                 err_quit(__FILE__, __LINE__, __func__, "opendir() returned NULL");
         }
 

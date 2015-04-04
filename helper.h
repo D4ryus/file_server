@@ -17,12 +17,12 @@ enum err_status {OK            =  0,
  * per request a data store is generated and then during execution filed
  */
 struct data_store {
-        char   root_dir[256];         /* root directory */
+        char   *root_dir;              /* root directory */
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
         char   url[256];              /* requested file */
-        char   head[254];             /* response header */
+        char   *head;                 /* response header */
         char   *body;                 /* response body, if file filename */
         size_t body_length;           /* length of response body / filesize */
         enum  request_type req_type;  /* requested type (PLAIN or HTTP) */

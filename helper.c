@@ -17,11 +17,10 @@ create_data_store(void)
 
         data = err_malloc(sizeof(struct data_store));
 
-        data->root_dir[0] = '.';
-        data->root_dir[1] = '\0';
         data->port = -1;
         data->socket = -1;
         data->url[0] = '\0';
+        data->head = err_malloc(sizeof(char));
         data->head[0] = '\0';
         data->body = err_malloc(sizeof(char));
         data->body[0] = '\0';
@@ -41,6 +40,9 @@ free_data_store(struct data_store *data)
         }
         if (data->color != NULL) {
                 (*data->color) = 0;
+        }
+        if (data->head != NULL) {
+                free(data->head);
         }
         if (data->body != NULL) {
                 free(data->body);
@@ -128,8 +130,8 @@ send_file(struct data_store *data)
                 written += sent;
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1) {
-                        sprintf(message_buffer, "/%-19s size: %12lub written: %12lub remaining: %12lub %12lub/s %3lu%%",
-                                             data->body,
+                        sprintf(message_buffer, "%-20s size: %12lub written: %12lub remaining: %12lub %12lub/s %3lu%%",
+                                             data->body + strlen(data->root_dir),
                                              data->body_length,
                                              written,
                                              data->body_length - written,
