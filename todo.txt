@@ -7,8 +7,6 @@
 [ ] - messages (optional)
 [X] - main/root folder (option)
 [ ] - ncurses?
-[ ] - config.h with CONST values (try const for filename_length inside
-      printf(%filenamelengths))
 [X] - renaming of variables
 [X] - req, res, thread data and socket data into one struct, so data is
       everywhere
@@ -22,12 +20,12 @@
 [X] - better malloc with integrated err check
 [X] - move content_encoding
 [ ] - implement max connections
-[ ] - templates for http tables
+[X] - templates for http tables
 
 config.h:
-
-      - max filename
+      - max filename/url
       - max request size (depends on max filename i guess)
       - max header size
       - default port
       - ignored files!
+      - default directory

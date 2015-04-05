@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-
 #include "file_list.h"
+#include "config.h"
 
 void
 free_dir(struct dir *d)
@@ -35,8 +35,9 @@ void
 dir_to_table(struct data_store *data, char* directory)
 {
         int  i;
-        char buffer[512];
+        char buffer[TABLE_BUFFER_SIZE];
         struct dir *d;
+        const char **table_ptr;
 
         d = get_dir(directory);
 
@@ -51,63 +52,33 @@ dir_to_table(struct data_store *data, char* directory)
         }
 
         if (data->req_type == HTTP) {
-                data->body = concat(data->body, "<style>"
-                        "tbody tr:nth-child(odd) {"
-                                "background: #eee;"
-                        "}"
-                "</style>"
-                "<table style size='100%'>"
-                        "<tbody>"
-                        "<thead>"
-                                "<tr>"
-                                        "<th align='left'>Type</th>"
-                                        "<th align='left'>Last modified</th>"
-                                        "<th align='left'>Size</th>"
-                                        "<th align='left'>Filename</th>"
-                                "</tr>"
-                        "</thead>");
+                table_ptr = TABLE_HTML;
         } else {
-                sprintf(buffer,
-                        "%-20s %-17s %-12s %s\n",
-                        "Last modified",
-                        "Type",
-                        "Size",
-                        "Filename");
-                data->body = concat(data->body, buffer);
+                table_ptr = TABLE_PLAIN;
         }
+
+        sprintf(buffer, table_ptr[0], /* table head, see config.h */
+                                "Last modified",
+                                "Type",
+                                "Size",
+                                "Filename");
+        data->body = concat(data->body, buffer);
 
         for (i = 0; i < d->length; i++) {
                 if (d->files[i]->name == NULL) {
                         continue;
                 }
-                if (data->req_type == HTTP) {
-                        sprintf(buffer,
-                                "<tr>"
-                                        "<td align='center'>%s</td>"
-                                        "<td align='center'>%s</td>"
-                                        "<td align='right'>%12li</td>"
-                                        "<td align='left'><a href='%s/%s'>%s</a></td>"
-                                "</tr>",
-                                d->files[i]->time,
-                                d->files[i]->type,
-                                (long)d->files[i]->size,
-                                directory + strlen(data->root_dir),
-                                d->files[i]->name,
-                                d->files[i]->name);
-                } else {
-                        sprintf(buffer, "%20s %17s %12li %s/%s\n",
-                                d->files[i]->time,
-                                d->files[i]->type,
-                                (long)d->files[i]->size,
-                                directory + strlen(data->root_dir),
-                                d->files[i]->name);
-                }
+                sprintf(buffer, table_ptr[1], /* table body */
+                                        d->files[i]->time,
+                                        d->files[i]->type,
+                                        (long)d->files[i]->size,
+                                        directory + strlen(data->root_dir),
+                                        d->files[i]->name,
+                                        d->files[i]->name);
                 data->body = concat(data->body, buffer);
         }
 
-        if (data->req_type == HTTP) {
-                data->body = concat(data->body, "</tbody></table>");
-        }
+        data->body = concat(data->body, table_ptr[2]); /* table end */
 
         data->body_length = strlen(data->body);
 

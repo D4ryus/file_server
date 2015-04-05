@@ -17,7 +17,7 @@ enum err_status {OK            =  0,
  * per request a data store is generated and then during execution filed
  */
 struct data_store {
-        char   *root_dir;              /* root directory */
+        char   *root_dir;             /* root directory */
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
