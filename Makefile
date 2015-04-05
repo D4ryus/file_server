@@ -56,7 +56,7 @@ LFLAGS = -lpthread
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 $(EXECUTABLE) : main.c $(OBJECT_FILES)
-	$(CC) -o $@ $< $(OBJECT_FILES) $(CFLAGS) $(LFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
 
 clean :
 	rm $(OBJECT_FILES) $(EXECUTABLE)
