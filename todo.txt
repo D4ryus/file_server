@@ -21,6 +21,9 @@
 [X] - move content_encoding
 [ ] - implement max connections
 [X] - templates for http tables
+[ ] - fix ugly color implementation
+[ ] - port/root/.. defaults into config.h
+[ ] - data structure to reference to main
 
 config.h:
       - max filename/url

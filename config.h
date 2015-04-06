@@ -1,22 +1,24 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 /**
- * table head values which will be filed in at %s
- * given values are:
- * "Last modified"
- * "Type"
- * "Size"
- * "Filename"
+ * default variables
+ * -----------------
  */
 
 /**
- * table body values which will be filed in at %s
- * the body part will be repeaded for each file found inside the directory
- * given values are:
- * "[last modified]"
- * "[filetype]"
- * "[filesize]"
- * "[directory]"
- * "[filename]"
- * "[filename]"
+ * default shared directory
+ */
+static char *ROOT_DIR = ".";
+
+/**
+ * default port if none specified
+ */
+static int PORT = 8283;
+
+/**
+ * directory table config
+ * ----------------------
  */
 
 /**
@@ -24,9 +26,17 @@
  * will be filled in with sprintf(). so if table is getting bigger change value
  * accordingly.
  */
-const int TABLE_BUFFER_SIZE = 512;
+static const int TABLE_BUFFER_SIZE = 512;
 
-const char *TABLE_PLAIN[3] = {
+/**
+ * table head values which will be filed in at %s
+ * given values are:
+ * "Last modified" "Type" "Size" "Filename"
+ * the body part will be repeaded for each file found inside the directory
+ * given values are:
+ * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]" "[filename]"
+ */
+static const char *TABLE_PLAIN[3] = {
         /* table head */
         "%-20s %-17s %-12s %s\n",
         /* table body */
@@ -34,7 +44,7 @@ const char *TABLE_PLAIN[3] = {
         /* table end */
         ""};
 
-const char *TABLE_HTML[3] = {
+static const char *TABLE_HTML[3] = {
         /* table head */
         "<style>"
                 "tbody tr:nth-child(odd) {"
@@ -61,3 +71,5 @@ const char *TABLE_HTML[3] = {
         /* table end */
                 "</tbody>"
         "</table>"};
+
+#endif

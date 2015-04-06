@@ -10,9 +10,8 @@
 
 #include "helper.h"
 #include "handle_request.h"
+#include "config.h"
 
-char* root_dir;
-int port = 8283;
 int use_color = 0;
 int current_color = 0;
 int colors[] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -80,7 +79,7 @@ main(int argc, const char *argv[])
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
         serv_addr.sin_family = AF_INET;
         serv_addr.sin_addr.s_addr = INADDR_ANY;
-        serv_addr.sin_port = htons(port);
+        serv_addr.sin_port = htons(PORT);
 
         /* bind socket */
         error = bind(server_socket, (struct sockaddr *) &serv_addr, sizeof(serv_addr));
@@ -95,7 +94,6 @@ main(int argc, const char *argv[])
         /* put each connection in a new detached thread with its own data_store */
         while (1) {
                 data = create_data_store();
-                data->root_dir = root_dir;
                 data->socket = accept(server_socket, (struct sockaddr *) &cli_addr, &clilen);
                 if (use_color) {
                         data->color = get_color();
@@ -109,7 +107,7 @@ main(int argc, const char *argv[])
                 }
         }
 
-        free(root_dir);
+        free(ROOT_DIR);
         close(server_socket);
 }
 
@@ -148,7 +146,7 @@ parse_arguments(int argc, const char *argv[])
                                                 "user specified -d/--dir "
                                                 "without a path");
                         }
-                        root_dir = realpath(argv[i], NULL);
+                        ROOT_DIR = realpath(argv[i], NULL);
                 } else if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--port") == 0)) {
                         i++;
                         if (argc < i) {
@@ -156,19 +154,19 @@ parse_arguments(int argc, const char *argv[])
                                                 "user specified -p/--port "
                                                 "without a port");
                         }
-                        port = atoi(argv[i]);
+                        PORT = atoi(argv[i]);
                 } else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--color") == 0)) {
                         use_color = 1;
                 }
         }
 
-        if (root_dir == NULL) {
-                root_dir = realpath(".", NULL);
-                if (root_dir == NULL) {
+        if (ROOT_DIR == NULL) {
+                ROOT_DIR = realpath(ROOT_DIR, NULL);
+                if (ROOT_DIR == NULL) {
                         err_quit(__FILE__, __LINE__, __func__, "realpath on . returned NULL");
                 }
         }
-        if (strlen(root_dir) == 1 && root_dir[0] == '/') {
+        if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
                 err_quit(__FILE__, __LINE__, __func__, "you tried to share /, no sir, thats not happening");
         }
 }

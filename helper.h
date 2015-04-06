@@ -17,7 +17,7 @@ enum err_status {OK            =  0,
  * per request a data store is generated and then during execution filed
  */
 struct data_store {
-        char   *root_dir;             /* root directory */
+        int    *color;                /* given color from main thread */
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
@@ -27,7 +27,6 @@ struct data_store {
         size_t body_length;           /* length of response body / filesize */
         enum  request_type req_type;  /* requested type (PLAIN or HTTP) */
         enum  body_type    body_type; /* type of body (TEXT or DATA) */
-        int   *color;                 /* given color from main thread */
 };
 
 /**

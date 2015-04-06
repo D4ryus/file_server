@@ -6,6 +6,7 @@
 #include <time.h>
 
 #include "helper.h"
+#include "config.h"
 
 // BUFFSIZE_WRITE bytes are written to socket
 #define BUFFSIZE_WRITE 8192
@@ -131,7 +132,7 @@ send_file(struct data_store *data)
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1) {
                         sprintf(message_buffer, "%-20s size: %12lub written: %12lub remaining: %12lub %12lub/s %3lu%%",
-                                             data->body + strlen(data->root_dir),
+                                             data->body + strlen(ROOT_DIR),
                                              data->body_length,
                                              written,
                                              data->body_length - written,

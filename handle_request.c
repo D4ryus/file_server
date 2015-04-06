@@ -7,6 +7,7 @@
 
 #include "handle_request.h"
 #include "file_list.h"
+#include "config.h"
 
 // BUFFSIZE_READ - 1 bytes are read from socket
 #define BUFFSIZE_READ 2048
@@ -181,7 +182,7 @@ generate_response(struct data_store *data)
         size_t length;
 
         if (strcmp(data->url, "/") == 0) {
-                generate_200_directory(data, data->root_dir);
+                generate_200_directory(data, ROOT_DIR);
                 return;
         }
         if (strlen(data->url) == 0) {
@@ -189,16 +190,16 @@ generate_response(struct data_store *data)
                 return;
         }
 
-        length = strlen(data->root_dir) + strlen(data->url);
+        length = strlen(ROOT_DIR) + strlen(data->url);
         full_requested_path = err_malloc(length + 1);
-        strncpy(full_requested_path, data->root_dir, length + 1);
+        strncpy(full_requested_path, ROOT_DIR, length + 1);
         strncat(full_requested_path, data->url, strlen(data->url));
         full_requested_path[length] = '\0';
 
         requested_path = realpath(full_requested_path, NULL);
         if (requested_path == NULL) {
                 generate_404(data);
-        } else if (!starts_with(requested_path, data->root_dir)) {
+        } else if (!starts_with(requested_path, ROOT_DIR)) {
                 generate_403(data);
         } else if (is_directory(requested_path)) {
                 generate_200_directory(data, requested_path);
