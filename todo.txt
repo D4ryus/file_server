@@ -1,34 +1,46 @@
-[X] - options (port, verbose, path, ...)
-[X] - fix pipe singal
-[X] - fix pthread_create memory leak
-[X] - fix high virt mem
-[X] - color (optional)
-[ ] - verbose (optional)
-[ ] - messages (optional)
-[X] - main/root folder (option)
-[ ] - ncurses?
-[X] - renaming of variables
-[X] - req, res, thread data and socket data into one struct, so data is
-      everywhere
-[X] - try strings "" "" ""
-[X] - cross plattform
-[-] - try forking
-[ ] - strlcat
-[X] - documentation and comments
-[X] - only print if there was a real transfer
-[X] - better error messages
-[X] - better malloc with integrated err check
-[X] - move content_encoding
-[ ] - implement max connections
-[X] - templates for http tables
-[ ] - fix ugly color implementation
-[ ] - port/root/.. defaults into config.h
-[ ] - data structure to reference to main
+fixes and code changes:
+      [X] - fix pipe singal
+      [X] - fix pthread_create memory leak
+      [X] - fix high virt mem
+      [X] - rename variables
+      [X] - combine req, res, thread data and socket data structs
+      [X] - replace string concats with "" "" ""
+      [X] - documentation and comments
+      [X] - only print if there was a transfer
+      [X] - better error messages
+      [X] - wrap malloc with integrated err check
+      [ ] - cross plattform Makefile
+      [ ] - cross plattform code
+      [ ] - implement max connections
+      [ ] - fix ugly color implementation
+      [ ] - data structure to reference to main
+      [ ] - strlcat
+
+args:
+      [X] - color
+      [X] - port
+      [X] - directory
+      [ ] - getopt_long
+      [ ] - max connections
+      [ ] - verbosity
+      [ ] - ncurses enabled
 
 config.h:
-      - max filename/url
-      - max request size (depends on max filename i guess)
-      - max header size
-      - default port
-      - ignored files!
-      - default directory
+      [X] - default port
+      [X] - default directory
+      [X] - templates for http tables
+      [ ] - max filename/url
+      [ ] - max request size (depends on max filename i guess)
+      [ ] - max header size
+      [ ] - ignored files!
+
+ncurses:
+      [ ] - message.h
+      [ ] - a function to print regular messages to stdout/ncurses
+      [ ] - a linked list with a extra thread to go through list and print
+            status information either to ncuses or stout
+      [ ] - status infomation with growing amounts like /proc/stat
+
+tests:
+      [ ] - make a test suite
+      [ ] - configure git repo to automate tests
