@@ -34,12 +34,20 @@ config.h:
       [ ] - max header size
       [ ] - ignored files!
 
-ncurses:
+messages:
       [ ] - message.h
-      [ ] - a function to print regular messages to stdout/ncurses
-      [ ] - a linked list with a extra thread to go through list and print
-            status information either to ncuses or stout
-      [ ] - status infomation with growing amounts like /proc/stat
+      [ ] - types (error, connection, leave, status)
+      [ ] - enable optional logging which takes regular verbosity
+      [ ] - message status structs can be connected to clients
+      [ ] - clients cann connect to messages
+      [ ] - linked list with status information, add/del mutex
+      [ ] - status infomation specified in growing amounts (see /proc/stat)
+
+ncurses:
+      [ ] - window for log
+      [ ] - window for status messages
+      [ ] - keybindings for more/less verbose
+      [ ] - information header
 
 tests:
       [ ] - make a test suite
