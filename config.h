@@ -2,19 +2,9 @@
 #define CONFIG_H
 
 /**
- * default variables
- * -----------------
- */
-
-/**
  * default shared directory
  */
 static char *ROOT_DIR = ".";
-
-/**
- * default port if none specified
- */
-static int PORT = 8283;
 
 /**
  * directory table config

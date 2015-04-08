@@ -10,7 +10,12 @@
 
 #include "helper.h"
 #include "handle_request.h"
-#include "config.h"
+#include "root_dir.h"
+
+/**
+ * default port if none specified
+ */
+static int PORT = 8283;
 
 int use_color = 0;
 int current_color = 0;
@@ -163,7 +168,7 @@ parse_arguments(int argc, const char *argv[])
         if (ROOT_DIR == NULL) {
                 ROOT_DIR = realpath(ROOT_DIR, NULL);
                 if (ROOT_DIR == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "realpath on . returned NULL");
+                        err_quit(__FILE__, __LINE__, __func__, "realpath on ROOT_DIR returned NULL");
                 }
         }
         if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {

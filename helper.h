@@ -32,7 +32,7 @@ struct data_store {
 /**
  * mallocs a new data_store and sets initial values
  */
-struct data_store* create_data_store(void);
+struct data_store *create_data_store(void);
 
 /**
  * savely frees the given datastore from memory
@@ -53,7 +53,7 @@ int send_text(int, char*, size_t);
  * WRITE_CLOSED (-1) : could not write, client closed connection
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
-int send_file(struct data_store *data);
+int send_file(struct data_store*);
 
 /**
  * prints info (ip port socket) + given type and message to stdout
@@ -63,7 +63,7 @@ void print_info(struct data_store*, char*, char*);
 /**
  * will reallocated dst and strcat src onto it
  */
-char* concat(char* dst, const char* src);
+char* concat(char*, const char*);
 
 /**
  * checks if given string is a directory, if its a file 0 is returned

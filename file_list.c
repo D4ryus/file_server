@@ -32,7 +32,7 @@ free_dir(struct dir *d)
 }
 
 void
-dir_to_table(struct data_store *data, char* directory)
+dir_to_table(struct data_store *data, char *directory)
 {
         int  i;
         char buffer[TABLE_BUFFER_SIZE];
@@ -88,24 +88,21 @@ dir_to_table(struct data_store *data, char* directory)
 }
 
 struct dir*
-add_file_to_dir(struct dir *d, char *file, char* directory)
+add_file_to_dir(struct dir *d, char *file, char *directory)
 {
         if (file == NULL) {
-                printf("file is null, dunno\n");
+                err_quit(__FILE__, __LINE__, __func__, "tried to add file which was NULL");
                 return d;
         }
 
+        char *combined_path;
         struct stat sb;
-        struct file *tmp;
-        char        *combined_path;
+        struct file *new_file;
 
-        d = (struct dir *)err_realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
-
-        d->files[d->length] = err_malloc(sizeof(struct file));
-        tmp = d->files[d->length];
-        d->length++;
-        tmp->name = err_malloc(strlen(file) + 1);
-        strncpy(tmp->name, file, strlen(file) + 1);
+        new_file = err_malloc(sizeof(struct file));
+        /* TODO: here is another inplace malloc for file length */
+        new_file->name = err_malloc(strlen(file) + 1);
+        strncpy(new_file->name, file, strlen(file) + 1);
 
         combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
         memcpy(combined_path, directory, strlen(directory) + 1);
@@ -118,17 +115,25 @@ add_file_to_dir(struct dir *d, char *file, char* directory)
 
         /* TODO: replace this 17 with a config variable, see file struct */
         switch (sb.st_mode & S_IFMT) {
-                case S_IFREG:  strncpy(tmp->type, "regular file"    , 17); break;
-                case S_IFDIR:  strncpy(tmp->type, "directory"       , 17); break;
-                case S_IFLNK:  strncpy(tmp->type, "symlink"         , 17); break;
-                case S_IFBLK:  strncpy(tmp->type, "block device"    , 17); break;
-                case S_IFCHR:  strncpy(tmp->type, "character device", 17); break;
-                case S_IFIFO:  strncpy(tmp->type, "fifo/pipe"       , 17); break;
-                case S_IFSOCK: strncpy(tmp->type, "socket"          , 17); break;
-                default:       strncpy(tmp->type, "unknown"         , 17); break;
+                case S_IFREG:  strncpy(new_file->type, "regular file"    , 17); break;
+                case S_IFDIR:  strncpy(new_file->type, "directory"       , 17); break;
+                case S_IFLNK:  strncpy(new_file->type, "symlink"         , 17); break;
+                case S_IFBLK:  strncpy(new_file->type, "block device"    , 17); break;
+                case S_IFCHR:  strncpy(new_file->type, "character device", 17); break;
+                case S_IFIFO:  strncpy(new_file->type, "fifo/pipe"       , 17); break;
+                case S_IFSOCK: strncpy(new_file->type, "socket"          , 17); break;
+                default:       strncpy(new_file->type, "unknown"         , 17); break;
         }
-        strftime(tmp->time, 20, "%Y-%m-%d %H:%M:%S", localtime(&sb.st_mtime));
-        tmp->size = sb.st_size;
+        strftime(new_file->time, 20, "%Y-%m-%d %H:%M:%S", localtime(&sb.st_mtime));
+        new_file->size = sb.st_size;
+
+        /* remalloc directory struct to fit the new filepointer */
+        d = (struct dir *)err_realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
+
+        /* set new ptr to new_file */
+        d->files[d->length] = new_file;
+
+        d->length++;
 
         return d;
 }

@@ -7,7 +7,7 @@
 
 #include "handle_request.h"
 #include "file_list.h"
-#include "config.h"
+#include "root_dir.h"
 
 // BUFFSIZE_READ - 1 bytes are read from socket
 #define BUFFSIZE_READ 2048
@@ -115,7 +115,7 @@ exit:
 }
 
 int
-read_request(int socket, char* buffer, size_t size)
+read_request(int socket, char *buffer, size_t size)
 {
         ssize_t n;
 
@@ -132,7 +132,7 @@ read_request(int socket, char* buffer, size_t size)
 }
 
 int
-parse_request(char *request, enum request_type *req_type, char* url, const size_t size)
+parse_request(char *request, enum request_type *req_type, char *url, const size_t size)
 {
         char   *tmp;
         size_t length;
@@ -214,7 +214,7 @@ generate_response(struct data_store *data)
 }
 
 void
-generate_200_file(struct data_store *data, char* file)
+generate_200_file(struct data_store *data, char *file)
 {
         struct stat sb;
         char content_length[128];
@@ -237,7 +237,7 @@ generate_200_file(struct data_store *data, char* file)
 }
 
 void
-generate_200_directory(struct data_store *data, char* directory)
+generate_200_directory(struct data_store *data, char *directory)
 {
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"

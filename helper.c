@@ -6,10 +6,11 @@
 #include <time.h>
 
 #include "helper.h"
-#include "config.h"
+#include "root_dir.h"
 
 // BUFFSIZE_WRITE bytes are written to socket
 #define BUFFSIZE_WRITE 8192
+
 
 struct data_store*
 create_data_store(void)
@@ -54,7 +55,7 @@ free_data_store(struct data_store *data)
 }
 
 int
-send_text(int socket, char* text, size_t length)
+send_text(int socket, char *text, size_t length)
 {
         ssize_t write_res;
         int     sending;
@@ -170,7 +171,7 @@ print_info(struct data_store *data, char *type, char *message)
 }
 
 char*
-concat(char* dst, const char* src)
+concat(char *dst, const char *src)
 {
         dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
         strncat(dst, src, strlen(src));
@@ -270,7 +271,7 @@ err_quit(const char *file, const int line, const char *function, const char *msg
 }
 
 char*
-get_content_encoding(char* type)
+get_content_encoding(char *type)
 {
         if (type == NULL || !strcmp(type, "")) {
                 return "application/octet-stream";
