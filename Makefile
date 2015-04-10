@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJECT_FILES = file_list.o handle_request.o helper.o
+OBJS = file_list.o handle_request.o helper.o main.o
 
 EXECUTABLE = main
 
@@ -43,23 +43,29 @@ CFLAGS = -Wall \
          -ggdb \
        # -pg \
        # -g3 \
-         -g \
+       # -g \
        # -Wpadded
        # -Wdeclaration-after-statement
        # -Werror
 
 LFLAGS = -lpthread
 
-# targets to compile
+.PHONY : all
+all : depend $(EXECUTABLE)
 
-%.o : %.c %.h
-	$(CC) -c -o $@ $< $(CFLAGS)
+.PHONY : $(EXECUTABLE)
+$(EXECUTABLE) : $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LFLAGS)
 
-$(EXECUTABLE) : main.c $(OBJECT_FILES)
-	$(CC) -o $@ $^ $(CFLAGS) $(LFLAGS)
+-include .depend
 
+.PHONY : depend
+depend:
+	$(CC) -E -MM *.c > .depend
+
+.PHONY : clean
 clean :
-	rm $(OBJECT_FILES) $(EXECUTABLE)
+	rm $(OBJS) $(EXECUTABLE)
 
 # targets to run
 run_$(EXECUTABLE) : $(EXECUTABLE)
@@ -68,9 +74,3 @@ run_$(EXECUTABLE) : $(EXECUTABLE)
 perf : clean $(EXECUTABLE)
 	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
 	$(EDITOR) $(GPROF_FILE)
-
-# random info
-
-# $@ means target (left of :)
-# $< means first depency (first right of :)
-# %.c %.o %.h means current target name
