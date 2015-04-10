@@ -14,6 +14,8 @@
  * see config.h
  */
 extern char *ROOT_DIR;
+extern int VERBOSITY;
+extern const size_t MIN_STATUS_SIZE;
 extern const size_t BUFFSIZE_READ;
 extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
@@ -35,6 +37,7 @@ void
         char read_buffer[BUFFSIZE_READ];
         char message_buffer[64];
         enum err_status status;
+        int added_hook = 0;
 
         status = OK;
 
@@ -49,6 +52,14 @@ void
         }
 
         generate_response(data);
+
+#ifdef NCURSES
+        /* TODO: NCURSES no check for verbosity */
+#endif
+        if (VERBOSITY >= 3 && data->body_length >= MIN_STATUS_SIZE) {
+                added_hook = 1;
+                add_hook(data);
+        }
 
         status = send_text(data->socket, data->head, strlen(data->head));
         if (status != OK) {
@@ -116,6 +127,9 @@ exit:
                         break;
         }
 
+        if (added_hook) {
+                remove_hook(data);
+        }
         close(data->socket);
         free_data_store(data);
 

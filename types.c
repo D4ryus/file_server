@@ -10,8 +10,9 @@ create_data_store(void)
 
         data = err_malloc(sizeof(struct data_store));
 
-        data->port = -1;
-        data->socket = -1;
+        data->ip[0]   = '\0';
+        data->port    = -1;
+        data->socket  = -1;
         data->url = NULL;
         data->head = err_malloc(sizeof(char));
         data->head[0] = '\0';
@@ -20,6 +21,7 @@ create_data_store(void)
         data->body_length = 0;
         data->req_type = TEXT;
         data->body_type = PLAIN;
+        data->written = 0;
         data->color = NULL;
 
         return data;

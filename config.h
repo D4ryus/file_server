@@ -17,6 +17,11 @@ char *ROOT_DIR = ".";
 int PORT = 8283;
 
 /**
+ * port if none specified
+ */
+int VERBOSITY = 0;
+
+/**
  * Http table config
  * -----------------
  */
@@ -103,6 +108,12 @@ const char *TABLE_HTML[3] = {
         /* table end */
                 "</tbody>"
         "</table>"};
+
+/**
+ * minimum size in bytes of file to get printed on verbositiy lvl 3,
+ * or inside the ncurses status area
+ */
+const size_t MIN_STATUS_SIZE = 1048576; /* 1MB */
 
 /**
  * on new connection BUFFSIZE_READ -1 bytes are read from the socket,

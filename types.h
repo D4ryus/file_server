@@ -39,10 +39,9 @@ struct dir {
 };
 
 /**
- * per request a data store is generated and then during execution filed
+ * per request a data store is generated and then during execution filled
  */
 struct data_store {
-        int    *color;                /* given color from main thread */
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
@@ -52,6 +51,14 @@ struct data_store {
         size_t body_length;           /* length of response body / filesize */
         enum  request_type req_type;  /* requested type */
         enum  body_type    body_type; /* type of body */
+        size_t written;               /* written data */
+        size_t last_written;          /* will be updated by status print thread */
+        int    *color;                /* given color from main thread */
+};
+
+struct status_list_node {
+        struct data_store *data;
+        struct status_list_node *next;
 };
 
 /**

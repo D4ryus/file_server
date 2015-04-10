@@ -9,6 +9,7 @@
 #include <limits.h>
 
 #include "handle_request.h"
+#include "messages.h"
 #include "types.h"
 #include "helper.h"
 #include "config.h"
@@ -63,6 +64,17 @@ main(int argc, const char *argv[])
 
         /* ignore sigpipe singal on write, since i cant catch it inside a thread */
         signal(SIGPIPE, SIG_IGN);
+
+#ifdef NCURSES
+        /* TODO: NCURSES no check for verbosity */
+#endif
+        if (VERBOSITY >= 3) {
+                /* start up a extra thread to print status, see message.c */
+                error = pthread_create(&thread, &attr, &print_loop, 1);
+                if (error != 0) {
+                        err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
+                }
+        }
 
         /* get a socket */
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -143,7 +155,7 @@ parse_arguments(int argc, const char *argv[])
         for (i = 1; i < argc; i++) {
                 if ((strcmp(argv[i], "-d") == 0) || (strcmp(argv[i], "--dir") == 0)) {
                         i++;
-                        if (argc < i) {
+                        if (argc <= i) {
                                 err_quit(__FILE__, __LINE__, __func__,
                                                 "user specified -d/--dir "
                                                 "without a path");
@@ -151,7 +163,7 @@ parse_arguments(int argc, const char *argv[])
                         root_arg = i;
                 } else if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--port") == 0)) {
                         i++;
-                        if (argc < i) {
+                        if (argc <= i) {
                                 err_quit(__FILE__, __LINE__, __func__,
                                                 "user specified -p/--port "
                                                 "without a port");
@@ -159,6 +171,14 @@ parse_arguments(int argc, const char *argv[])
                         PORT = atoi(argv[i]);
                 } else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--color") == 0)) {
                         use_color = 1;
+                } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--verbosity") == 0)) {
+                        i++;
+                        if (argc <= i) {
+                                err_quit(__FILE__, __LINE__, __func__,
+                                                "user specified -v/--verbosity "
+                                                "without a number (values are [0] 1 2 3)");
+                        }
+                        VERBOSITY = atoi(argv[i]);
                 }
         }
 

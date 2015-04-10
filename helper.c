@@ -53,13 +53,8 @@ send_file(struct data_store *data)
         int     sending;
         size_t  read;
         size_t  sent;
-        size_t  written;
-        size_t  last_written;
         char    buffer[BUFFSIZE_WRITE];
         FILE    *f;
-        time_t  last_time;
-        time_t  current_time;
-        char    message_buffer[256];
         enum err_status ret_status;
 
         f = fopen(data->body, "rb");
@@ -68,10 +63,7 @@ send_file(struct data_store *data)
         }
 
         write_res = 0;
-        last_time = time(NULL);
         sending = 1;
-        written = 0;
-        last_written = 0;
         ret_status = OK;
 
         while (sending) {
@@ -93,18 +85,7 @@ send_file(struct data_store *data)
                         }
                         sent = sent + (size_t)write_res;
                 }
-                written += sent;
-                current_time = time(NULL);
-                if ((current_time - last_time) > 1) {
-                        sprintf(message_buffer, "%-20s size: %12lub %12lub/s %3lu%%",
-                                             data->body + strlen(ROOT_DIR),
-                                             data->body_length,
-                                             (written - last_written) / (!sending ? 1 : (size_t)(current_time - last_time)),
-                                             written * 100 / data->body_length);
-                        print_info(data, TRANSFER_STATUS, message_buffer);
-                        last_time = current_time;
-                        last_written = written;
-                }
+                data->written += sent;
         }
         fclose(f);
 

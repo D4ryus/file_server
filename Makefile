@@ -41,6 +41,7 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
+         -DNCURSES
        # -pg \
        # -g3 \
        # -g \
