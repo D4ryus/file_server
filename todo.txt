@@ -16,6 +16,7 @@ fixes and code changes:
       [ ] - fix ugly color implementation
       [ ] - data structure to reference to main
       [ ] - strlcat
+      [ ] - implement 'gcc -M'
 
 args:
       [X] - color
