@@ -9,6 +9,7 @@ fixes and code changes:
       [X] - only print if there was a transfer
       [X] - better error messages
       [X] - wrap malloc with integrated err check
+      [X] - PLAIN wont send header
       [ ] - cross plattform Makefile
       [ ] - cross plattform code
       [ ] - implement max connections
@@ -29,9 +30,10 @@ config.h:
       [X] - default port
       [X] - default directory
       [X] - templates for http tables
+      [X] - max request size (depends on max filename i guess)
+      [X] - max header size
+      [X] - add 404 and 403 messages
       [ ] - max filename/url
-      [ ] - max request size (depends on max filename i guess)
-      [ ] - max header size
       [ ] - ignored files!
 
 messages:
