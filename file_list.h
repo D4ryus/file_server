@@ -3,20 +3,7 @@
 
 #include <dirent.h>
 
-#include "helper.h"
-
-struct file {
-        char  *name;
-        char  type[17];
-        char  time[20];
-        off_t size;
-};
-
-struct dir {
-        int  length;
-        char *name;
-        struct file *files[];
-};
+#include "types.h"
 
 /**
  * free's dir struct + file list + file names

@@ -6,57 +6,13 @@
 #include <time.h>
 
 #include "helper.h"
+#include "messages.h"
 
 /**
  * see config.h
  */
 extern char *ROOT_DIR;
 extern const size_t BUFFSIZE_WRITE;
-
-struct data_store*
-create_data_store(void)
-{
-        struct data_store *data;
-
-        data = err_malloc(sizeof(struct data_store));
-
-        data->port = -1;
-        data->socket = -1;
-        data->url = NULL;
-        data->head = err_malloc(sizeof(char));
-        data->head[0] = '\0';
-        data->body = err_malloc(sizeof(char));
-        data->body[0] = '\0';
-        data->body_length = 0;
-        data->req_type = TEXT;
-        data->body_type = PLAIN;
-        data->color = NULL;
-
-        return data;
-}
-
-void
-free_data_store(struct data_store *data)
-{
-        if (data == NULL) {
-                return;
-        }
-        if (data->url != NULL) {
-                free(data->url);
-        }
-        if (data->color != NULL) {
-                (*data->color) = 0;
-        }
-        if (data->head != NULL) {
-                free(data->head);
-        }
-        if (data->body != NULL) {
-                free(data->body);
-        }
-        free(data);
-
-        return;
-}
 
 int
 send_text(int socket, char *text, size_t length)
@@ -155,47 +111,6 @@ send_file(struct data_store *data)
         return ret_status;
 }
 
-void
-print_info(struct data_store *data, enum message_type type, char *message)
-{
-        char *m_type;
-        switch (type) {
-                case ACCEPTED:
-                        m_type = "accepted";
-                        break;
-                case SENT:
-                        m_type = "sent";
-                        break;
-                case ERROR:
-                        m_type = "error";
-                        break;
-                case TRANSFER_STATUS:
-                        m_type = "transfer_status";
-                        break;
-                default:
-                        m_type = "";
-                        break;
-
-        }
-
-        if (data->color == NULL) {
-                printf("[%15s:%-5d - %3d]: %-15s - %s\n",
-                                data->ip,
-                                data->port,
-                                data->socket,
-                                m_type,
-                                message);
-        } else {
-                printf("\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
-                                (*data->color),
-                                data->ip,
-                                data->port,
-                                data->socket,
-                                m_type,
-                                message);
-        }
-}
-
 char*
 concat(char *dst, const char *src)
 {
@@ -243,27 +158,6 @@ starts_with(const char *line, const char *prefix)
         return 1;
 }
 
-void*
-file_to_buf(const char *file, size_t *length)
-{
-        FILE *fptr;
-        char *buf;
-
-        fptr = fopen(file, "rb");
-        if (!fptr) {
-                return NULL;
-        }
-        fseek(fptr, 0, SEEK_END);
-        *length = (size_t)ftell(fptr);
-        buf = (void*)err_malloc(*length + 1);
-        fseek(fptr, 0, SEEK_SET);
-        fread(buf, (*length), 1, fptr);
-        fclose(fptr);
-        buf[*length] = '\0';
-
-        return buf;
-}
-
 void
 *err_malloc(size_t size)
 {
@@ -297,7 +191,7 @@ err_quit(const char *file, const int line, const char *function, const char *msg
 }
 
 char*
-get_content_encoding(char *type)
+get_content_encoding(const char *type)
 {
         if (type == NULL || !strcmp(type, "")) {
                 return "application/octet-stream";

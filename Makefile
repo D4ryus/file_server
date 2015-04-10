@@ -2,9 +2,9 @@
 
 CC = gcc
 
-OBJS = file_list.o handle_request.o helper.o main.o
+OBJS = file_list.o handle_request.o helper.o main.o messages.o types.o
 
-EXECUTABLE = main
+EXECUTABLE = file_server
 
 GPROF_FILE = performance.txt
 

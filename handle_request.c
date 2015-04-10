@@ -5,8 +5,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "helper.h"
 #include "handle_request.h"
 #include "file_list.h"
+#include "messages.h"
 
 /**
  * see config.h

@@ -8,6 +8,7 @@
 #include <errno.h>
 
 #include "file_list.h"
+#include "helper.h"
 
 /**
  * see config.h

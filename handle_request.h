@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <sys/types.h>
 
-#include "helper.h"
+#include "types.h"
 
 /**
  * function where each thread starts execution with given data_store

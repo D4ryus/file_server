@@ -1,2 +1,3 @@
 *.o
-main
+file_server
+.depend

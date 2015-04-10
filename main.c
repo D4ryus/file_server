@@ -8,8 +8,9 @@
 #include <stdio.h>
 #include <limits.h>
 
-#include "helper.h"
 #include "handle_request.h"
+#include "types.h"
+#include "helper.h"
 #include "config.h"
 
 int use_color = 0;
