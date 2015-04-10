@@ -21,12 +21,13 @@ void *handle_request(void*);
 int read_request(int, char*, size_t);
 
 /**
- * parses given request and writes size bytes to url
+ * parses given request
+ * allocs given *url with size of requested filename
  * if negative number is returned, error occured
  * OK            ( 0) : everything went fine.
  * INV_GET       (-5) : parse error
  */
-int parse_request(char*, enum request_type*, char*, size_t);
+int parse_request(char*, enum request_type*, char**);
 
 /**
  * generates a response and saves it inside the data_store

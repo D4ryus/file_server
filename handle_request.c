@@ -41,7 +41,7 @@ void
                 goto exit;
         }
 
-        status = parse_request(read_buffer, &(data->req_type), data->url, 255);
+        status = parse_request(read_buffer, &(data->req_type), &(data->url));
         if (status != OK) {
                 goto exit;
         }
@@ -138,12 +138,10 @@ read_request(int socket, char *buffer, size_t size)
 }
 
 int
-parse_request(char *request, enum request_type *req_type, char *url, const size_t size)
+parse_request(char *request, enum request_type *req_type, char **url)
 {
         char   *tmp;
         size_t length;
-
-        memset(url, '\0', size);
 
         tmp = strtok(request, "\n"); /* get first line */
 
@@ -162,7 +160,9 @@ parse_request(char *request, enum request_type *req_type, char *url, const size_
                 length = strlen(tmp);
         }
 
-        strncpy(url, tmp, size);
+        (*url) = err_malloc(length + 1);
+        memset((*url), '\0', length + 1);
+        strncpy((*url), tmp, length);
 
         /* get requested type */
         tmp = strtok(NULL, " ");
@@ -187,12 +187,12 @@ generate_response(struct data_store *data)
         char *requested_path;
         size_t length;
 
-        if (strcmp(data->url, "/") == 0) {
-                generate_200_directory(data, ROOT_DIR);
+        if (data->url == NULL) {
+                generate_404(data);
                 return;
         }
-        if (strlen(data->url) == 0) {
-                generate_404(data);
+        if (strcmp(data->url, "/") == 0) {
+                generate_200_directory(data, ROOT_DIR);
                 return;
         }
 

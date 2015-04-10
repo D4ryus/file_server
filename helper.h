@@ -27,7 +27,7 @@ struct data_store {
         char   ip[16];                /* ip from client */
         int    port;                  /* port from client */
         int    socket;                /* socket descriptor */
-        char   url[256];              /* requested file */
+        char   *url;                  /* requested file */
         char   *head;                 /* response header */
         char   *body;                 /* response body, if file filename */
         size_t body_length;           /* length of response body / filesize */

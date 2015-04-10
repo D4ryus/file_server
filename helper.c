@@ -22,7 +22,7 @@ create_data_store(void)
 
         data->port = -1;
         data->socket = -1;
-        data->url[0] = '\0';
+        data->url = NULL;
         data->head = err_malloc(sizeof(char));
         data->head[0] = '\0';
         data->body = err_malloc(sizeof(char));
@@ -40,6 +40,9 @@ free_data_store(struct data_store *data)
 {
         if (data == NULL) {
                 return;
+        }
+        if (data->url != NULL) {
+                free(data->url);
         }
         if (data->color != NULL) {
                 (*data->color) = 0;
