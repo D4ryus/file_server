@@ -22,6 +22,7 @@ args:
       [X] - color
       [X] - port
       [X] - directory
+      [ ] - log option
       [ ] - getopt_long
       [ ] - max connections
       [ ] - verbosity
