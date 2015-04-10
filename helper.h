@@ -3,14 +3,20 @@
 
 #include <sys/types.h>
 
-enum request_type {PLAIN, HTTP};
-enum body_type {DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
-enum err_status {OK            =  0,
-                 WRITE_CLOSED  = -1,
-                 ZERO_WRITTEN  = -2,
-                 READ_CLOSED   = -3,
-                 EMPTY_MESSAGE = -4,
-                 INV_GET       = -5};
+enum message_type { ACCEPTED, SENT, ERROR, TRANSFER_STATUS };
+
+enum request_type { PLAIN, HTTP };
+
+enum body_type    { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
+
+enum err_status {
+        OK            =  0,
+        WRITE_CLOSED  = -1,
+        ZERO_WRITTEN  = -2,
+        READ_CLOSED   = -3,
+        EMPTY_MESSAGE = -4,
+        INV_GET       = -5
+};
 
 
 /**
@@ -58,7 +64,7 @@ int send_file(struct data_store*);
 /**
  * prints info (ip port socket) + given type and message to stdout
  */
-void print_info(struct data_store*, char*, char*);
+void print_info(struct data_store*, enum message_type, char*);
 
 /**
  * will reallocated dst and strcat src onto it

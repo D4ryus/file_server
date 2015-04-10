@@ -8,7 +8,14 @@
 #include <errno.h>
 
 #include "file_list.h"
-#include "config.h"
+
+/**
+ * see config.h
+ */
+extern char *ROOT_DIR;
+extern const int TABLE_BUFFER_SIZE;
+extern const char *TABLE_PLAIN[3];
+extern const char *TABLE_HTML[3];
 
 void
 free_dir(struct dir *d)
@@ -100,7 +107,6 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
         struct file *new_file;
 
         new_file = err_malloc(sizeof(struct file));
-        /* TODO: here is another inplace malloc for file length */
         new_file->name = err_malloc(strlen(file) + 1);
         strncpy(new_file->name, file, strlen(file) + 1);
 

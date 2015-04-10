@@ -2,21 +2,63 @@
 #define CONFIG_H
 
 /**
- * default shared directory
+ * default values
+ * --------------
  */
-static char *ROOT_DIR = ".";
 
 /**
- * directory table config
- * ----------------------
+ * shared directory if none specified
  */
+char *ROOT_DIR = ".";
+
+/**
+ * port if none specified
+ */
+int PORT = 8283;
+
+/**
+ * Http table config
+ * -----------------
+ */
+
+/**
+ * string which will be at the top of http table response
+ */
+const char *HTTP_TOP =
+        "<!DOCTYPE html>"
+        "<html>"
+                "<head>"
+                        "<link href='http://fonts.googleapis.com/css?family=Iceland'"
+                                "rel='stylesheet'"
+                                "type='text/css'>"
+                        "<meta http-equiv='content-type'"
+                                 "content='text/html;"
+                                 "charset=UTF-8'/>"
+                "</head>"
+                "<body>";
+/**
+ * string which will be at the bottom of http table response
+ */
+const char *HTTP_BOT =
+                "</body>"
+        "</html>";
+
+/**
+ * plaintext message which will be sent on 404 - File not found
+ */
+const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
+
+/**
+ * plaintext message which will be sent on 403 - Forbidden
+ */
+const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
 
 /**
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
  * will be filled in with sprintf(). so if table is getting bigger change value
  * accordingly.
  */
-static const int TABLE_BUFFER_SIZE = 512;
+const int TABLE_BUFFER_SIZE = 512;
 
 /**
  * table head values which will be filed in at %s
@@ -26,7 +68,7 @@ static const int TABLE_BUFFER_SIZE = 512;
  * given values are:
  * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]" "[filename]"
  */
-static const char *TABLE_PLAIN[3] = {
+const char *TABLE_PLAIN[3] = {
         /* table head */
         "%-20s %-17s %-12s %s\n",
         /* table body */
@@ -34,7 +76,7 @@ static const char *TABLE_PLAIN[3] = {
         /* table end */
         ""};
 
-static const char *TABLE_HTML[3] = {
+const char *TABLE_HTML[3] = {
         /* table head */
         "<style>"
                 "tbody tr:nth-child(odd) {"
@@ -61,5 +103,17 @@ static const char *TABLE_HTML[3] = {
         /* table end */
                 "</tbody>"
         "</table>"};
+
+/**
+ * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
+ * everything extending that limit will be thrown away.
+ */
+const size_t BUFFSIZE_READ  = 2048;
+
+/**
+ * if i file is transferd BUFFSIZE_WRITE describes the buffersize of
+ * bytes read and then written to the socket.
+ */
+const size_t BUFFSIZE_WRITE = 8192;
 
 #endif

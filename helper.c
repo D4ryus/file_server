@@ -6,11 +6,12 @@
 #include <time.h>
 
 #include "helper.h"
-#include "root_dir.h"
 
-// BUFFSIZE_WRITE bytes are written to socket
-#define BUFFSIZE_WRITE 8192
-
+/**
+ * see config.h
+ */
+extern char *ROOT_DIR;
+extern const size_t BUFFSIZE_WRITE;
 
 struct data_store*
 create_data_store(void)
@@ -57,6 +58,10 @@ free_data_store(struct data_store *data)
 int
 send_text(int socket, char *text, size_t length)
 {
+        if (strlen(text) == 0) {
+                return OK;
+        }
+
         ssize_t write_res;
         int     sending;
         size_t  sent;
@@ -132,14 +137,12 @@ send_file(struct data_store *data)
                 written += sent;
                 current_time = time(NULL);
                 if ((current_time - last_time) > 1) {
-                        sprintf(message_buffer, "%-20s size: %12lub written: %12lub remaining: %12lub %12lub/s %3lu%%",
+                        sprintf(message_buffer, "%-20s size: %12lub %12lub/s %3lu%%",
                                              data->body + strlen(ROOT_DIR),
                                              data->body_length,
-                                             written,
-                                             data->body_length - written,
                                              (written - last_written) / (!sending ? 1 : (size_t)(current_time - last_time)),
                                              written * 100 / data->body_length);
-                        print_info(data, "requested", message_buffer);
+                        print_info(data, TRANSFER_STATUS, message_buffer);
                         last_time = current_time;
                         last_written = written;
                 }
@@ -150,22 +153,42 @@ send_file(struct data_store *data)
 }
 
 void
-print_info(struct data_store *data, char *type, char *message)
+print_info(struct data_store *data, enum message_type type, char *message)
 {
+        char *m_type;
+        switch (type) {
+                case ACCEPTED:
+                        m_type = "accepted";
+                        break;
+                case SENT:
+                        m_type = "sent";
+                        break;
+                case ERROR:
+                        m_type = "error";
+                        break;
+                case TRANSFER_STATUS:
+                        m_type = "transfer_status";
+                        break;
+                default:
+                        m_type = "";
+                        break;
+
+        }
+
         if (data->color == NULL) {
-                printf("[%15s:%-5d - %3d]: %-10s - %s\n",
+                printf("[%15s:%-5d - %3d]: %-15s - %s\n",
                                 data->ip,
                                 data->port,
                                 data->socket,
-                                type,
+                                m_type,
                                 message);
         } else {
-                printf("\x1b[3%dm[%15s:%-5d - %3d]: %-10s - %s\x1b[39;49m\n",
+                printf("\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
                                 (*data->color),
                                 data->ip,
                                 data->port,
                                 data->socket,
-                                type,
+                                m_type,
                                 message);
         }
 }

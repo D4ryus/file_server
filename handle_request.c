@@ -7,10 +7,16 @@
 
 #include "handle_request.h"
 #include "file_list.h"
-#include "root_dir.h"
 
-// BUFFSIZE_READ - 1 bytes are read from socket
-#define BUFFSIZE_READ 2048
+/**
+ * see config.h
+ */
+extern char *ROOT_DIR;
+extern const size_t BUFFSIZE_READ;
+extern const char *HTTP_TOP;
+extern const char *HTTP_BOT;
+extern const char *RESPONSE_404;
+extern const char *RESPONSE_403;
 
 void
 *handle_request(void *ptr)
@@ -22,7 +28,7 @@ void
                 err_quit(__FILE__, __LINE__, __func__, "socket in handle_request is < 0");
         }
 
-        print_info(data, "accepted", "");
+        print_info(data, ACCEPTED, "");
 
         char read_buffer[BUFFSIZE_READ];
         char message_buffer[64];
@@ -81,7 +87,7 @@ void
                         strncpy(message_buffer, "no body_type set", 17);
                         break;
         }
-        print_info(data, "sent", message_buffer);
+        print_info(data, SENT, message_buffer);
 
         /**
          * thread exit point, if status was set to error it will be printed,
@@ -90,19 +96,19 @@ void
 exit:
         switch (status) {
                 case WRITE_CLOSED:
-                        print_info(data, "error", "could not write, client closed connection");
+                        print_info(data, ERROR, "could not write, client closed connection");
                         break;
                 case ZERO_WRITTEN:
-                        print_info(data, "error", "could not write, 0 bytes written");
+                        print_info(data, ERROR, "could not write, 0 bytes written");
                         break;
                 case READ_CLOSED:
-                        print_info(data, "error", "could not read");
+                        print_info(data, ERROR, "could not read");
                         break;
                 case EMPTY_MESSAGE:
-                        print_info(data, "error", "empty message");
+                        print_info(data, ERROR, "empty message");
                         break;
                 case INV_GET:
-                        print_info(data, "error", "invalid GET");
+                        print_info(data, ERROR, "invalid GET");
                         break;
                 default:
                         break;
@@ -223,11 +229,13 @@ generate_200_file(struct data_store *data, char *file)
                 err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
         }
 
-        data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
-                                        "Content-Type: ");
-        data->head = concat(data->head, get_content_encoding(strrchr(file, '.')));
-        sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n", (size_t)sb.st_size);
-        data->head = concat(data->head, content_length);
+        if (data->req_type == HTTP) {
+                data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
+                                                "Content-Type: ");
+                data->head = concat(data->head, get_content_encoding(strrchr(file, '.')));
+                sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n", (size_t)sb.st_size);
+                data->head = concat(data->head, content_length);
+        }
 
         data->body = concat(data->body, file);
         data->body_length = (size_t)sb.st_size;
@@ -242,24 +250,13 @@ generate_200_directory(struct data_store *data, char *directory)
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
                                                 "Content-Type: text/html\r\n\r\n");
-                data->body = concat(data->body, "<!DOCTYPE html><html><head>"
-                               "<link href='http://fonts.googleapis.com/css?family=Iceland'"
-                                     "rel='stylesheet'"
-                                     "type='text/css'>"
-                               "<meta http-equiv='content-type'"
-                                     "content='text/html;"
-                                     "charset=UTF-8'/>"
-                               "</head>"
-                               "<body>");
-        } else {
-                data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
-                                                "Content-Type: text/plain\r\n\r\n");
+                data->body = concat(data->body, HTTP_TOP);
         }
 
         dir_to_table(data, directory);
 
         if (data->req_type == HTTP) {
-                data->body = concat(data->body, "</body></html>");
+                data->body = concat(data->body, HTTP_BOT);
         }
 
         data->body_length = strlen(data->body);
@@ -272,9 +269,11 @@ generate_200_directory(struct data_store *data, char *directory)
 void
 generate_404(struct data_store *data)
 {
-        data->head = concat(data->head, "HTTP/1.1 404 Not Found\r\n"
-                                        "Content-Type: text/plain\r\n\r\n");
-        data->body = concat(data->body, "404 - Watcha pulling here buddy?\r\n");
+        if (data->req_type == HTTP) {
+                data->head = concat(data->head, "HTTP/1.1 404 Not Found\r\n"
+                                                "Content-Type: text/plain\r\n\r\n");
+        }
+        data->body = concat(data->body, RESPONSE_404);
         data->body_length = strlen(data->body);
         data->body_type = ERR_404;
 
@@ -284,9 +283,11 @@ generate_404(struct data_store *data)
 void
 generate_403(struct data_store *data)
 {
-        data->head = concat(data->head, "HTTP/1.1 403 Forbidden\r\n"
-                                        "Content-Type: text/plain\r\n\r\n");
-        data->body = concat(data->body, "403 - U better not go down this road!\r\n");
+        if (data->req_type == HTTP) {
+                data->head = concat(data->head, "HTTP/1.1 403 Forbidden\r\n"
+                                                "Content-Type: text/plain\r\n\r\n");
+        }
+        data->body = concat(data->body, RESPONSE_403);
         data->body_length = strlen(data->body);
         data->body_type = ERR_403;
 

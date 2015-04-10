@@ -10,12 +10,7 @@
 
 #include "helper.h"
 #include "handle_request.h"
-#include "root_dir.h"
-
-/**
- * default port if none specified
- */
-static int PORT = 8283;
+#include "config.h"
 
 int use_color = 0;
 int current_color = 0;
@@ -142,6 +137,7 @@ void
 parse_arguments(int argc, const char *argv[])
 {
         int i;
+        int root_arg = 0;
 
         for (i = 1; i < argc; i++) {
                 if ((strcmp(argv[i], "-d") == 0) || (strcmp(argv[i], "--dir") == 0)) {
@@ -151,7 +147,7 @@ parse_arguments(int argc, const char *argv[])
                                                 "user specified -d/--dir "
                                                 "without a path");
                         }
-                        ROOT_DIR = realpath(argv[i], NULL);
+                        root_arg = i;
                 } else if ((strcmp(argv[i], "-p") == 0) || (strcmp(argv[i], "--port") == 0)) {
                         i++;
                         if (argc < i) {
@@ -165,11 +161,13 @@ parse_arguments(int argc, const char *argv[])
                 }
         }
 
-        if (ROOT_DIR == NULL) {
+        if (root_arg == 0) {
                 ROOT_DIR = realpath(ROOT_DIR, NULL);
-                if (ROOT_DIR == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "realpath on ROOT_DIR returned NULL");
-                }
+        } else {
+                ROOT_DIR = realpath(argv[root_arg], NULL);
+        }
+        if (ROOT_DIR == NULL) {
+                err_quit(__FILE__, __LINE__, __func__, "realpath on ROOT_DIR returned NULL");
         }
         if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
                 err_quit(__FILE__, __LINE__, __func__, "you tried to share /, no sir, thats not happening");
