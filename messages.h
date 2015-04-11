@@ -17,7 +17,7 @@ void remove_hook(struct data_store*);
  * wont end, will print every refresh_time seconds
  * each element from the linkedlist
  */
-void *print_loop(size_t refresh_time);
+void *print_loop(void*);
 /**
  * prints info (ip port socket) + given type and message to stdout
  */

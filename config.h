@@ -22,6 +22,11 @@ int PORT = 8283;
 int VERBOSITY = 0;
 
 /**
+ * status update timeout
+ */
+size_t UPDATE_TIMEOUT = 1;
+
+/**
  * Http table config
  * -----------------
  */

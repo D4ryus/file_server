@@ -11,6 +11,7 @@
  */
 extern char *ROOT_DIR;
 extern int VERBOSITY;
+extern size_t UPDATE_TIMEOUT;
 
 static struct status_list_node *first = NULL;
 
@@ -68,7 +69,7 @@ remove_hook(struct data_store *del_data)
 }
 
 void
-*print_loop(size_t refresh_time)
+*print_loop(void *ptr)
 {
         struct status_list_node *cur;
         char message_buffer[256];
@@ -91,8 +92,8 @@ void
                         sprintf(message_buffer, "%-20s size: %12lub %12lub/%lus %3lu%%",
                                              cur->data->body + strlen(ROOT_DIR),
                                              cur->data->body_length,
-                                             (written - cur->data->last_written) / refresh_time,
-                                             refresh_time,
+                                             (written - cur->data->last_written) / UPDATE_TIMEOUT,
+                                             UPDATE_TIMEOUT,
                                              written * 100 / cur->data->body_length);
                         print_info(cur->data, TRANSFER_STATUS, message_buffer);
 #ifdef NCURSES
@@ -103,7 +104,7 @@ void
                 }
 sleep:
                 /* TODO: MUTEX LIFT */
-                sleep((uint)refresh_time);
+                sleep((uint)UPDATE_TIMEOUT);
         }
 }
 

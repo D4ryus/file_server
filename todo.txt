@@ -10,22 +10,22 @@ fixes and code changes:
       [X] - better error messages
       [X] - wrap malloc with integrated err check
       [X] - PLAIN wont send header
+      [X] - data structure to reference to main
+      [X] - implement 'gcc -M'
       [ ] - cross plattform Makefile
       [ ] - cross plattform code
       [ ] - implement max connections
       [ ] - fix ugly color implementation
-      [ ] - data structure to reference to main
       [ ] - strlcat
-      [ ] - implement 'gcc -M'
 
 args:
       [X] - color
       [X] - port
       [X] - directory
-      [ ] - log option
+      [X] - verbosity
+      [-] - log option
       [ ] - getopt_long
       [ ] - max connections
-      [ ] - verbosity
       [ ] - ncurses enabled
 
 config.h:
@@ -35,17 +35,17 @@ config.h:
       [X] - max request size (depends on max filename i guess)
       [X] - max header size
       [X] - add 404 and 403 messages
-      [ ] - max filename/url
+      [X] - max filename/url
       [ ] - ignored files!
 
 messages:
-      [ ] - message.h
-      [ ] - types (error, connection, leave, status)
-      [ ] - enable optional logging which takes regular verbosity
-      [ ] - message status structs can be connected to clients
-      [ ] - clients cann connect to messages
-      [ ] - linked list with status information, add/del mutex
-      [ ] - status infomation specified in growing amounts (see /proc/stat)
+      [X] - message.h
+      [X] - types (error, connection, leave, status)
+      [-] - enable optional logging which takes regular verbosity
+      [X] - message status structs can be connected to clients
+      [X] - clients can connect to messages
+      [X] - linked list with status information, add/del mutex
+      [X] - status infomation specified in growing amounts (see /proc/stat)
 
 ncurses:
       [ ] - window for log
