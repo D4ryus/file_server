@@ -65,7 +65,7 @@ main(int argc, const char *argv[])
         /* ignore sigpipe singal on write, since i cant catch it inside a thread */
         signal(SIGPIPE, SIG_IGN);
 
-        message_init(&thread, &attr);
+        init_messages(&thread, &attr);
 
         /* get a socket */
         server_socket = socket(AF_INET, SOCK_STREAM, 0);

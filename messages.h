@@ -8,7 +8,7 @@
  * and init mutex variables. if NCURSES is enabled ncurses will be
  * started also
  */
-void message_init(pthread_t*, const pthread_attr_t*);
+void init_messages(pthread_t*, const pthread_attr_t*);
 
 /**
  * adds a hook to the status print thread

@@ -17,7 +17,7 @@ extern size_t UPDATE_TIMEOUT;
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 
-void message_init(pthread_t *thread, const pthread_attr_t *attr)
+void init_messages(pthread_t *thread, const pthread_attr_t *attr)
 {
         int error;
 
@@ -46,8 +46,7 @@ add_hook(struct data_store *new_data)
         new_node->data = new_data;
         new_node->next = NULL;
 
-        /* TODO: MUTEX LOCK */
-        /* pthread_mutex_lock(&status_list_mutex); */
+        pthread_mutex_lock(&status_list_mutex);
         if (first == NULL) {
                 first = new_node;
         } else {
@@ -55,8 +54,7 @@ add_hook(struct data_store *new_data)
                 }
                 cur->next = new_node;
         }
-        /* pthread_mutex_unlock(&status_list_mutex); */
-        /* TODO: MUTEX LIFT */
+        pthread_mutex_unlock(&status_list_mutex);
 
         return;
 }
@@ -73,8 +71,7 @@ remove_hook(struct data_store *del_data)
                 return;
         }
 
-        /* TODO: MUTEX LOCK */
-        /* pthread_mutex_lock(&status_list_mutex); */
+        pthread_mutex_lock(&status_list_mutex);
         for (cur = first; cur != NULL; cur = cur->next) {
                 if (cur->data == del_data) {
                         if (cur == first) {
@@ -86,8 +83,7 @@ remove_hook(struct data_store *del_data)
                 }
                 last = cur;
         }
-        /* pthread_mutex_unlock(&status_list_mutex); */
-        /* TODO: MUTEX LIFT */
+        pthread_mutex_unlock(&status_list_mutex);
         free(cur);
 
         return;
@@ -103,13 +99,9 @@ void
 
         written = 0;
         position = 0;
-#ifdef NCURSES
-        /* TODO: NCURSES INIT? */
-#endif
 
         while (1) {
-                /* TODO: MUTEX LOCK */
-                /* pthread_mutex_lock(&status_list_mutex); */
+                pthread_mutex_lock(&status_list_mutex);
                 if (first == NULL) {
                         goto sleep;
                 }
@@ -129,8 +121,7 @@ void
                         cur->data->last_written = written;
                 }
 sleep:
-                /* pthread_mutex_unlock(&status_list_mutex); */
-                /* TODO: MUTEX LIFT */
+                pthread_mutex_unlock(&status_list_mutex);
                 sleep((uint)UPDATE_TIMEOUT);
         }
         pthread_mutex_destroy(&status_list_mutex);
@@ -140,7 +131,7 @@ void
 print_info(struct data_store *data, enum message_type type, char *message)
 {
 #ifdef NCURSES
-                        /* TODO: NCURSES PRINT */
+        /* TODO: NCURSES PRINT */
 #endif
         char *m_type;
         switch (type) {
