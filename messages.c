@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
 #include "messages.h"
 #include "helper.h"
@@ -14,6 +15,26 @@ extern int VERBOSITY;
 extern size_t UPDATE_TIMEOUT;
 
 static struct status_list_node *first = NULL;
+static pthread_mutex_t status_list_mutex;
+
+void message_init(pthread_t *thread, const pthread_attr_t *attr)
+{
+        int error;
+
+        error = 0;
+#ifdef NCURSES
+        /* TODO: NCURSES no check for verbosity */
+        /* initscr(); */
+#endif
+        if (VERBOSITY >= 3) {
+                pthread_mutex_init(&status_list_mutex, NULL);
+                /* start up a extra thread to print status, see message.c */
+                error = pthread_create(thread, attr, &print_loop, NULL);
+                if (error != 0) {
+                        err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
+                }
+        }
+}
 
 void
 add_hook(struct data_store *new_data)
@@ -26,6 +47,7 @@ add_hook(struct data_store *new_data)
         new_node->next = NULL;
 
         /* TODO: MUTEX LOCK */
+        /* pthread_mutex_lock(&status_list_mutex); */
         if (first == NULL) {
                 first = new_node;
         } else {
@@ -33,6 +55,7 @@ add_hook(struct data_store *new_data)
                 }
                 cur->next = new_node;
         }
+        /* pthread_mutex_unlock(&status_list_mutex); */
         /* TODO: MUTEX LIFT */
 
         return;
@@ -51,6 +74,7 @@ remove_hook(struct data_store *del_data)
         }
 
         /* TODO: MUTEX LOCK */
+        /* pthread_mutex_lock(&status_list_mutex); */
         for (cur = first; cur != NULL; cur = cur->next) {
                 if (cur->data == del_data) {
                         if (cur == first) {
@@ -62,6 +86,7 @@ remove_hook(struct data_store *del_data)
                 }
                 last = cur;
         }
+        /* pthread_mutex_unlock(&status_list_mutex); */
         /* TODO: MUTEX LIFT */
         free(cur);
 
@@ -84,6 +109,7 @@ void
 
         while (1) {
                 /* TODO: MUTEX LOCK */
+                /* pthread_mutex_lock(&status_list_mutex); */
                 if (first == NULL) {
                         goto sleep;
                 }
@@ -103,9 +129,11 @@ void
                         cur->data->last_written = written;
                 }
 sleep:
+                /* pthread_mutex_unlock(&status_list_mutex); */
                 /* TODO: MUTEX LIFT */
                 sleep((uint)UPDATE_TIMEOUT);
         }
+        pthread_mutex_destroy(&status_list_mutex);
 }
 
 void

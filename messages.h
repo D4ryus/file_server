@@ -4,6 +4,13 @@
 #include "types.h"
 
 /**
+ * initialize messages subsystem, which will create its own thread
+ * and init mutex variables. if NCURSES is enabled ncurses will be
+ * started also
+ */
+void message_init(pthread_t*, const pthread_attr_t*);
+
+/**
  * adds a hook to the status print thread
  */
 void add_hook(struct data_store*);

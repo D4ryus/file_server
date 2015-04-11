@@ -65,16 +65,7 @@ main(int argc, const char *argv[])
         /* ignore sigpipe singal on write, since i cant catch it inside a thread */
         signal(SIGPIPE, SIG_IGN);
 
-#ifdef NCURSES
-        /* TODO: NCURSES no check for verbosity */
-#endif
-        if (VERBOSITY >= 3) {
-                /* start up a extra thread to print status, see message.c */
-                error = pthread_create(&thread, &attr, &print_loop, NULL);
-                if (error != 0) {
-                        err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
-                }
-        }
+        message_init(&thread, &attr);
 
         /* get a socket */
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
