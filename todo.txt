@@ -52,8 +52,8 @@ ncurses:
       [X] - basic implementation
       [X] - window for log
       [X] - window for status messages
-      [ ] - keybindings for more/less verbose
-      [ ] - information header
+      [ ] - total stats
+      [ ] - scrollable windows
 
 tests:
       [ ] - make a test suite

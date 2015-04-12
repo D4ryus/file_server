@@ -120,7 +120,6 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
         }
         free(combined_path);
 
-        /* TODO: replace this 17 with a config variable, see file struct */
         switch (sb.st_mode & S_IFMT) {
                 case S_IFREG:  strncpy(new_file->type, "regular file"    , 17); break;
                 case S_IFDIR:  strncpy(new_file->type, "directory"       , 17); break;
