@@ -13,6 +13,7 @@ fixes and code changes:
       [X] - data structure to reference to main
       [X] - implement 'gcc -M'
       [X] - fix ugly color implementation
+      [ ] - add debugging option
       [ ] - cross plattform Makefile
       [ ] - cross plattform code
       [ ] - implement max connections
@@ -49,8 +50,8 @@ messages:
 
 ncurses:
       [X] - basic implementation
-      [ ] - window for log
-      [ ] - window for status messages
+      [X] - window for log
+      [X] - window for status messages
       [ ] - keybindings for more/less verbose
       [ ] - information header
 

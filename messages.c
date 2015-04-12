@@ -16,6 +16,7 @@ extern int COLOR;
 extern size_t UPDATE_TIMEOUT;
 #ifdef NCURSES
 extern int USE_NCURSES;
+extern int LOGGING_WINDOW_HEIGTH;
 #endif
 
 #ifdef NCURSES
@@ -26,11 +27,12 @@ extern int USE_NCURSES;
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 #ifdef NCURSES
-WINDOW *ncurses_window = NULL;
-int resized = 0;;
+WINDOW *win_status  = NULL;
+WINDOW *win_logging = NULL;
 #endif
 
-void init_messages(pthread_t *thread, const pthread_attr_t *attr)
+void
+init_messages(pthread_t *thread, const pthread_attr_t *attr)
 {
         int error;
 
@@ -38,15 +40,15 @@ void init_messages(pthread_t *thread, const pthread_attr_t *attr)
 
 #ifdef NCURSES
         if (USE_NCURSES) {
-                ncurses_window = initscr();
-                if (ncurses_window == NULL) {
+                initscr();
+                if (stdscr == NULL) {
                         err_quit(__FILE__, __LINE__, __func__, "initscr() != NULL");
                 }
-                struct sigaction sa;
-                memset(&sa, 0, sizeof(struct sigaction));
-                sa.sa_handler = resize_handler;
-                sigaction(SIGWINCH, &sa, NULL);
-                refresh();
+
+                int width, heigth;
+                getmaxyx(stdscr, heigth, width);
+                init_ncurses_windows(heigth, width);
+                scrollok(win_logging, true);
         }
 
         if (USE_NCURSES || VERBOSITY >= 3) {
@@ -123,14 +125,23 @@ void
         int position;
         size_t written;
 #ifdef NCURSES
-        int i;
-        int row;
-        int col;
-#endif 
+        int win_heigth, win_width;
+        int last_win_heigth, last_win_width;
 
+        getmaxyx(stdscr, last_win_heigth, last_win_width);
+#endif
         written = 0;
 
         while (1) {
+#ifdef NCURSES
+                getmaxyx(stdscr, win_heigth, win_width);
+                if (win_heigth != last_win_heigth || win_width != last_win_width) {
+                        init_ncurses_windows(win_heigth, win_width);
+                        last_win_heigth = win_heigth;
+                        last_win_width = win_width;
+                }
+                wclear(win_status);
+#endif
                 position = 0;
                 pthread_mutex_lock(&status_list_mutex);
                 if (first == NULL) {
@@ -150,20 +161,13 @@ void
 sleep:
                 pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-                getmaxyx(ncurses_window, row, col);
-
-                for (i = position + 1; i < row; i++) {
-                        move(i, 0);
-                        clrtoeol();
-                }
-                refresh();
+                wrefresh(win_status);
 #endif
                 sleep((uint)UPDATE_TIMEOUT);
         }
 #ifdef NCURSES
-        delwin(ncurses_window);
+        delwin(stdscr);
         endwin();
-        refresh();
 #endif
         pthread_mutex_destroy(&status_list_mutex);
 }
@@ -193,20 +197,24 @@ print_info(struct data_store *data, enum message_type type, char *message, int p
 
 #ifdef NCURSES
         if (USE_NCURSES) {
-                if (resized) {
-                        resized = 0;
-                        endwin();
-                        refresh();
-                        clear();
-                }
-                mvprintw(position + 1, 0, "[%15s:%-5d - %3d]: %-15s - %s\n",
-                                data->ip,
-                                data->port,
-                                data->socket,
-                                m_type,
-                                message);
                 if (type != TRANSFER_STATUS) {
-                        refresh();
+                        scroll(win_logging);
+                        mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
+                                "[%15s:%-5d - %3d]: %-15s - %s",
+                                        data->ip,
+                                        data->port,
+                                        data->socket,
+                                        m_type,
+                                        message);
+                        wrefresh(win_logging);
+                } else  {
+                        mvwprintw(win_status, position, 0,
+                                "[%15s:%-5d - %3d]: %-15s - %s\n",
+                                        data->ip,
+                                        data->port,
+                                        data->socket,
+                                        m_type,
+                                        message);
                 }
         }
 #endif
@@ -255,9 +263,58 @@ print_info(struct data_store *data, enum message_type type, char *message, int p
 
 #ifdef NCURSES
 void
-resize_handler(int x)
+init_ncurses_windows(int heigth, int width)
 {
-        (void)x;
-        resized = 1;
+        int status_heigth, i;
+        int cur_stat_heigth, cur_stat_width;
+
+        status_heigth = heigth - LOGGING_WINDOW_HEIGTH - 5; /* headers */
+
+        /* if there is not space for status win, quit */
+        if (status_heigth < 1) {
+                err_quit(__FILE__, __LINE__, __func__, "terminal height way to little (< 10 rows)");
+        }
+
+        if (win_status == NULL) {
+                win_status = newwin(status_heigth, width, 3, 0);
+                if (win_status == NULL) {
+                        err_quit(__FILE__, __LINE__, __func__, "win_status is NULL");
+                }
+        }
+        if (win_logging == NULL) {
+                win_logging = newwin(LOGGING_WINDOW_HEIGTH, width, heigth - LOGGING_WINDOW_HEIGTH, 0);
+                if (win_logging == NULL) {
+                        err_quit(__FILE__, __LINE__, __func__, "win_logging is NULL");
+                }
+        }
+
+        getmaxyx(win_status, cur_stat_heigth, cur_stat_width);
+        if ((cur_stat_width != width) || (cur_stat_heigth != status_heigth)) {
+                wresize(win_status,  status_heigth,         width);
+                wresize(win_logging, LOGGING_WINDOW_HEIGTH, width);
+                mvwin(win_logging, heigth - LOGGING_WINDOW_HEIGTH, 0);
+        }
+
+        start_color();
+
+        init_pair(1, COLOR_BLACK, COLOR_WHITE);
+        init_pair(2, COLOR_WHITE, COLOR_BLACK);
+
+        attron(COLOR_PAIR(1));
+        mvprintw(0, 0, "File Server version 0.1");
+        attron(COLOR_PAIR(2));
+        mvprintw(1, 0, "Current file transfers:");
+        mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 2, 0, "Log messages:");
+
+        for (i = 0; i < width; i++) {
+                mvprintw(2, i, "-");
+                mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 1, i, "-");
+        }
+
+        refresh();
+        wrefresh(win_status);
+        wrefresh(win_logging);
 }
+
 #endif
+

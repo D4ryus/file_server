@@ -35,6 +35,11 @@ void print_info(struct data_store*, enum message_type, char*, int);
  * handles signal if window is resized
  */
 void resize_handler(int);
+
+/**
+ * initializes ncurses windows, called on startup and resize
+ */
+void init_ncurses_windows(int, int);
 #endif
 
 #endif

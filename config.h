@@ -36,6 +36,11 @@ size_t UPDATE_TIMEOUT = 1;
  * ncurses flag
  */
 int USE_NCURSES = 0;
+
+/**
+ * ncurses logging window height (rows)
+ */
+int LOGGING_WINDOW_HEIGTH = 10;
 #endif
 
 /**
