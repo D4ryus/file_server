@@ -18,7 +18,7 @@ int main(int, const char**);
 void parse_arguments(int, const char**);
 
 int
-main(int argc, const char *argv[])
+main(const int argc, const char *argv[])
 {
         int server_socket;
         int on;
@@ -108,7 +108,7 @@ main(int argc, const char *argv[])
 }
 
 void
-parse_arguments(int argc, const char *argv[])
+parse_arguments(const int argc, const char *argv[])
 {
         int i;
         int root_arg = 0;

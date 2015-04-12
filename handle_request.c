@@ -50,15 +50,15 @@ void
         enum err_status status;
         int added_hook = 0;
 
-        status = OK;
+        status = STAT_OK;
 
         status = read_request(data->socket, read_buffer, BUFFSIZE_READ);
-        if (status != OK) {
+        if (status != STAT_OK) {
                 goto exit;
         }
 
         status = parse_request(read_buffer, &(data->req_type), &(data->url));
-        if (status != OK) {
+        if (status != STAT_OK) {
                 goto exit;
         }
 
@@ -75,7 +75,7 @@ void
         }
 
         status = send_text(data->socket, data->head, strlen(data->head));
-        if (status != OK) {
+        if (status != STAT_OK) {
                 goto exit;
         }
 
@@ -90,7 +90,7 @@ void
                         status = send_text(data->socket, data->body, data->body_length);
                         break;
         }
-        if (status != OK) {
+        if (status != STAT_OK) {
                 goto exit;
         }
 
@@ -163,7 +163,7 @@ read_request(int socket, char *buffer, size_t size)
                 return EMPTY_MESSAGE;
         }
 
-        return OK;
+        return STAT_OK;
 }
 
 int
@@ -198,7 +198,7 @@ parse_request(char *request, enum request_type *req_type, char **url)
         /* if none given go with PLAIN and return */
         if (tmp == NULL) {
                 *req_type = PLAIN;
-                return OK;
+                return STAT_OK;
         }
         if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
                 *req_type = HTTP;
@@ -206,7 +206,7 @@ parse_request(char *request, enum request_type *req_type, char **url)
                 *req_type = PLAIN;
         }
 
-        return OK;
+        return STAT_OK;
 }
 
 void

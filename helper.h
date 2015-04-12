@@ -7,7 +7,7 @@
 
 /**
  * if negative number is return, error occured
- * OK           ( 0) : everything went fine.
+ * STAT_OK      ( 0) : everything went fine.
  * WRITE_CLOSED (-1) : could not write, client closed connection
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
@@ -15,7 +15,7 @@ int send_text(int, char*, size_t);
 
 /**
  * if negative number is return, error occured
- * OK           ( 0) : everything went fine.
+ * STAT_OK      ( 0) : everything went fine.
  * WRITE_CLOSED (-1) : could not write, client closed connection
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */

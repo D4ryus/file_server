@@ -11,7 +11,7 @@ enum request_type { PLAIN, HTTP };
 enum body_type { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
 
 enum err_status {
-        OK            =  0,
+        STAT_OK       =  0,
         WRITE_CLOSED  = -1,
         ZERO_WRITTEN  = -2,
         READ_CLOSED   = -3,

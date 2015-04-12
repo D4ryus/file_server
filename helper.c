@@ -19,7 +19,7 @@ int
 send_text(int socket, char *text, size_t length)
 {
         if (strlen(text) == 0) {
-                return OK;
+                return STAT_OK;
         }
 
         ssize_t write_res;
@@ -44,7 +44,7 @@ send_text(int socket, char *text, size_t length)
                 sending = 0;
         }
 
-        return OK;
+        return STAT_OK;
 }
 
 int
@@ -65,7 +65,7 @@ send_file(struct data_store *data)
 
         write_res = 0;
         sending = 1;
-        ret_status = OK;
+        ret_status = STAT_OK;
 
         while (sending) {
                 read = fread(buffer, 1, BUFFSIZE_WRITE, f);

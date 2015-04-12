@@ -41,12 +41,12 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
+         -Werror \
        # -pg \
        # -g3 \
        # -g \
        # -Wpadded
        # -Wdeclaration-after-statement
-       # -Werror
 
 LFLAGS = -lpthread
 

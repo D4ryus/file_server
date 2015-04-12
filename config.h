@@ -29,7 +29,7 @@ int COLOR = 0;
 /**
  * status update timeout
  */
-size_t UPDATE_TIMEOUT = 1;
+const size_t UPDATE_TIMEOUT = 1;
 
 /**
  * log file, if != NULL it will be used.
@@ -46,7 +46,7 @@ int USE_NCURSES = 0;
 /**
  * ncurses logging window height (rows)
  */
-int LOGGING_WINDOW_HEIGTH = 10;
+const int LOGGING_WINDOW_HEIGTH = 10;
 #endif
 
 /**
