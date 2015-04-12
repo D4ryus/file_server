@@ -41,7 +41,7 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
-         -Werror \
+       # -Werror \
        # -pg \
        # -g3 \
        # -g \
