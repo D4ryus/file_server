@@ -129,6 +129,7 @@ void
 
         getmaxyx(stdscr, last_win_heigth, last_win_width);
 #endif
+        position = 0;
 
         while (1) {
 #ifdef NCURSES
@@ -138,7 +139,10 @@ void
                         last_win_heigth = win_heigth;
                         last_win_width = win_width;
                 }
-                wclear(win_status);
+                /* only refresh if something changed */
+                if (position > 0) {
+                        wclear(win_status);
+                }
 #endif
                 position = 0;
                 pthread_mutex_lock(&status_list_mutex);
@@ -152,7 +156,10 @@ void
 sleep:
                 pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-                wrefresh(win_status);
+                /* only refresh if something changed */
+                if (position > 0) {
+                        wrefresh(win_status);
+                }
 #endif
                 sleep((uint)UPDATE_TIMEOUT);
         }
