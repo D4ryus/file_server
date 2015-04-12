@@ -77,16 +77,6 @@ const char *HTTP_BOT =
         "</html>";
 
 /**
- * plaintext message which will be sent on 404 - File not found
- */
-const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
-
-/**
- * plaintext message which will be sent on 403 - Forbidden
- */
-const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
-
-/**
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
  * will be filled in with sprintf(). so if table is getting bigger change value
  * accordingly.
@@ -138,6 +128,16 @@ const char *TABLE_HTML[3] = {
         "</table>"};
 
 /**
+ * plaintext message which will be sent on 404 - File not found
+ */
+const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
+
+/**
+ * plaintext message which will be sent on 403 - Forbidden
+ */
+const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
+
+/**
  * minimum size in bytes of file to get printed on verbositiy lvl 3,
  * or inside the ncurses status area
  */
@@ -150,7 +150,7 @@ const size_t MIN_STATUS_SIZE = 1048576; /* 1MB */
 const size_t BUFFSIZE_READ  = 2048;
 
 /**
- * if i file is transferd BUFFSIZE_WRITE describes the buffersize of
+ * if a file is transferd BUFFSIZE_WRITE describes the buffersize of
  * bytes read and then written to the socket.
  */
 const size_t BUFFSIZE_WRITE = 8192;
