@@ -3,13 +3,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#ifdef NCURSES
-#include <signal.h>
-#include <curses.h>
-#endif
 
 #include "messages.h"
 #include "helper.h"
+#ifdef NCURSES
+#include "ncurses_messages.h"
+#endif
 
 /**
  * see config.h
@@ -20,17 +19,11 @@ extern int VERBOSITY;
 extern int COLOR;
 extern size_t UPDATE_TIMEOUT;
 #ifdef NCURSES
-extern int PORT;
 extern int USE_NCURSES;
-extern int LOGGING_WINDOW_HEIGTH;
 #endif
 
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
-#ifdef NCURSES
-WINDOW *win_status  = NULL;
-WINDOW *win_logging = NULL;
-#endif
 
 void
 init_messages(pthread_t *thread, const pthread_attr_t *attr)
@@ -40,24 +33,12 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
         error = 0;
 
 #ifdef NCURSES
-        if (USE_NCURSES) {
-                initscr();
-                if (stdscr == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "initscr() != NULL");
-                }
-
-                int width, heigth;
-                getmaxyx(stdscr, heigth, width);
-                init_ncurses_windows(heigth, width);
-                scrollok(win_logging, true);
-        }
-
+        ncurses_init();
         if (USE_NCURSES || VERBOSITY >= 3) {
 #else
         if (VERBOSITY >= 3) {
 #endif
                 pthread_mutex_init(&status_list_mutex, NULL);
-                /* start up a extra thread to print status, see message.c */
                 error = pthread_create(thread, attr, &print_loop, NULL);
                 if (error != 0) {
                         err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
@@ -70,24 +51,11 @@ void
 {
         struct status_list_node *cur;
         int position;
-#ifdef NCURSES
-        int win_heigth, win_width;
-        int last_win_heigth, last_win_width;
-
-        getmaxyx(stdscr, last_win_heigth, last_win_width);
-#endif
         position = 0;
 
         while (1) {
 #ifdef NCURSES
-                getmaxyx(stdscr, win_heigth, win_width);
-                if (win_heigth != last_win_heigth || win_width != last_win_width) {
-                        init_ncurses_windows(win_heigth, win_width);
-                        last_win_heigth = win_heigth;
-                        last_win_width = win_width;
-                } else if (position > 0) { /* only refresh if something changed */
-                        wclear(win_status);
-                }
+                ncurses_update_begin(position);
 #endif
                 position = 0;
                 pthread_mutex_lock(&status_list_mutex);
@@ -101,16 +69,12 @@ void
 sleep:
                 pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-                /* only refresh if something changed */
-                if (position > 0) {
-                        wrefresh(win_status);
-                }
+                ncurses_update_end(position);
 #endif
                 sleep((uint)UPDATE_TIMEOUT);
         }
 #ifdef NCURSES
-        delwin(stdscr);
-        endwin();
+        ncurses_terminate();
 #endif
         pthread_mutex_destroy(&status_list_mutex);
 }
@@ -140,28 +104,9 @@ print_info(struct data_store *data, const enum message_type type, const char *me
         }
 
 #ifdef NCURSES
-        if (USE_NCURSES) {
-                if (type != TRANSFER_STATUS) {
-                        scroll(win_logging);
-                        mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
-                                "[%15s:%-5d - %3d]: %-15s - %s",
-                                        data->ip,
-                                        data->port,
-                                        data->socket,
-                                        m_type,
-                                        message);
-                        wrefresh(win_logging);
-                } else  {
-                        mvwprintw(win_status, position, 0,
-                                "[%15s:%-5d - %3d]: %-15s - %s",
-                                        data->ip,
-                                        data->port,
-                                        data->socket,
-                                        m_type,
-                                        message);
-                }
-        }
+        ncurses_print_info(data, m_type, message, position);
 #endif
+
         switch (type) {
                 case ERROR:
                         if (VERBOSITY < 1) {
@@ -367,68 +312,4 @@ remove_hook(struct data_store *del_data)
 
         return;
 }
-
-#ifdef NCURSES
-void
-init_ncurses_windows(const int heigth, const int width)
-{
-        int status_heigth, i;
-        int cur_stat_heigth, cur_stat_width;
-
-        status_heigth = heigth - LOGGING_WINDOW_HEIGTH - 5; /* headers */
-
-        /* if there is not space for status win, quit */
-        if (status_heigth < 1) {
-                status_heigth = 1;
-        }
-
-        if (win_status == NULL) {
-                win_status = newwin(status_heigth, width, 3, 0);
-                if (win_status == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "win_status is NULL");
-                }
-        }
-        if (win_logging == NULL) {
-                win_logging = newwin(LOGGING_WINDOW_HEIGTH, width, heigth - LOGGING_WINDOW_HEIGTH, 0);
-                if (win_logging == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "win_logging is NULL");
-                }
-        }
-
-        getmaxyx(win_status, cur_stat_heigth, cur_stat_width);
-        if ((cur_stat_width != width) || (cur_stat_heigth != status_heigth)) {
-                wresize(win_status,  status_heigth,         width);
-                wresize(win_logging, LOGGING_WINDOW_HEIGTH, width);
-                mvwin(win_logging, heigth - LOGGING_WINDOW_HEIGTH, 0);
-        }
-
-        wclear(win_status);
-        start_color();
-
-        init_pair(1, COLOR_BLACK, COLOR_WHITE);
-        init_pair(2, COLOR_WHITE, COLOR_BLACK);
-
-        attron(COLOR_PAIR(1));
-        move(0, 0);
-        clrtoeol();
-        mvprintw(0, 0, "File Server version 0.1. shared directory: %s Port: %d", ROOT_DIR, PORT);
-        attron(COLOR_PAIR(2));
-        move(1, 0);
-        clrtoeol();
-        mvprintw(1, 0, "Current file transfers:");
-        move(heigth - LOGGING_WINDOW_HEIGTH - 2, 0);
-        clrtoeol();
-        mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 2, 0, "Log messages:");
-
-        for (i = 0; i < width; i++) {
-                mvprintw(2, i, "-");
-                mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 1, i, "-");
-        }
-
-        refresh();
-        wrefresh(win_status);
-        wrefresh(win_logging);
-}
-
-#endif
 

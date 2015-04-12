@@ -50,6 +50,7 @@ CFLAGS = -Wall \
 
 LFLAGS = -lpthread
 
+OBJS   += ncurses_messages.o
 CFLAGS += -DNCURSES
 LFLAGS += -lcurses
 

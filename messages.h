@@ -36,16 +36,4 @@ void add_hook(struct data_store*);
  */
 void remove_hook(struct data_store*);
 
-#ifdef NCURSES
-/**
- * handles signal if window is resized
- */
-void resize_handler(int);
-
-/**
- * initializes ncurses windows, called on startup and resize
- */
-void init_ncurses_windows(const int, const int);
-#endif
-
 #endif
