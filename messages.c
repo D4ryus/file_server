@@ -85,9 +85,7 @@ void
                         init_ncurses_windows(win_heigth, win_width);
                         last_win_heigth = win_heigth;
                         last_win_width = win_width;
-                }
-                /* only refresh if something changed */
-                if (position > 0) {
+                } else if (position > 0) { /* only refresh if something changed */
                         wclear(win_status);
                 }
 #endif
@@ -381,7 +379,7 @@ init_ncurses_windows(const int heigth, const int width)
 
         /* if there is not space for status win, quit */
         if (status_heigth < 1) {
-                err_quit(__FILE__, __LINE__, __func__, "terminal height way to little (< 10 rows)");
+                status_heigth = 1;
         }
 
         if (win_status == NULL) {
@@ -404,15 +402,22 @@ init_ncurses_windows(const int heigth, const int width)
                 mvwin(win_logging, heigth - LOGGING_WINDOW_HEIGTH, 0);
         }
 
+        wclear(win_status);
         start_color();
 
         init_pair(1, COLOR_BLACK, COLOR_WHITE);
         init_pair(2, COLOR_WHITE, COLOR_BLACK);
 
         attron(COLOR_PAIR(1));
+        move(0, 0);
+        clrtoeol();
         mvprintw(0, 0, "File Server version 0.1. shared directory: %s Port: %d", ROOT_DIR, PORT);
         attron(COLOR_PAIR(2));
+        move(1, 0);
+        clrtoeol();
         mvprintw(1, 0, "Current file transfers:");
+        move(heigth - LOGGING_WINDOW_HEIGTH - 2, 0);
+        clrtoeol();
         mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 2, 0, "Log messages:");
 
         for (i = 0; i < width; i++) {
