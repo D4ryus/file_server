@@ -177,7 +177,7 @@ get_dir(char *directory)
 }
 
 int
-compare_files(const void *elem1, const void *elem2) 
+compare_files(const void *elem1, const void *elem2)
 {
         const struct file *file1 = *(struct file * const *)elem1;
         const struct file *file2 = *(struct file * const *)elem2;
