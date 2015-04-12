@@ -25,6 +25,12 @@ void remove_hook(struct data_store*);
  * each element from the linkedlist
  */
 void *print_loop(void*);
+
+/**
+ * formats a data_list_node and calls print_info
+ */
+void format_and_print(struct status_list_node*, int);
+
 /**
  * prints info (ip port socket) + given type and message to stdout
  */

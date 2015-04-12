@@ -31,6 +31,12 @@ int COLOR = 0;
  */
 size_t UPDATE_TIMEOUT = 1;
 
+/**
+ * log file, if != NULL it will be used.
+ */
+char *LOG_FILE = NULL;
+FILE *_LOG_FILE = NULL;
+
 #ifdef NCURSES
 /**
  * ncurses flag

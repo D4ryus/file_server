@@ -11,6 +11,7 @@
  * see config.h
  */
 extern char *ROOT_DIR;
+extern FILE *_LOG_FILE;
 extern int VERBOSITY;
 extern int COLOR;
 extern size_t UPDATE_TIMEOUT;
@@ -121,16 +122,13 @@ void
 *print_loop(void *ptr)
 {
         struct status_list_node *cur;
-        char message_buffer[256];
         int position;
-        size_t written;
 #ifdef NCURSES
         int win_heigth, win_width;
         int last_win_heigth, last_win_width;
 
         getmaxyx(stdscr, last_win_heigth, last_win_width);
 #endif
-        written = 0;
 
         while (1) {
 #ifdef NCURSES
@@ -148,15 +146,8 @@ void
                         goto sleep;
                 }
                 for (cur = first; cur != NULL; cur = cur->next, position++) {
-                        written = cur->data->written;
-                        sprintf(message_buffer, "%-20s size: %12lub %12lub/%lus %3lu%%",
-                                             cur->data->body + strlen(ROOT_DIR),
-                                             cur->data->body_length,
-                                             (written - cur->data->last_written) / UPDATE_TIMEOUT,
-                                             UPDATE_TIMEOUT,
-                                             written * 100 / cur->data->body_length);
-                        print_info(cur->data, TRANSFER_STATUS, message_buffer, position);
-                        cur->data->last_written = written;
+                        format_and_print(cur, position);
+                        /* TODO: sum up size here */
                 }
 sleep:
                 pthread_mutex_unlock(&status_list_mutex);
@@ -173,8 +164,106 @@ sleep:
 }
 
 void
+format_and_print(struct status_list_node *cur, int position)
+{
+        /**
+         * later last_written is set and the initial written value is needed,
+         * to not read multiple times this value holds the inital value
+         */
+        size_t synched_written;
+        size_t one;
+        size_t written;
+        size_t left;
+        size_t size;
+        size_t bytes_per_tval;
+        char   *written_type;
+        char   *left_type;
+        char   *size_type;
+        char   *bytes_per_tval_type;
+        char   message_buffer[256];
+
+        one = 1;
+        synched_written = cur->data->written; /* read value only once from struct */
+
+        written        = synched_written;
+        left           = cur->data->body_length - synched_written;
+        size           = cur->data->body_length;
+        bytes_per_tval = (synched_written - cur->data->last_written) / UPDATE_TIMEOUT;
+        /* set last written to inital read value */
+        cur->data->last_written = cur->data->written;
+
+        if (written > (one << 33)) { /* 8gb */
+                written = written >> 30;
+                written_type = "gb";
+        } else if (written > (one << 23)) { /* 8mb */
+                written = written >> 20;
+                written_type = "mb";
+        } else if (written > (one << 13)) { /* 8kb */
+                written = written >> 10;
+                written_type = "kb";
+        } else {
+                written_type = "b";
+        }
+
+        if (left > (one << 33)) { /* 8gb */
+                left = left >> 30;
+                left_type = "gb";
+        } else if (left > (one << 23)) { /* 8mb */
+                left = left >> 20;
+                left_type = "mb";
+        } else if (left > (one << 13)) { /* 8kb */
+                left = left >> 10;
+                left_type = "kb";
+        } else {
+                left_type = "b";
+        }
+
+        if (size > (one << 33)) { /* 8gb */
+                size = size >> 30;
+                size_type = "gb";
+        } else if (size > (one << 23)) { /* 8mb */
+                size = size >> 20;
+                size_type = "mb";
+        } else if (size > (one << 13)) { /* 8kb */
+                size = size >> 10;
+                size_type = "kb";
+        } else {
+                size_type = "b";
+        }
+
+        if (bytes_per_tval > (one << 33)) { /* 8gb */
+                bytes_per_tval = bytes_per_tval >> 30;
+                bytes_per_tval_type = "gb";
+        } else if (bytes_per_tval > (one << 23)) { /* 8mb */
+                bytes_per_tval = bytes_per_tval >> 20;
+                bytes_per_tval_type = "mb";
+        } else if (bytes_per_tval > (one << 13)) { /* 8kb */
+                bytes_per_tval = bytes_per_tval >> 10;
+                bytes_per_tval_type = "kb";
+        } else {
+                bytes_per_tval_type = "b";
+        }
+
+        sprintf(message_buffer, "%3lu%% %s [%4lu%2s/%4lu%2s (%4lu%2s)] %4lu%2s/%lus ",
+                             synched_written * 100 / cur->data->body_length,
+                             cur->data->body + strlen(ROOT_DIR),
+                             written,
+                             written_type,
+                             size,
+                             size_type,
+                             left,
+                             left_type,
+                             bytes_per_tval,
+                             bytes_per_tval_type,
+                             UPDATE_TIMEOUT);
+
+        print_info(cur->data, TRANSFER_STATUS, message_buffer, position);
+}
+
+void
 print_info(struct data_store *data, enum message_type type, char *message, int position)
 {
+        FILE *stream;
         char *m_type;
 
         switch (type) {
@@ -238,13 +327,19 @@ print_info(struct data_store *data, enum message_type type, char *message, int p
                         break;
         }
 
+        if (_LOG_FILE != NULL) {
+                stream = _LOG_FILE;
+        } else {
+                stream = stdout;
+        }
+
         if (COLOR) {
                 if (position == -1) {
                         position = 7;
                 } else {
                         position = (position % 6) + 1; /* first (0) color is black, last (7) color is white */
                 }
-                printf("\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
+                fprintf(stream, "\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
                                 position,
                                 data->ip,
                                 data->port,
@@ -252,13 +347,20 @@ print_info(struct data_store *data, enum message_type type, char *message, int p
                                 m_type,
                                 message);
         } else {
-                printf("[%15s:%-5d - %3d]: %-15s - %s\n",
+                position = 0;
+                fprintf(stream, "[%15s:%-5d - %3d]: %-15s - %s\n",
                                 data->ip,
                                 data->port,
                                 data->socket,
                                 m_type,
                                 message);
         }
+
+        if (_LOG_FILE != NULL) {
+                fflush(_LOG_FILE);
+        }
+
+        return;
 }
 
 #ifdef NCURSES

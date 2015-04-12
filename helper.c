@@ -12,6 +12,7 @@
  * see config.h
  */
 extern char *ROOT_DIR;
+extern FILE *_LOG_FILE;
 extern const size_t BUFFSIZE_WRITE;
 
 int
@@ -166,8 +167,13 @@ void
 void
 err_quit(const char *file, const int line, const char *function, const char *msg)
 {
-        fprintf(stderr, "%s:%d:%s: error: ", file, line, function);
-        perror(msg);
+        if (_LOG_FILE != NULL) {
+                fprintf(_LOG_FILE, "%s:%d:%s: error\n", file, line, function);
+                fflush(_LOG_FILE);
+        } else {
+                fprintf(stderr, "%s:%d:%s: error: ", file, line, function);
+                perror(msg);
+        }
         exit(1);
 }
 

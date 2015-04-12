@@ -130,6 +130,15 @@ parse_arguments(int argc, const char *argv[])
                                                 "without a port");
                         }
                         PORT = atoi(argv[i]);
+                } else if ((strcmp(argv[i], "-l") == 0) || (strcmp(argv[i], "--log_file") == 0)) {
+                        i++;
+                        if (argc <= i) {
+                                err_quit(__FILE__, __LINE__, __func__,
+                                                "user specified -l/--log_file "
+                                                "without a file");
+                        }
+                        LOG_FILE = malloc(strlen(argv[i]) + 1);
+                        strncpy(LOG_FILE, argv[i], strlen(argv[i]) + 1);
                 } else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--color") == 0)) {
                         COLOR = 1;
                 } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--verbosity") == 0)) {
@@ -159,6 +168,13 @@ parse_arguments(int argc, const char *argv[])
         }
         if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
                 err_quit(__FILE__, __LINE__, __func__, "you tried to share /, no sir, thats not happening");
+        }
+
+        if (LOG_FILE != NULL) {
+                _LOG_FILE = fopen(LOG_FILE, "a+");
+                if (_LOG_FILE == NULL) {
+                        err_quit(__FILE__, __LINE__, __func__, "could not open logfile");
+                }
         }
 }
 

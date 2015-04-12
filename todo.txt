@@ -25,7 +25,7 @@ args:
       [X] - directory
       [X] - verbosity
       [X] - ncurses enabled
-      [ ] - log option (needed for ncurses)
+      [X] - log option (needed for ncurses)
       [ ] - getopt_long
       [ ] - max connections
 
@@ -46,7 +46,7 @@ messages:
       [X] - clients can connect to messages
       [X] - linked list with status information, add/del mutex
       [X] - status infomation specified in growing amounts (see /proc/stat)
-      [ ] - enable optional logging which takes regular verbosity
+      [X] - enable optional logging which takes regular verbosity
 
 ncurses:
       [X] - basic implementation
