@@ -22,6 +22,10 @@ extern const char *HTTP_BOT;
 extern const char *RESPONSE_404;
 extern const char *RESPONSE_403;
 
+#ifdef NCURSES
+extern int USE_NCURSES;
+#endif
+
 void
 *handle_request(void *ptr)
 {
@@ -29,10 +33,17 @@ void
 
         data = (struct data_store*)ptr;
         if (data->socket < 0) {
+#ifdef NCURSES
+                /* TODO: that aint nice */
+                print_info(data, ERROR, "socket is <0, could be due to window resize singal", -1);
+                free_data_store(data);
+                return(NULL);
+#else
                 err_quit(__FILE__, __LINE__, __func__, "socket in handle_request is < 0");
+#endif
         }
 
-        print_info(data, ACCEPTED, "");
+        print_info(data, ACCEPTED, "", -1);
 
         char read_buffer[BUFFSIZE_READ];
         char message_buffer[64];
@@ -54,9 +65,11 @@ void
         generate_response(data);
 
 #ifdef NCURSES
-        /* TODO: NCURSES no check for verbosity */
-#endif
+        if ( (USE_NCURSES || VERBOSITY >= 3)
+            && data->body_length >= MIN_STATUS_SIZE) {
+#else
         if (VERBOSITY >= 3 && data->body_length >= MIN_STATUS_SIZE) {
+#endif
                 added_hook = 1;
                 add_hook(data);
         }
@@ -100,7 +113,7 @@ void
                         strncpy(message_buffer, "no body_type set", 17);
                         break;
         }
-        print_info(data, SENT, message_buffer);
+        print_info(data, SENT, message_buffer, -1);
 
         /**
          * thread exit point, if status was set to error it will be printed,
@@ -109,19 +122,19 @@ void
 exit:
         switch (status) {
                 case WRITE_CLOSED:
-                        print_info(data, ERROR, "could not write, client closed connection");
+                        print_info(data, ERROR, "could not write, client closed connection", -1);
                         break;
                 case ZERO_WRITTEN:
-                        print_info(data, ERROR, "could not write, 0 bytes written");
+                        print_info(data, ERROR, "could not write, 0 bytes written", -1);
                         break;
                 case READ_CLOSED:
-                        print_info(data, ERROR, "could not read");
+                        print_info(data, ERROR, "could not read", -1);
                         break;
                 case EMPTY_MESSAGE:
-                        print_info(data, ERROR, "empty message");
+                        print_info(data, ERROR, "empty message", -1);
                         break;
                 case INV_GET:
-                        print_info(data, ERROR, "invalid GET");
+                        print_info(data, ERROR, "invalid GET", -1);
                         break;
                 default:
                         break;

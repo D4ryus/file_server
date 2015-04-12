@@ -14,12 +14,7 @@
 #include "helper.h"
 #include "config.h"
 
-int use_color = 0;
-int current_color = 0;
-int colors[] = {0, 0, 0, 0, 0, 0, 0, 0};
-
 int main(int, const char**);
-int *get_color(void);
 void parse_arguments(int, const char**);
 
 int
@@ -56,7 +51,7 @@ main(int argc, const char *argv[])
         }
 
         stack_size = PTHREAD_STACK_MIN << 1;
-        printf("set pthread stacksize to %lu\n", stack_size);
+        /* printf("set pthread stacksize to %lu\n", stack_size); */
         error = pthread_attr_setstacksize(&attr, stack_size);
         if (error != 0) {
                 err_quit(__FILE__, __LINE__, __func__, "pthread_attr_setstacksize() != 0");
@@ -99,9 +94,6 @@ main(int argc, const char *argv[])
         while (1) {
                 data = create_data_store();
                 data->socket = accept(server_socket, (struct sockaddr *) &cli_addr, &clilen);
-                if (use_color) {
-                        data->color = get_color();
-                }
                 strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
                 data->port = ntohs(cli_addr.sin_port);
 
@@ -113,28 +105,6 @@ main(int argc, const char *argv[])
 
         free(ROOT_DIR);
         close(server_socket);
-}
-
-int
-*get_color(void)
-{
-        int i;
-        int *ret_color = NULL;
-
-        for (i = 0; i < 8; i++, current_color++) {
-                current_color = current_color % 8;
-                if (current_color == 0) { /* ignore black */
-                        continue;
-                }
-                if (colors[current_color] == 0) {
-                        colors[current_color] = current_color;
-                        ret_color = &(colors[current_color]);
-                        current_color++;
-                        break;
-                }
-        }
-
-        return ret_color;
 }
 
 void
@@ -161,7 +131,7 @@ parse_arguments(int argc, const char *argv[])
                         }
                         PORT = atoi(argv[i]);
                 } else if ((strcmp(argv[i], "-c") == 0) || (strcmp(argv[i], "--color") == 0)) {
-                        use_color = 1;
+                        COLOR = 1;
                 } else if ((strcmp(argv[i], "-v") == 0) || (strcmp(argv[i], "--verbosity") == 0)) {
                         i++;
                         if (argc <= i) {
@@ -170,6 +140,12 @@ parse_arguments(int argc, const char *argv[])
                                                 "without a number (values are [0] 1 2 3)");
                         }
                         VERBOSITY = atoi(argv[i]);
+#ifdef NCURSES
+                } else if ((strcmp(argv[i], "-n") == 0) || (strcmp(argv[i], "--ncurses") == 0)) {
+                        USE_NCURSES = 1;
+#endif
+                } else {
+                        err_quit(__FILE__, __LINE__, __func__, "unknown argument specified");
                 }
         }
 

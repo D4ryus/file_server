@@ -22,7 +22,6 @@ create_data_store(void)
         data->req_type = TEXT;
         data->body_type = PLAIN;
         data->written = 0;
-        data->color = NULL;
 
         return data;
 }
@@ -35,9 +34,6 @@ free_data_store(struct data_store *data)
         }
         if (data->url != NULL) {
                 free(data->url);
-        }
-        if (data->color != NULL) {
-                (*data->color) = 0;
         }
         if (data->head != NULL) {
                 free(data->head);

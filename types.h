@@ -8,7 +8,7 @@ enum message_type { ACCEPTED, SENT, ERROR, TRANSFER_STATUS };
 
 enum request_type { PLAIN, HTTP };
 
-enum body_type    { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
+enum body_type { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
 
 enum err_status {
         OK            =  0,
@@ -53,7 +53,6 @@ struct data_store {
         enum  body_type    body_type; /* type of body */
         size_t written;               /* written data */
         size_t last_written;          /* will be updated by status print thread */
-        int    *color;                /* given color from main thread */
 };
 
 struct status_list_node {

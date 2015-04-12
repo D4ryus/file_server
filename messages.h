@@ -28,6 +28,13 @@ void *print_loop(void*);
 /**
  * prints info (ip port socket) + given type and message to stdout
  */
-void print_info(struct data_store*, enum message_type, char*);
+void print_info(struct data_store*, enum message_type, char*, int);
+
+#ifdef NCURSES
+/**
+ * handles signal if window is resized
+ */
+void resize_handler(int);
+#endif
 
 #endif

@@ -22,9 +22,21 @@ int PORT = 8283;
 int VERBOSITY = 0;
 
 /**
+ * enable coloring
+ */
+int COLOR = 0;
+
+/**
  * status update timeout
  */
 size_t UPDATE_TIMEOUT = 1;
+
+#ifdef NCURSES
+/**
+ * ncurses flag
+ */
+int USE_NCURSES = 0;
+#endif
 
 /**
  * Http table config

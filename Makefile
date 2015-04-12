@@ -41,7 +41,6 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
-         -DNCURSES
        # -pg \
        # -g3 \
        # -g \
@@ -50,6 +49,9 @@ CFLAGS = -Wall \
        # -Werror
 
 LFLAGS = -lpthread
+
+CFLAGS += -DNCURSES
+LFLAGS += -lcurses
 
 .PHONY : all
 all : depend $(EXECUTABLE)
