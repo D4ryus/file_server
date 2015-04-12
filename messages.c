@@ -16,6 +16,7 @@ extern int VERBOSITY;
 extern int COLOR;
 extern size_t UPDATE_TIMEOUT;
 #ifdef NCURSES
+extern int PORT;
 extern int USE_NCURSES;
 extern int LOGGING_WINDOW_HEIGTH;
 #endif
@@ -403,7 +404,7 @@ init_ncurses_windows(int heigth, int width)
         init_pair(2, COLOR_WHITE, COLOR_BLACK);
 
         attron(COLOR_PAIR(1));
-        mvprintw(0, 0, "File Server version 0.1");
+        mvprintw(0, 0, "File Server version 0.1. shared directory: %s Port: %d", ROOT_DIR, PORT);
         attron(COLOR_PAIR(2));
         mvprintw(1, 0, "Current file transfers:");
         mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 2, 0, "Log messages:");
