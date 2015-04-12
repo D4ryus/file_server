@@ -12,10 +12,10 @@ fixes and code changes:
       [X] - PLAIN wont send header
       [X] - data structure to reference to main
       [X] - implement 'gcc -M'
+      [X] - fix ugly color implementation
       [ ] - cross plattform Makefile
       [ ] - cross plattform code
       [ ] - implement max connections
-      [ ] - fix ugly color implementation
       [ ] - strlcat
 
 args:
@@ -23,10 +23,10 @@ args:
       [X] - port
       [X] - directory
       [X] - verbosity
-      [-] - log option
+      [X] - ncurses enabled
+      [ ] - log option (needed for ncurses)
       [ ] - getopt_long
       [ ] - max connections
-      [ ] - ncurses enabled
 
 config.h:
       [X] - default port
@@ -41,13 +41,14 @@ config.h:
 messages:
       [X] - message.h
       [X] - types (error, connection, leave, status)
-      [-] - enable optional logging which takes regular verbosity
       [X] - message status structs can be connected to clients
       [X] - clients can connect to messages
       [X] - linked list with status information, add/del mutex
       [X] - status infomation specified in growing amounts (see /proc/stat)
+      [ ] - enable optional logging which takes regular verbosity
 
 ncurses:
+      [X] - basic implementation
       [ ] - window for log
       [ ] - window for status messages
       [ ] - keybindings for more/less verbose

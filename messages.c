@@ -231,8 +231,13 @@ print_info(struct data_store *data, enum message_type type, char *message, int p
         }
 
         if (COLOR) {
+                if (position == -1) {
+                        position = 7;
+                } else {
+                        position = (position % 6) + 1; /* first (0) color is black, last (7) color is white */
+                }
                 printf("\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
-                                position + 2, /* first color is black, so +2 */
+                                position,
                                 data->ip,
                                 data->port,
                                 data->socket,
