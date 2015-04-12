@@ -299,9 +299,8 @@ format_and_print(struct status_list_node *cur, const int position)
                 bytes_per_tval_type = "b";
         }
 
-        sprintf(message_buffer, "%3lu%% %s [%4lu%2s/%4lu%2s (%4lu%2s)] %4lu%2s/%lus ",
+        sprintf(message_buffer, "%3lu%% [%4lu%2s/%4lu%2s (%4lu%2s)] %4lu%2s/%lus - %s",
                              synched_written * 100 / cur->data->body_length,
-                             cur->data->body + strlen(ROOT_DIR),
                              written,
                              written_type,
                              size,
@@ -310,7 +309,8 @@ format_and_print(struct status_list_node *cur, const int position)
                              left_type,
                              bytes_per_tval,
                              bytes_per_tval_type,
-                             UPDATE_TIMEOUT);
+                             UPDATE_TIMEOUT,
+                             cur->data->body + strlen(ROOT_DIR));
 
         print_info(cur->data, TRANSFER_STATUS, message_buffer, position);
 }

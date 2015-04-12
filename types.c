@@ -22,6 +22,7 @@ create_data_store(void)
         data->req_type = TEXT;
         data->body_type = PLAIN;
         data->written = 0;
+        data->last_written = 0;
 
         return data;
 }
