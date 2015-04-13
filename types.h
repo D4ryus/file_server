@@ -10,6 +10,9 @@ enum request_type { PLAIN, HTTP };
 
 enum body_type { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
 
+/**
+ * intern error enum, uses as function return value
+ */
 enum err_status {
         STAT_OK       =  0,
         WRITE_CLOSED  = -1,
@@ -55,6 +58,10 @@ struct data_store {
         size_t last_written;          /* will be updated by status print thread */
 };
 
+/**
+ * Linked list containing all data_store structs which should be printed
+ * as stauts information, see messages.[ch]
+ */
 struct status_list_node {
         struct data_store *data;
         struct status_list_node *next;
