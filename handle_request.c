@@ -1,10 +1,10 @@
-#include <pthread.h>
-#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/stat.h>
+#include <string.h>
+#include <pthread.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 
 #include "helper.h"

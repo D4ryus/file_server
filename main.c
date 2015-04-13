@@ -1,12 +1,12 @@
-#include <pthread.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <string.h>
-#include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <limits.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "handle_request.h"
 #include "messages.h"
