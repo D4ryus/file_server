@@ -116,7 +116,8 @@ is_directory(const char *path)
                 } else if (s.st_mode & S_IFREG) {
                         return 0;
                 } else {
-                        err_quit(__FILE__, __LINE__, __func__, "stat() has no file nor a directory");
+                        err_quit(__FILE__, __LINE__, __func__,
+                                          "stat() has no file nor a directory");
                 }
         } else {
                 err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");

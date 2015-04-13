@@ -18,7 +18,8 @@ int last_win_heigth = 0;
 int last_win_width  = 0;
 
 void
-ncurses_print_info(struct data_store *data, char *m_type, const char *message, int position)
+ncurses_print_info(struct data_store *data, char *m_type, const char *message,
+                                                                   int position)
 {
         if (!USE_NCURSES) {
                 return;
@@ -126,13 +127,16 @@ ncurses_init_windows(const int heigth, const int width)
         if (win_status == NULL) {
                 win_status = newwin(status_heigth, width, 3, 0);
                 if (win_status == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "win_status is NULL");
+                        err_quit(__FILE__, __LINE__, __func__,
+                                                          "win_status is NULL");
                 }
         }
         if (win_logging == NULL) {
-                win_logging = newwin(LOGGING_WINDOW_HEIGTH, width, heigth - LOGGING_WINDOW_HEIGTH, 0);
+                win_logging = newwin(LOGGING_WINDOW_HEIGTH, width,
+                                             heigth - LOGGING_WINDOW_HEIGTH, 0);
                 if (win_logging == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__, "win_logging is NULL");
+                        err_quit(__FILE__, __LINE__, __func__,
+                                                         "win_logging is NULL");
                 }
         }
 
@@ -152,7 +156,8 @@ ncurses_init_windows(const int heigth, const int width)
         attron(COLOR_PAIR(1));
         move(0, 0);
         clrtoeol();
-        mvprintw(0, 0, "File Server version 0.1. shared directory: %s Port: %d", ROOT_DIR, PORT);
+        mvprintw(0, 0, "File Server version 0.1. shared directory: %s Port: %d",
+                                                                ROOT_DIR, PORT);
         attron(COLOR_PAIR(2));
         move(1, 0);
         clrtoeol();

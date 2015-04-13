@@ -41,7 +41,8 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
                 pthread_mutex_init(&status_list_mutex, NULL);
                 error = pthread_create(thread, attr, &print_loop, NULL);
                 if (error != 0) {
-                        err_quit(__FILE__, __LINE__, __func__, "pthread_create() != 0");
+                        err_quit(__FILE__, __LINE__, __func__,
+                                                       "pthread_create() != 0");
                 }
         }
 }
@@ -80,7 +81,8 @@ sleep:
 }
 
 void
-print_info(struct data_store *data, const enum message_type type, const char *message, int position)
+print_info(struct data_store *data, const enum message_type type,
+                                              const char *message, int position)
 {
         FILE *stream;
         char *m_type;
@@ -137,7 +139,8 @@ print_info(struct data_store *data, const enum message_type type, const char *me
                 if (position == -1) {
                         position = 7;
                 } else {
-                        position = (position % 6) + 1; /* first (0) color is black, last (7) color is white */
+                        /* first (0) color is black, last (7) color is white */
+                        position = (position % 6) + 1;
                 }
                 fprintf(stream, "\x1b[3%dm[%15s:%-5d - %3d]: %-15s - %s\x1b[39;49m\n",
                                 position,
@@ -183,7 +186,8 @@ format_and_print(struct status_list_node *cur, const int position)
         char   message_buffer[256];
 
         one = 1;
-        synched_written = cur->data->written; /* read value only once from struct */
+        /* read value only once from struct */
+        synched_written = cur->data->written;
 
         written        = synched_written;
         left           = cur->data->body_length - synched_written;

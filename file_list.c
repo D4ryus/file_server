@@ -50,13 +50,15 @@ dir_to_table(struct data_store *data, char *directory)
         d = get_dir(directory);
 
         if (d == NULL) {
-                data->body = concat(data->body, "Cannot open this directory, permission denied.");
+                data->body = concat(data->body,
+                              "Cannot open this directory, permission denied.");
                 data->body_length = strlen(data->body);
                 return;
         }
 
         if (d->files == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "get_dir()->files are NULL");
+                err_quit(__FILE__, __LINE__, __func__,
+                                                   "get_dir()->files are NULL");
         }
 
         if (data->req_type == HTTP) {
@@ -99,7 +101,8 @@ struct dir*
 add_file_to_dir(struct dir *d, char *file, char *directory)
 {
         if (file == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "tried to add file which was NULL");
+                err_quit(__FILE__, __LINE__, __func__,
+                                            "tried to add file which was NULL");
                 return d;
         }
 
@@ -134,7 +137,8 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
         new_file->size = sb.st_size;
 
         /* remalloc directory struct to fit the new filepointer */
-        d = (struct dir *)err_realloc(d, sizeof(struct dir) + ((size_t)(d->length + 1) * sizeof(struct file*)));
+        d = (struct dir *)err_realloc(d, sizeof(struct dir) +
+                              ((size_t)(d->length + 1) * sizeof(struct file*)));
 
         /* set new ptr to new_file */
         d->files[d->length] = new_file;
@@ -171,7 +175,8 @@ get_dir(char *directory)
 
         closedir(dirp);
 
-        qsort(result->files, (size_t)result->length, sizeof(struct file *), compare_files);
+        qsort(result->files, (size_t)result->length, sizeof(struct file *),
+                                                                 compare_files);
 
         return result;
 }

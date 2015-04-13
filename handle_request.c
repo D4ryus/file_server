@@ -35,11 +35,13 @@ void
         if (data->socket < 0) {
 #ifdef NCURSES
                 /* TODO: that aint nice */
-                print_info(data, ERROR, "socket is <0, could be due to window resize singal", -1);
+                print_info(data, ERROR,
+                      "socket is <0, could be due to window resize singal", -1);
                 free_data_store(data);
                 return(NULL);
 #else
-                err_quit(__FILE__, __LINE__, __func__, "socket in handle_request is < 0");
+                err_quit(__FILE__, __LINE__, __func__,
+                                             "socket in handle_request is < 0");
 #endif
         }
 
@@ -87,7 +89,8 @@ void
                 case ERR_404:
                 case ERR_403:
                 default:
-                        status = send_text(data->socket, data->body, data->body_length);
+                        status = send_text(data->socket, data->body,
+                                                             data->body_length);
                         break;
         }
         if (status != STAT_OK) {
@@ -98,16 +101,15 @@ void
                 case DATA:
                 case TEXT:
                         sprintf(message_buffer, "%-20s size: %12lub",
-                                             data->url,
-                                             data->body_length);
+                                                  data->url, data->body_length);
                         break;
                 case ERR_404:
                         sprintf(message_buffer, "404 requested: %-20s",
-                                             data->url);
+                                                                     data->url);
                         break;
                 case ERR_403:
                         sprintf(message_buffer, "403 requested: %-20s",
-                                             data->url);
+                                                                     data->url);
                         break;
                 default:
                         strncpy(message_buffer, "no body_type set", 17);
@@ -122,10 +124,12 @@ void
 exit:
         switch (status) {
                 case WRITE_CLOSED:
-                        print_info(data, ERROR, "could not write, client closed connection", -1);
+                        print_info(data, ERROR,
+                               "could not write, client closed connection", -1);
                         break;
                 case ZERO_WRITTEN:
-                        print_info(data, ERROR, "could not write, 0 bytes written", -1);
+                        print_info(data, ERROR,
+                                        "could not write, 0 bytes written", -1);
                         break;
                 case READ_CLOSED:
                         print_info(data, ERROR, "could not read", -1);
@@ -200,7 +204,8 @@ parse_request(char *request, enum request_type *req_type, char **url)
                 *req_type = PLAIN;
                 return STAT_OK;
         }
-        if (starts_with(tmp, "HTTP/1.1") == 0 || starts_with(tmp, "HTTP/1.0") == 0) {
+        if ((starts_with(tmp, "HTTP/1.1") == 0)
+                                       || (starts_with(tmp, "HTTP/1.0") == 0)) {
                 *req_type = HTTP;
         } else {
                 *req_type = PLAIN;
@@ -261,8 +266,10 @@ generate_200_file(struct data_store *data, char *file)
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
                                                 "Content-Type: ");
-                data->head = concat(data->head, get_content_encoding(strrchr(file, '.')));
-                sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n", (size_t)sb.st_size);
+                data->head = concat(data->head,
+                                      get_content_encoding(strrchr(file, '.')));
+                sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n",
+                                                            (size_t)sb.st_size);
                 data->head = concat(data->head, content_length);
         }
 
@@ -278,7 +285,7 @@ generate_200_directory(struct data_store *data, char *directory)
 {
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
-                                                "Content-Type: text/html\r\n\r\n");
+                                             "Content-Type: text/html\r\n\r\n");
                 data->body = concat(data->body, HTTP_TOP);
         }
 
@@ -300,7 +307,7 @@ generate_404(struct data_store *data)
 {
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 404 Not Found\r\n"
-                                                "Content-Type: text/plain\r\n\r\n");
+                                            "Content-Type: text/plain\r\n\r\n");
         }
         data->body = concat(data->body, RESPONSE_404);
         data->body_length = strlen(data->body);
@@ -314,7 +321,7 @@ generate_403(struct data_store *data)
 {
         if (data->req_type == HTTP) {
                 data->head = concat(data->head, "HTTP/1.1 403 Forbidden\r\n"
-                                                "Content-Type: text/plain\r\n\r\n");
+                                            "Content-Type: text/plain\r\n\r\n");
         }
         data->body = concat(data->body, RESPONSE_403);
         data->body_length = strlen(data->body);
