@@ -1,8 +1,6 @@
 #ifndef FILE_LIST_H
 #define FILE_LIST_H
 
-#include <dirent.h>
-
 #include "types.h"
 
 /**

@@ -1,9 +1,6 @@
 #ifndef HANDLE_REQUEST_H
 #define HANDLE_REQUEST_H
 
-#include <pthread.h>
-#include <sys/types.h>
-
 #include "types.h"
 
 /**

@@ -6,6 +6,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <dirent.h>
 
 #include "file_list.h"
 #include "helper.h"

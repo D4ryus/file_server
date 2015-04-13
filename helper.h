@@ -1,8 +1,6 @@
 #ifndef HELPER_H
 #define HELPER_H
 
-#include <sys/types.h>
-
 #include "types.h"
 
 /**

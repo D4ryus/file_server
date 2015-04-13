@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/types.h>
 
 #include "helper.h"
 #include "handle_request.h"
