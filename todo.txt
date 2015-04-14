@@ -13,6 +13,7 @@ fixes and code changes:
       [X] - data structure to reference to main
       [X] - implement 'gcc -M'
       [X] - fix ugly color implementation
+      [ ] - add startup information
       [ ] - add debugging option
       [ ] - cross plattform Makefile
       [ ] - cross plattform code
@@ -53,6 +54,7 @@ ncurses:
       [X] - basic implementation
       [X] - window for log
       [X] - window for status messages
+      [ ] - fancy top/bottom line (---(path)---(port)----)
       [ ] - total stats
       [ ] - scrollable windows
 

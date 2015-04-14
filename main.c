@@ -126,17 +126,17 @@ parse_arguments(const int argc, const char *argv[])
                                            || (strcmp(argv[i], "--dir") == 0)) {
                         i++;
                         if (argc <= i) {
-                                err_quit(__FILE__, __LINE__, __func__,
-                                                "user specified -d/--dir "
-                                                "without a path");
+                                usage_quit("user specified -d/--dir without a path");
                         }
                         root_arg = i;
+                } else if ((strcmp(argv[i], "-h") == 0)
+                                          || (strcmp(argv[i], "--help") == 0)) {
+                        usage_quit(NULL);
                 } else if ((strcmp(argv[i], "-p") == 0)
                                           || (strcmp(argv[i], "--port") == 0)) {
                         i++;
                         if (argc <= i) {
-                                err_quit(__FILE__, __LINE__, __func__,
-                                                "user specified -p/--port "
+                                usage_quit("user specified -p/--port "
                                                 "without a port");
                         }
                         PORT = atoi(argv[i]);
@@ -144,8 +144,7 @@ parse_arguments(const int argc, const char *argv[])
                                       || (strcmp(argv[i], "--log_file") == 0)) {
                         i++;
                         if (argc <= i) {
-                                err_quit(__FILE__, __LINE__, __func__,
-                                                "user specified -l/--log_file "
+                                usage_quit("user specified -l/--log_file "
                                                 "without a file");
                         }
                         LOG_FILE = malloc(strlen(argv[i]) + 1);
@@ -157,8 +156,7 @@ parse_arguments(const int argc, const char *argv[])
                                      || (strcmp(argv[i], "--verbosity") == 0)) {
                         i++;
                         if (argc <= i) {
-                                err_quit(__FILE__, __LINE__, __func__,
-                                                "user specified -v/--verbosity "
+                                usage_quit("user specified -v/--verbosity "
                                      "without a number (values are [0] 1 2 3)");
                         }
                         VERBOSITY = atoi(argv[i]);
@@ -168,8 +166,7 @@ parse_arguments(const int argc, const char *argv[])
                         USE_NCURSES = 1;
 #endif
                 } else {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                  "unknown argument specified");
+                        usage_quit("unknown argument specified");
                 }
         }
 

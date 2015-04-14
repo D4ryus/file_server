@@ -49,6 +49,11 @@ void *err_realloc(void*, size_t);
 void err_quit(const char*, const int, const char*, const char*);
 
 /**
+ * prints usage and quits
+ */
+void usage_quit(const char*);
+
+/**
  * returns content type of given file type
  * given "html" returns  "text/html"
  * given "gz"   returns  "application/gzip"

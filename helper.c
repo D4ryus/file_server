@@ -179,6 +179,34 @@ err_quit(const char *file, const int line, const char *function, const char *msg
         exit(1);
 }
 
+void
+usage_quit(const char *msg)
+{
+        if (msg != NULL) {
+                fprintf(stderr, "error: %s\n", msg);
+        }
+        printf(
+                "[-h|--help]\n"
+                "        print this help/usage\n"
+                "[-d|--dir] dir\n"
+                "        use given dir as root/shared directory\n"
+                "[-p|--port] port\n"
+                "        specify a port\n"
+                "[-l|--log_file] log_file\n"
+                "        write to given log_file instead of stdout\n"
+                "[-v|--verbosity] verbosity\n"
+                "        change verbosity, levels are 0 (no messages) up to 3\n"
+                "[-c|--color]\n"
+                "        prints to terminal in fancy color\n"
+#ifdef NCURSES
+                "[-n|--ncurses]\n"
+                "        use ncurses display. if used with verbosity a log file is advised\n"
+                "        since it would clutter the ncurses screen.\n"
+#endif
+        );
+        exit(1);
+}
+
 char*
 get_content_encoding(const char *type)
 {
