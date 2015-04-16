@@ -42,8 +42,7 @@ void
                 free_data_store(data);
                 return(NULL);
 #else
-                err_quit(__FILE__, __LINE__, __func__,
-                                             "socket in handle_request is < 0");
+                err_quit(ERR_INFO, "socket in handle_request is < 0");
 #endif
         }
 
@@ -262,7 +261,7 @@ generate_200_file(struct data_store *data, char *file)
         char content_length[128];
 
         if (stat(file, &sb) == -1) {
-                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
+                err_quit(ERR_INFO, "stat() retuned -1");
         }
 
         if (data->req_type == HTTP) {

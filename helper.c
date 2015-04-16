@@ -61,7 +61,7 @@ send_file(struct data_store *data)
 
         f = fopen(data->body, "rb");
         if (f == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "fopen() retuned NULL");
+                err_quit(ERR_INFO, "fopen() retuned NULL");
         }
 
         write_res = 0;
@@ -117,11 +117,10 @@ is_directory(const char *path)
                 } else if (s.st_mode & S_IFREG) {
                         return 0;
                 } else {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                          "stat() has no file nor a directory");
+                        err_quit(ERR_INFO, "stat() has no file nor a directory");
                 }
         } else {
-                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
+                err_quit(ERR_INFO, "stat() retuned -1");
         }
 
         return 0;
@@ -149,7 +148,7 @@ void
 
         tmp = malloc(size);
         if (tmp == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "could not malloc");
+                err_quit(ERR_INFO, "could not malloc");
         }
 
         return tmp;
@@ -160,7 +159,7 @@ void
 {
         ptr = realloc(ptr, size);
         if (ptr == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "could not realloc");
+                err_quit(ERR_INFO, "could not realloc");
         }
 
         return ptr;

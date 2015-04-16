@@ -35,30 +35,26 @@ main(const int argc, const char *argv[])
         /* init a pthread attribute struct */
         error = pthread_attr_init(&attr);
         if (error != 0) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                                    "pthread_attr_init() != 0");
+                err_quit(ERR_INFO, "pthread_attr_init() != 0");
         }
 
         /* set threads to be detached, so they dont need to be joined */
         error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
         if (error != 0) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                          "pthread_attr_setdetachstate() != 0");
+                err_quit(ERR_INFO, "pthread_attr_setdetachstate() != 0");
         }
 
         size_t stack_size;
         error =  pthread_attr_getstacksize(&attr, &stack_size);
         if (error != 0) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                            "pthread_attr_getstacksize() != 0");
+                err_quit(ERR_INFO, "pthread_attr_getstacksize() != 0");
         }
 
         stack_size = PTHREAD_STACK_MIN << 1;
         /* printf("set pthread stacksize to %lu\n", stack_size); */
         error = pthread_attr_setstacksize(&attr, stack_size);
         if (error != 0) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                            "pthread_attr_setstacksize() != 0");
+                err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
         }
 
         /* ignore sigpipe singal on write, since i cant catch it inside a thread */
@@ -69,7 +65,7 @@ main(const int argc, const char *argv[])
         /* get a socket */
         server_socket = socket(AF_INET, SOCK_STREAM, 0);
         if (server_socket < 0) {
-                err_quit(__FILE__, __LINE__, __func__, "socket() retuned < 0");
+                err_quit(ERR_INFO, "socket() retuned < 0");
         }
 
         on = 1;
@@ -77,7 +73,7 @@ main(const int argc, const char *argv[])
         error = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
                                                 (const char *) &on, sizeof(on));
         if (error == -1) {
-                err_quit(__FILE__, __LINE__, __func__, "setsockopt() retuned -1");
+                err_quit(ERR_INFO, "setsockopt() retuned -1");
         }
 
         memset((char *) &serv_addr, '\0', sizeof(serv_addr));
@@ -89,7 +85,7 @@ main(const int argc, const char *argv[])
         error = bind(server_socket, (struct sockaddr *) &serv_addr,
                                                              sizeof(serv_addr));
         if (error < 0) {
-                err_quit(__FILE__, __LINE__, __func__, "bind() < 0");
+                err_quit(ERR_INFO, "bind() < 0");
         }
 
         /* set socket in listen mode */
@@ -106,8 +102,7 @@ main(const int argc, const char *argv[])
 
                 error = pthread_create(&thread, &attr, &handle_request, data);
                 if (error != 0) {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                       "pthread_create() != 0");
+                        err_quit(ERR_INFO, "pthread_create() != 0");
                 }
         }
 
@@ -176,19 +171,16 @@ parse_arguments(const int argc, const char *argv[])
                 ROOT_DIR = realpath(argv[root_arg], NULL);
         }
         if (ROOT_DIR == NULL) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                          "realpath on ROOT_DIR returned NULL");
+                err_quit(ERR_INFO, "realpath on ROOT_DIR returned NULL");
         }
         if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
-                err_quit(__FILE__, __LINE__, __func__,
-                           "you tried to share /, no sir, thats not happening");
+                err_quit(ERR_INFO, "you tried to share /, no sir, thats not happening");
         }
 
         if (LOG_FILE != NULL) {
                 _LOG_FILE = fopen(LOG_FILE, "a+");
                 if (_LOG_FILE == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                      "could not open logfile");
+                        err_quit(ERR_INFO, "could not open logfile");
                 }
         }
 }

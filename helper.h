@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+#define ERR_INFO __FILE__, __LINE__, __func__
+
 /**
  * if negative number is return, error occured
  * STAT_OK      ( 0) : everything went fine.

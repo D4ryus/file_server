@@ -41,8 +41,7 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
                 pthread_mutex_init(&status_list_mutex, NULL);
                 error = pthread_create(thread, attr, &print_loop, NULL);
                 if (error != 0) {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                       "pthread_create() != 0");
+                        err_quit(ERR_INFO, "pthread_create() != 0");
                 }
         }
 }

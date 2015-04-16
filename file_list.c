@@ -57,8 +57,7 @@ dir_to_table(struct data_store *data, char *directory)
         }
 
         if (d->files == NULL) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                                   "get_dir()->files are NULL");
+                err_quit(ERR_INFO, "get_dir()->files are NULL");
         }
 
         if (data->req_type == HTTP) {
@@ -101,8 +100,7 @@ struct dir*
 add_file_to_dir(struct dir *d, char *file, char *directory)
 {
         if (file == NULL) {
-                err_quit(__FILE__, __LINE__, __func__,
-                                            "tried to add file which was NULL");
+                err_quit(ERR_INFO, "tried to add file which was NULL");
                 return d;
         }
 
@@ -119,7 +117,7 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
         combined_path[strlen(directory)] = '/';
         memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
         if (stat(combined_path, &sb) == -1) {
-                err_quit(__FILE__, __LINE__, __func__, "stat() retuned -1");
+                err_quit(ERR_INFO, "stat() retuned -1");
         }
         free(combined_path);
 
@@ -161,7 +159,7 @@ get_dir(char *directory)
                 if (errno == EACCES) {
                         return NULL;
                 }
-                err_quit(__FILE__, __LINE__, __func__, "opendir() returned NULL");
+                err_quit(ERR_INFO, "opendir() returned NULL");
         }
 
         result = (struct dir*)err_malloc(sizeof(struct dir));

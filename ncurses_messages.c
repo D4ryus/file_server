@@ -59,8 +59,7 @@ ncurses_init(void)
 
         initscr();
         if (stdscr == NULL) {
-                err_quit(__FILE__, __LINE__, __func__, "initscr() != NULL");
-        }
+                err_quit(ERR_INFO,  "initscr() != NULL"); }
 
         getmaxyx(stdscr, heigth, width);
         ncurses_init_windows(heigth, width);
@@ -129,16 +128,14 @@ ncurses_init_windows(const int heigth, const int width)
         if (win_status == NULL) {
                 win_status = newwin(status_heigth, width, 3, 0);
                 if (win_status == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                          "win_status is NULL");
+                        err_quit(ERR_INFO, "win_status is NULL");
                 }
         }
         if (win_logging == NULL) {
                 win_logging = newwin(LOGGING_WINDOW_HEIGTH, width,
                                              heigth - LOGGING_WINDOW_HEIGTH, 0);
                 if (win_logging == NULL) {
-                        err_quit(__FILE__, __LINE__, __func__,
-                                                         "win_logging is NULL");
+                        err_quit(ERR_INFO, "win_logging is NULL");
                 }
         }
 
