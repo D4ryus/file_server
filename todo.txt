@@ -27,7 +27,7 @@ args:
       [X] - verbosity
       [X] - ncurses enabled
       [X] - log option (needed for ncurses)
-      [ ] - usage
+      [X] - usage
       [ ] - getopt_long
       [ ] - max connections
 
