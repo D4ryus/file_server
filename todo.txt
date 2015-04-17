@@ -19,6 +19,7 @@ fixes and code changes:
       [ ] - cross plattform code
       [ ] - implement max connections
       [ ] - strlcat
+      [ ] - transfer filename function, (sent/http_plain display)
 
 args:
       [X] - color
