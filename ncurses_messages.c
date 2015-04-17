@@ -80,6 +80,7 @@ ncurses_update_begin(int last_position)
                 ncurses_init_windows(win_heigth, win_width);
                 last_win_heigth = win_heigth;
                 last_win_width = win_width;
+        /* TODO: do this one right */
         } else if (last_position > 0) { /* only refresh if something changed */
                 wclear(win_status);
         }
@@ -92,9 +93,7 @@ ncurses_update_end(int last_position)
                 return;
         }
 
-        if (last_position > 0) {
-                wrefresh(win_status);
-        }
+        wrefresh(win_status);
 }
 
 void
