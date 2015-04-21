@@ -36,6 +36,11 @@ int is_directory(const char*);
 int starts_with(const char*, const char*);
 
 /**
+ * formats size into readable format
+ */
+char *format_size(size_t, char[7]);
+
+/**
  * mallocs given size but also checks if succeded, if not exits
  */
 void *err_malloc(size_t);

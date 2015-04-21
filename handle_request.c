@@ -52,6 +52,7 @@ void
         char message_buffer[64];
         enum err_status status;
         int added_hook = 0;
+        char fmt_size[7];
 
         status = STAT_OK;
 
@@ -101,8 +102,8 @@ void
         switch (data->body_type) {
                 case DATA:
                 case TEXT:
-                        sprintf(message_buffer, "%-20s size: %12lub",
-                                                  data->url, data->body_length);
+                        sprintf(message_buffer, "%-20s size: %s",
+                           data->url, format_size(data->body_length, fmt_size));
                         break;
                 case ERR_404:
                         sprintf(message_buffer, "404 requested: %-20s",
@@ -120,7 +121,8 @@ void
 
         /**
          * thread exit point, if status was set to error it will be printed,
-         * socket will be closed and memory will be cleaned b4 thread exists
+         * socket will be closed, memory will be cleaned and status hook will be
+         * removed before thread exit's
          */
 exit:
         switch (status) {

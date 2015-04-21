@@ -95,7 +95,7 @@ const char *TABLE_PLAIN[3] = {
         /* table head */
         "%-20s %-17s %-12s %s\n",
         /* table body */
-        "%20s %17s %12li %s/%s\n",
+        "%20s %17s %6s %s/%s\n",
         /* table end */
         ""};
 
@@ -120,7 +120,7 @@ const char *TABLE_HTML[3] = {
                 "<tr>"
                         "<td align='center'>%s</td>"
                         "<td align='center'>%s</td>"
-                        "<td align='right'>%12li</td>"
+                        "<td align='right'>%6s</td>"
                         "<td align='left'><a href='%s/%s'>%s</a></td>"
                 "</tr>",
         /* table end */

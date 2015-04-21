@@ -94,8 +94,8 @@ send_file(struct data_store *data)
         return ret_status;
 }
 
-char*
-concat(char *dst, const char *src)
+char
+*concat(char *dst, const char *src)
 {
         dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
         strncat(dst, src, strlen(src));
@@ -103,9 +103,6 @@ concat(char *dst, const char *src)
         return dst;
 }
 
-/**
- * checks if given string is a directory, if its a file 0 is returned
- */
 int
 is_directory(const char *path)
 {
@@ -139,6 +136,40 @@ starts_with(const char *line, const char *prefix)
         }
 
         return 1;
+}
+
+char
+*format_size(size_t size, char format_size[7])
+{
+        char   *type;
+        size_t new_size;
+        size_t gb; /* 8gb */
+        size_t mb; /* 8mb */
+        size_t kb; /* 8kb */
+
+        new_size = 0;
+
+        gb = 1L << 33;
+        mb = 1L << 23;
+        kb = 1L << 13;
+
+        if (size > gb) {        /* 8gb */
+                new_size = size >> 30;
+                type = "gb";
+        } else if (size > mb) { /* 8mb */
+                new_size = size >> 20;
+                type = "mb";
+        } else if (size > kb) { /* 8kb */
+                new_size = size >> 10;
+                type = "kb";
+        } else {
+                new_size = size;
+                type = "b";
+        }
+
+        sprintf(format_size, "%4lu%s", new_size, type);
+
+        return format_size;
 }
 
 void
@@ -206,8 +237,8 @@ usage_quit(const char *msg)
         exit(1);
 }
 
-char*
-get_content_encoding(const char *type)
+char
+*get_content_encoding(const char *type)
 {
         if (type == NULL || !strcmp(type, "")) {
                 return "application/octet-stream";

@@ -45,6 +45,7 @@ dir_to_table(struct data_store *data, char *directory)
         int  i;
         char buffer[TABLE_BUFFER_SIZE];
         struct dir *d;
+        char fmt_size[7];
         const char **table_ptr;
 
         d = get_dir(directory);
@@ -80,7 +81,7 @@ dir_to_table(struct data_store *data, char *directory)
                 sprintf(buffer, table_ptr[1], /* table body */
                                         d->files[i]->time,
                                         d->files[i]->type,
-                                        (long)d->files[i]->size,
+                                        format_size((size_t)d->files[i]->size, fmt_size),
                                         directory + strlen(ROOT_DIR),
                                         d->files[i]->name,
                                         d->files[i]->name);
@@ -122,7 +123,7 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
         free(combined_path);
 
         switch (sb.st_mode & S_IFMT) {
-                case S_IFREG:  strncpy(new_file->type, "regular file"    , 17); break;
+                case S_IFREG:  strncpy(new_file->type, "file"            , 17); break;
                 case S_IFDIR:  strncpy(new_file->type, "directory"       , 17); break;
                 case S_IFLNK:  strncpy(new_file->type, "symlink"         , 17); break;
                 case S_IFBLK:  strncpy(new_file->type, "block device"    , 17); break;
