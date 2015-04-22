@@ -89,13 +89,12 @@ const int TABLE_BUFFER_SIZE = 512;
  * "Last modified" "Type" "Size" "Filename"
  * the body part will be repeaded for each file found inside the directory
  * given values are:
- * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]" "[filename]"
+ * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]"
  */
 const char *TABLE_PLAIN[3] = {
 	/* table head */
 	"%-19s %-11s %-6s %s\n"
-	"------------------------"
-	"-----------------------\n",
+	"-----------------------------------------------\n",
 	/* table body */
 	"%19s %11s %6s %s/%s\n",
 	/* table end */
@@ -123,7 +122,7 @@ const char *TABLE_HTML[3] = {
 			"<td align='center'>%s</td>"
 			"<td align='center'>%s</td>"
 			"<td align='right'>%6s</td>"
-			"<td align='left'><a href='%s/%s'>%s</a></td>"
+			"<td align='left'><a href='%s/%s'>%5$s</a></td>"
 		"</tr>",
 	/* table end */
 		"</tbody>"

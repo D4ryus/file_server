@@ -83,7 +83,6 @@ dir_to_table(struct data_store *data, char *directory)
 		    d->files[i]->type,
 		    format_size((size_t)d->files[i]->size, fmt_size),
 		    directory + strlen(ROOT_DIR),
-		    d->files[i]->name,
 		    d->files[i]->name);
 		data->body = concat(data->body, buffer);
 	}
