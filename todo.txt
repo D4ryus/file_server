@@ -50,6 +50,7 @@ messages:
       [X] - linked list with status information, add/del mutex
       [X] - status infomation specified in growing amounts (see /proc/stat)
       [X] - enable optional logging which takes regular verbosity
+      [ ] - timestamp
 
 ncurses:
       [X] - basic implementation
