@@ -10,7 +10,7 @@
 #include "ncurses_messages.h"
 #endif
 
-/**
+/*
  * see config.h
  */
 extern char *ROOT_DIR;
@@ -124,6 +124,7 @@ print_info(struct data_store *data, const enum message_type type,
                         if (VERBOSITY < 3) {
                                 return;
                         }
+                        break;
                 default:
                         break;
         }
@@ -168,7 +169,7 @@ print_info(struct data_store *data, const enum message_type type,
 void
 format_and_print(struct status_list_node *cur, const int position)
 {
-        /**
+        /*
          * later last_written is set and the initial written value is needed,
          * to not read multiple times this value holds the inital value
          */

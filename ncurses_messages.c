@@ -6,7 +6,7 @@
 #include "ncurses_messages.h"
 #include "helper.h"
 
-/**
+/*
  * see config.h
  */
 extern char *ROOT_DIR;

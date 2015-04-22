@@ -9,7 +9,7 @@
 #include "helper.h"
 #include "messages.h"
 
-/**
+/*
  * see config.h
  */
 extern char *ROOT_DIR;

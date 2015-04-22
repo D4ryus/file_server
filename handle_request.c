@@ -12,7 +12,7 @@
 #include "file_list.h"
 #include "messages.h"
 
-/**
+/*
  * see config.h
  */
 extern char *ROOT_DIR;
@@ -119,7 +119,7 @@ void
         }
         print_info(data, SENT, message_buffer, -1);
 
-        /**
+        /*
          * thread exit point, if status was set to error it will be printed,
          * socket will be closed, memory will be cleaned and status hook will be
          * removed before thread exit's

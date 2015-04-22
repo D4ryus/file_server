@@ -10,7 +10,7 @@
 #include "file_list.h"
 #include "helper.h"
 
-/**
+/*
  * see config.h
  */
 extern char *ROOT_DIR;

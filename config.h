@@ -1,60 +1,60 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-/**
+/*
  * default values
  * --------------
  */
 
-/**
+/*
  * shared directory if none specified
  */
 char *ROOT_DIR = ".";
 
-/**
+/*
  * port if none specified
  */
 int PORT = 8283;
 
-/**
+/*
  * port if none specified
  */
 int VERBOSITY = 0;
 
-/**
+/*
  * enable coloring
  */
 int COLOR = 0;
 
-/**
+/*
  * status update timeout
  */
 const size_t UPDATE_TIMEOUT = 1;
 
-/**
+/*
  * log file, if != NULL it will be used.
  */
 char *LOG_FILE = NULL;
 FILE *_LOG_FILE = NULL;
 
 #ifdef NCURSES
-/**
+/*
  * ncurses flag
  */
 int USE_NCURSES = 0;
 
-/**
+/*
  * ncurses logging window height (rows)
  */
 const int LOGGING_WINDOW_HEIGTH = 10;
 #endif
 
-/**
+/*
  * Http table config
  * -----------------
  */
 
-/**
+/*
  * string which will be at the top of http table response
  */
 const char *HTTP_TOP =
@@ -69,21 +69,21 @@ const char *HTTP_TOP =
                                  "charset=UTF-8'/>"
                 "</head>"
                 "<body>";
-/**
+/*
  * string which will be at the bottom of http table response
  */
 const char *HTTP_BOT =
                 "</body>"
         "</html>";
 
-/**
+/*
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
  * will be filled in with sprintf(). so if table is getting bigger change value
  * accordingly.
  */
 const int TABLE_BUFFER_SIZE = 512;
 
-/**
+/*
  * table head values which will be filed in at %s
  * given values are:
  * "Last modified" "Type" "Size" "Filename"
@@ -127,29 +127,29 @@ const char *TABLE_HTML[3] = {
                 "</tbody>"
         "</table>"};
 
-/**
+/*
  * plaintext message which will be sent on 404 - File not found
  */
 const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
 
-/**
+/*
  * plaintext message which will be sent on 403 - Forbidden
  */
 const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
 
-/**
+/*
  * minimum size in bytes of file to get printed on verbositiy lvl 3,
  * or inside the ncurses status area
  */
 const size_t MIN_STATUS_SIZE = 1048576; /* 1MB */
 
-/**
+/*
  * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
  * everything extending that limit will be thrown away.
  */
 const size_t BUFFSIZE_READ  = 2048;
 
-/**
+/*
  * if a file is transferd BUFFSIZE_WRITE describes the buffersize of
  * bytes read and then written to the socket.
  */

@@ -1,7 +1,7 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-/**
+/*
  * enums
  */
 enum message_type { ACCEPTED, SENT, ERROR, TRANSFER_STATUS };
@@ -10,7 +10,7 @@ enum request_type { PLAIN, HTTP };
 
 enum body_type { DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
 
-/**
+/*
  * intern error enum, uses as function return value
  */
 enum err_status {
@@ -22,7 +22,7 @@ enum err_status {
         INV_GET       = -5
 };
 
-/**
+/*
  * file information
  */
 struct file {
@@ -32,7 +32,7 @@ struct file {
         off_t size;
 };
 
-/**
+/*
  * contains multiple file structs
  */
 struct dir {
@@ -41,7 +41,7 @@ struct dir {
         struct file *files[];
 };
 
-/**
+/*
  * per request a data store is generated and then during execution filled
  */
 struct data_store {
@@ -58,7 +58,7 @@ struct data_store {
         size_t last_written;          /* will be updated by status print thread */
 };
 
-/**
+/*
  * Linked list containing all data_store structs which should be printed
  * as stauts information, see messages.[ch]
  */
@@ -67,12 +67,12 @@ struct status_list_node {
         struct status_list_node *next;
 };
 
-/**
+/*
  * mallocs a new data_store and sets initial values
  */
 struct data_store *create_data_store(void);
 
-/**
+/*
  * savely frees the given datastore from memory
  */
 void free_data_store(struct data_store*);
