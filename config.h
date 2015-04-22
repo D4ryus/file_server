@@ -58,23 +58,23 @@ const int LOGGING_WINDOW_HEIGTH = 10;
  * string which will be at the top of http table response
  */
 const char *HTTP_TOP =
-        "<!DOCTYPE html>"
-        "<html>"
-                "<head>"
-                        "<link href='http://fonts.googleapis.com/css?family=Iceland'"
-                                "rel='stylesheet'"
-                                "type='text/css'>"
-                        "<meta http-equiv='content-type'"
-                                 "content='text/html;"
-                                 "charset=UTF-8'/>"
-                "</head>"
-                "<body>";
+	"<!DOCTYPE html>"
+	"<html>"
+		"<head>"
+			"<link href='http://fonts.googleapis.com/css?family=Iceland'"
+				"rel='stylesheet'"
+				"type='text/css'>"
+			"<meta http-equiv='content-type'"
+				 "content='text/html;"
+				 "charset=UTF-8'/>"
+		"</head>"
+		"<body>";
 /*
  * string which will be at the bottom of http table response
  */
 const char *HTTP_BOT =
-                "</body>"
-        "</html>";
+		"</body>"
+	"</html>";
 
 /*
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
@@ -92,40 +92,40 @@ const int TABLE_BUFFER_SIZE = 512;
  * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]" "[filename]"
  */
 const char *TABLE_PLAIN[3] = {
-        /* table head */
-        "%-20s %-17s %-12s %s\n",
-        /* table body */
-        "%20s %17s %6s %s/%s\n",
-        /* table end */
-        ""};
+	/* table head */
+	"%-20s %-17s %-12s %s\n",
+	/* table body */
+	"%20s %17s %6s %s/%s\n",
+	/* table end */
+	""};
 
 const char *TABLE_HTML[3] = {
-        /* table head */
-        "<style>"
-                "tbody tr:nth-child(odd) {"
-                        "background: #eee;"
-                "}"
-        "</style>"
-        "<table style size='100%'>"
-                "<tbody>"
-                "<thead>"
-                        "<tr>"
-                                "<th align='left'>%s</th>"
-                                "<th align='left'>%s</th>"
-                                "<th align='left'>%s</th>"
-                                "<th align='left'>%s</th>"
-                        "</tr>"
-                "</thead>",
-        /* table body */
-                "<tr>"
-                        "<td align='center'>%s</td>"
-                        "<td align='center'>%s</td>"
-                        "<td align='right'>%6s</td>"
-                        "<td align='left'><a href='%s/%s'>%s</a></td>"
-                "</tr>",
-        /* table end */
-                "</tbody>"
-        "</table>"};
+	/* table head */
+	"<style>"
+		"tbody tr:nth-child(odd) {"
+			"background: #eee;"
+		"}"
+	"</style>"
+	"<table style size='100%'>"
+		"<tbody>"
+		"<thead>"
+			"<tr>"
+				"<th align='left'>%s</th>"
+				"<th align='left'>%s</th>"
+				"<th align='left'>%s</th>"
+				"<th align='left'>%s</th>"
+			"</tr>"
+		"</thead>",
+	/* table body */
+		"<tr>"
+			"<td align='center'>%s</td>"
+			"<td align='center'>%s</td>"
+			"<td align='right'>%6s</td>"
+			"<td align='left'><a href='%s/%s'>%s</a></td>"
+		"</tr>",
+	/* table end */
+		"</tbody>"
+	"</table>"};
 
 /*
  * plaintext message which will be sent on 404 - File not found

@@ -14,6 +14,7 @@ fixes and code changes:
       [X] - implement 'gcc -M'
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
+      [ ] - quit/cleanup function
       [ ] - add startup information
       [ ] - add debugging option
       [ ] - cross plattform Makefile

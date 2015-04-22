@@ -11,7 +11,7 @@ void ncurses_init(void);
 /*
  * prints given info inside ncurses window
  */
-void ncurses_print_info(struct data_store*, char*, const char*, int);
+void ncurses_print_info(struct data_store *, char *, const char *, int);
 
 /*
  * start of printing status messages
