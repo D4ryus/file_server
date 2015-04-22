@@ -68,7 +68,7 @@ dir_to_table(struct data_store *data, char *directory)
 	}
 
 	sprintf(buffer, table_ptr[0], /* table head, see config.h */
-	    "Last modified",
+	    "Last_modified",
 	    "Type",
 	    "Size",
 	    "Filename");
@@ -108,6 +108,7 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
 	char *combined_path;
 	struct stat sb;
 	struct file *new_file;
+	struct tm *tmp;
 
 	new_file = err_malloc(sizeof(struct file));
 	new_file->name = err_malloc(strlen(file) + 1);
@@ -123,16 +124,24 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
 	free(combined_path);
 
 	switch (sb.st_mode & S_IFMT) {
-		case S_IFREG:  strncpy(new_file->type, "file"		 , 17); break;
-		case S_IFDIR:  strncpy(new_file->type, "directory"	 , 17); break;
-		case S_IFLNK:  strncpy(new_file->type, "symlink"	 , 17); break;
-		case S_IFBLK:  strncpy(new_file->type, "block device"	 , 17); break;
-		case S_IFCHR:  strncpy(new_file->type, "character device", 17); break;
-		case S_IFIFO:  strncpy(new_file->type, "fifo/pipe"	 , 17); break;
-		case S_IFSOCK: strncpy(new_file->type, "socket"		 , 17); break;
-		default:       strncpy(new_file->type, "unknown"	 , 17); break;
+		case S_IFREG:  strncpy(new_file->type, "file"      , 11); break;
+		case S_IFDIR:  strncpy(new_file->type, "directory" , 11); break;
+		case S_IFLNK:  strncpy(new_file->type, "symlink"   , 11); break;
+		case S_IFBLK:  strncpy(new_file->type, "blk_device", 11); break;
+		case S_IFCHR:  strncpy(new_file->type, "chr_device", 11); break;
+		case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , 11); break;
+		case S_IFSOCK: strncpy(new_file->type, "socket"    , 11); break;
+		default:       strncpy(new_file->type, "unknown"   , 11); break;
 	}
-	strftime(new_file->time, 20, "%Y-%m-%d %H:%M:%S", localtime(&sb.st_mtime));
+
+	tmp = localtime(&sb.st_mtime);
+	if (tmp == NULL) {
+		err_quit(ERR_INFO, "localtime() returned NULL");
+	}
+	if (strftime(new_file->time, 20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
+		err_quit(ERR_INFO, "strftime() returned 0");
+	}
+
 	new_file->size = sb.st_size;
 
 	/* remalloc directory struct to fit the new filepointer */

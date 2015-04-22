@@ -143,28 +143,38 @@ format_size(size_t size, char format_size[7])
 {
 	char   *type;
 	size_t new_size;
+	size_t xb; /* 8xb */
+	size_t tb; /* 8tb */
 	size_t gb; /* 8gb */
 	size_t mb; /* 8mb */
 	size_t kb; /* 8kb */
 
 	new_size = 0;
 
+	xb = 1L << 53;
+	tb = 1L << 43;
 	gb = 1L << 33;
 	mb = 1L << 23;
 	kb = 1L << 13;
 
-	if (size > gb) {	/* 8gb */
+	if (size > xb) {
+		new_size = size >> 50;
+		type = "xb";
+	} else if (size > tb) {
+		new_size = size >> 40;
+		type = "tb";
+	} else if (size > gb) {
 		new_size = size >> 30;
 		type = "gb";
-	} else if (size > mb) { /* 8mb */
+	} else if (size > mb) {
 		new_size = size >> 20;
 		type = "mb";
-	} else if (size > kb) { /* 8kb */
+	} else if (size > kb) {
 		new_size = size >> 10;
 		type = "kb";
 	} else {
 		new_size = size;
-		type = " b";
+		type = "b ";
 	}
 
 	sprintf(format_size, "%4lu%s", new_size, type);

@@ -27,7 +27,7 @@ enum err_status {
  */
 struct file {
 	char  *name;
-	char  type[17];
+	char  type[11];
 	char  time[20];
 	off_t size;
 };

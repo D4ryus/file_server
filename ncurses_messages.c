@@ -20,8 +20,8 @@ int last_win_heigth = 0;
 int last_win_width  = 0;
 
 void
-ncurses_print_info(struct data_store *data, char *m_type, const char *message,
-    int position)
+ncurses_print_info(struct data_store *data, char *m_type, const char *time,
+    const char *message, int position)
 {
 	if (!USE_NCURSES) {
 		return;
@@ -30,7 +30,8 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *message,
 	if (position < 0) {
 		scroll(win_logging);
 		mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
-		    "[%15s:%-5d - %3d]: %-3s - %s",
+		    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
+		    time,
 		    data->ip,
 		    data->port,
 		    data->socket,
@@ -39,11 +40,10 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *message,
 		wrefresh(win_logging);
 	} else	{
 		mvwprintw(win_status, position, 0,
-		    "[%15s:%-5d - %3d]: %-3s - %s",
+		    "[%15s:%-5d - %3d]: %s",
 		    data->ip,
 		    data->port,
 		    data->socket,
-		    m_type,
 		    message);
 	}
 }

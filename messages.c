@@ -83,8 +83,21 @@ void
 print_info(struct data_store *data, const enum message_type type,
     const char *message, int position)
 {
+	char str_time[20];
 	FILE *stream;
 	char *m_type;
+	time_t t;
+	struct tm *tmp;
+
+	t = time(NULL);
+	tmp = localtime(&t);
+	if (tmp == NULL) {
+		err_quit(ERR_INFO, "localtime() returned NULL");
+	}
+
+	if (strftime(str_time, 20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
+		err_quit(ERR_INFO, "strftime() returned 0");
+	}
 
 	switch (type) {
 		case ERROR:
@@ -105,7 +118,7 @@ print_info(struct data_store *data, const enum message_type type,
 	}
 
 #ifdef NCURSES
-	ncurses_print_info(data, m_type, message, position);
+	ncurses_print_info(data, m_type, str_time, message, position);
 #endif
 
 	switch (type) {
@@ -142,7 +155,8 @@ print_info(struct data_store *data, const enum message_type type,
 			/* first (0) color is black, last (7) color is white */
 			position = (position % 6) + 1;
 		}
-		fprintf(stream, "\x1b[3%dm[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
+		fprintf(stream, "\x1b%-19s [3%dm[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
+		    str_time,
 		    position,
 		    data->ip,
 		    data->port,
@@ -151,7 +165,8 @@ print_info(struct data_store *data, const enum message_type type,
 		    message);
 	} else {
 		position = 0;
-		fprintf(stream, "[%15s:%-5d - %3d]: %3s - %s\n",
+		fprintf(stream, "%-19s [%15s:%-5d - %3d]: %3s - %s\n",
+		    str_time,
 		    data->ip,
 		    data->port,
 		    data->socket,

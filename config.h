@@ -93,9 +93,11 @@ const int TABLE_BUFFER_SIZE = 512;
  */
 const char *TABLE_PLAIN[3] = {
 	/* table head */
-	"%-20s %-17s %-12s %s\n",
+	"%-19s %-11s %-6s %s\n"
+	"------------------------"
+	"-----------------------\n",
 	/* table body */
-	"%20s %17s %6s %s/%s\n",
+	"%19s %11s %6s %s/%s\n",
 	/* table end */
 	""};
 
