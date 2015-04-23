@@ -52,7 +52,7 @@ dir_to_table(struct data_store *data, char *directory)
 
 	if (d == NULL) {
 		data->body = concat(data->body,
-				 "Cannot open this directory, permission denied.");
+		    "Cannot open this directory, permission denied.");
 		data->body_length = strlen(data->body);
 		return;
 	}
