@@ -21,6 +21,7 @@ int
 main(const int argc, const char *argv[])
 {
 	int server_socket;
+	int client_socket;
 	int on;
 	int error;
 	pthread_t thread;
@@ -94,9 +95,17 @@ main(const int argc, const char *argv[])
 
 	/* put each connection in a new detached thread with its own data_store */
 	while (1) {
-		data = create_data_store();
-		data->socket = accept(server_socket,
+		client_socket = accept(server_socket,
 				   (struct sockaddr *) &cli_addr, &clilen);
+#ifdef NCURSES
+		/* ncurses uses signals on resize, so accept will continue */
+		if (WINDOW_RESIZED) {
+			WINDOW_RESIZED = 0;
+			continue;
+		}
+#endif
+		data = create_data_store();
+		data->socket = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
 		data->port = ntohs(cli_addr.sin_port);
 

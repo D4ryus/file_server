@@ -47,6 +47,11 @@ int USE_NCURSES = 0;
  * ncurses logging window height (rows)
  */
 const int LOGGING_WINDOW_HEIGTH = 10;
+
+/*
+ * global flag which is set by the resize handler, will be reset by main()
+ */
+int WINDOW_RESIZED = 0;
 #endif
 
 /*

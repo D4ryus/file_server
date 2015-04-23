@@ -35,15 +35,7 @@ handle_request(void *ptr)
 
 	data = (struct data_store *)ptr;
 	if (data->socket < 0) {
-#ifdef NCURSES
-		/* TODO: that aint nice */
-		print_info(data, ERROR,
-		    "socket is <0, could be due to window resize singal", -1);
-		free_data_store(data);
-		return(NULL);
-#else
 		err_quit(ERR_INFO, "socket in handle_request is < 0");
-#endif
 	}
 
 	print_info(data, CONNECTED, "connection established", -1);

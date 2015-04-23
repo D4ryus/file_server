@@ -4,6 +4,11 @@
 #include "types.h"
 
 /*
+ * handles resize signal
+ */
+void _ncurses_resize_handler(int);
+
+/*
  * initialises ncurses main window
  */
 void ncurses_init(void);
@@ -31,6 +36,6 @@ void ncurses_terminate(void);
 /*
  * initializes ncurses windows, called on startup and resize
  */
-void ncurses_init_windows(const int, const int);
+void ncurses_init_windows(int, int);
 
 #endif
