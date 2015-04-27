@@ -14,6 +14,7 @@ fixes and code changes:
       [X] - implement 'gcc -M'
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
+      [ ] - HTTP Request escape sequenzes (space/...)!!
       [ ] - quit/cleanup function
       [ ] - add startup information
       [ ] - add debugging option
@@ -52,7 +53,7 @@ messages:
       [X] - status infomation specified in growing amounts (see /proc/stat)
       [X] - enable optional logging which takes regular verbosity
       [X] - timestamp
-      [ ] - sync all messages
+      [X] - sync all messages
 
 ncurses:
       [X] - basic implementation
