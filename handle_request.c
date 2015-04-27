@@ -263,8 +263,8 @@ generate_200_file(struct data_store *data, char *file)
 		    "Content-Type: ");
 		data->head = concat(data->head,
 		    get_content_encoding(strrchr(file, '.')));
-		sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n",
-		    (uint64_t)sb.st_size);
+		sprintf(content_length, "\r\nContent-Length: %llu\r\n\r\n",
+		    (long long unsigned int)sb.st_size);
 		data->head = concat(data->head, content_length);
 	}
 
