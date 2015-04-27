@@ -56,8 +56,8 @@ struct data_store {
 	uint64_t body_length;		/* length of response body / filesize */
 	enum  request_type req_type;	/* requested type */
 	enum  body_type    body_type;	/* type of body */
-	size_t written;			/* written data */
-	size_t last_written;		/* will be updated by status print thread */
+	uint64_t written;		/* written data */
+	uint64_t last_written;		/* will be updated by status print thread */
 };
 
 /*

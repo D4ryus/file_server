@@ -147,18 +147,18 @@ const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
  * minimum size in bytes of file to get printed on verbositiy lvl 3,
  * or inside the ncurses status area
  */
-const size_t MIN_STATUS_SIZE = 1048576; /* 1MB */
+const uint32_t MIN_STATUS_SIZE = 1048576; /* 1MB */
 
 /*
  * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
  * everything extending that limit will be thrown away.
  */
-const size_t BUFFSIZE_READ  = 2048;
+const uint32_t BUFFSIZE_READ  = 2048;
 
 /*
  * if a file is transferd BUFFSIZE_WRITE describes the buffersize of
  * bytes read and then written to the socket.
  */
-const size_t BUFFSIZE_WRITE = 8192;
+const uint32_t BUFFSIZE_WRITE = 8192;
 
 #endif

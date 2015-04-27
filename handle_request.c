@@ -17,8 +17,8 @@
  */
 extern char *ROOT_DIR;
 extern int VERBOSITY;
-extern const size_t MIN_STATUS_SIZE;
-extern const size_t BUFFSIZE_READ;
+extern const uint32_t MIN_STATUS_SIZE;
+extern const uint32_t BUFFSIZE_READ;
 extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
 extern const char *RESPONSE_404;
@@ -263,13 +263,13 @@ generate_200_file(struct data_store *data, char *file)
 		    "Content-Type: ");
 		data->head = concat(data->head,
 		    get_content_encoding(strrchr(file, '.')));
-		sprintf(content_length, "\r\nContent-Length: %u\r\n\r\n",
-		    (size_t)sb.st_size);
+		sprintf(content_length, "\r\nContent-Length: %lu\r\n\r\n",
+		    (uint64_t)sb.st_size);
 		data->head = concat(data->head, content_length);
 	}
 
 	data->body = concat(data->body, file);
-	data->body_length = (size_t)sb.st_size;
+	data->body_length = (uint64_t)sb.st_size;
 	data->body_type = DATA;
 
 	return;

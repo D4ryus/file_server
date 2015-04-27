@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <curses.h>
 #include <string.h>
+#include <pthread.h>
 
 #include "ncurses_messages.h"
 #include "helper.h"
@@ -18,6 +19,8 @@ extern int WINDOW_RESIZED;
 
 WINDOW *win_status  = NULL;
 WINDOW *win_logging = NULL;
+
+static pthread_mutex_t ncurses_mutex;
 
 void
 _ncurses_resize_handler(int sig)
@@ -36,8 +39,8 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *time,
 		return;
 	}
 
+	pthread_mutex_lock(&ncurses_mutex);
 	if (position < 0) {
-		/* TODO: NCURSES MUTEX LOCK */
 		scroll(win_logging);
 		mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
 		    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
@@ -48,17 +51,15 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *time,
 		    m_type,
 		    message);
 		wrefresh(win_logging);
-		/* TODO: NCURSES MUTEX UNLOCK */
 	} else {
-		/* TODO: NCURSES MUTEX LOCK */
 		mvwprintw(win_status, position, 0,
 		    "[%15s:%-5d - %3d]: %s",
 		    data->ip,
 		    data->port,
 		    data->socket,
 		    message);
-		/* TODO: NCURSES MUTEX UNLOCK */
 	}
+	pthread_mutex_unlock(&ncurses_mutex);
 }
 
 void
@@ -73,6 +74,9 @@ ncurses_init(void)
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = _ncurses_resize_handler;
 	sigaction(SIGWINCH, &sa, NULL);
+
+
+	pthread_mutex_init(&ncurses_mutex, NULL);
 
 	initscr();
 
@@ -98,9 +102,9 @@ ncurses_update_begin(int last_position)
 
 	/* TODO: do this one right */
 	if (last_position > 0) { /* only refresh if something changed */
-		/* TODO: NCURSES MUTEX LOCK */
+		pthread_mutex_lock(&ncurses_mutex);
 		werase(win_status);
-		/* TODO: NCURSES MUTEX UNLOCK */
+		pthread_mutex_unlock(&ncurses_mutex);
 	}
 }
 
@@ -111,9 +115,9 @@ ncurses_update_end(int last_position)
 		return;
 	}
 
-	/* TODO: NCURSES MUTEX LOCK */
+	pthread_mutex_lock(&ncurses_mutex);
 	wrefresh(win_status);
-	/* TODO: NCURSES MUTEX UNLOCK */
+	pthread_mutex_unlock(&ncurses_mutex);
 }
 
 void
@@ -124,10 +128,11 @@ ncurses_terminate()
 	}
 
 	/* TODO: fix cleanup */
-	/* TODO: NCURSES MUTEX LOCK */
+	pthread_mutex_lock(&ncurses_mutex);
 	delwin(stdscr);
 	endwin();
-	/* TODO: NCURSES MUTEX UNLOCK */
+	pthread_mutex_unlock(&ncurses_mutex);
+	pthread_mutex_destroy(&ncurses_mutex);
 }
 
 void
@@ -163,7 +168,7 @@ ncurses_init_windows(int heigth, int width)
 		status_heigth = 1;
 	}
 
-	/* TODO: NCURSES MUTEX LOCK */
+	pthread_mutex_lock(&ncurses_mutex);
 	if (win_status == NULL) {
 		win_status = newwin(status_heigth, width, 2, 0);
 		if (win_status == NULL) {
@@ -193,24 +198,20 @@ ncurses_init_windows(int heigth, int width)
 		mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 1, i, "_");
 	}
 	if ((size_t)width > strlen(head_info)) {
-		/* mvprintw(0, 0, head_info); */
 		mvaddnstr(0, 0, head_info, width);
 	}
 	if ((size_t)width > strlen(head_info) + strlen(head_data) + 1) {
-		/* mvprintw(0, (int)width  - (int)strlen(head_data), head_data); */
 		mvaddnstr(0, (int)width  - (int)strlen(head_data), head_data, width);
 	}
 	if ((size_t)width > strlen(head_body_status)) {
-		/* mvprintw(1, 0, head_body_status); */
 		mvaddnstr(1, 0, head_body_status, width);
 	}
 	if ((size_t)width > strlen(head_body_log)) {
-		/* mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 1, 0, head_body_log); */
 		mvaddnstr(heigth - LOGGING_WINDOW_HEIGTH - 1, 0, head_body_log, width);
 	}
 
 	refresh();
 	wrefresh(win_status);
 	wrefresh(win_logging);
-	/* TODO: NCURSES MUTEX UNLOCK */
+	pthread_mutex_unlock(&ncurses_mutex);
 }

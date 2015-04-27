@@ -24,6 +24,7 @@ extern int USE_NCURSES;
 
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
+static pthread_mutex_t print_mutex;
 
 void
 init_messages(pthread_t *thread, const pthread_attr_t *attr)
@@ -39,6 +40,8 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
 	if (VERBOSITY >= 3) {
 #endif
 		pthread_mutex_init(&status_list_mutex, NULL);
+		pthread_mutex_init(&print_mutex, NULL);
+
 		error = pthread_create(thread, attr, &print_loop, NULL);
 		if (error != 0) {
 			err_quit(ERR_INFO, "pthread_create() != 0");
@@ -77,6 +80,7 @@ sleep:
 	ncurses_terminate();
 #endif
 	pthread_mutex_destroy(&status_list_mutex);
+	pthread_mutex_destroy(&print_mutex);
 }
 
 void
@@ -148,6 +152,7 @@ print_info(struct data_store *data, const enum message_type type,
 		stream = stdout;
 	}
 
+	pthread_mutex_lock(&print_mutex);
 	if (COLOR) {
 		if (position == -1) {
 			position = 7;
@@ -155,9 +160,9 @@ print_info(struct data_store *data, const enum message_type type,
 			/* first (0) color is black, last (7) color is white */
 			position = (position % 6) + 1;
 		}
-		fprintf(stream, "\x1b%-19s [3%dm[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
-		    str_time,
+		fprintf(stream, "\x1b[3%dm%-19s[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
 		    position,
+		    str_time,
 		    data->ip,
 		    data->port,
 		    data->socket,
@@ -177,6 +182,7 @@ print_info(struct data_store *data, const enum message_type type,
 	if (_LOG_FILE != NULL) {
 		fflush(_LOG_FILE);
 	}
+	pthread_mutex_unlock(&print_mutex);
 }
 
 void
@@ -186,11 +192,11 @@ format_and_print(struct status_list_node *cur, const int position)
 	 * later last_written is set and the initial written value is needed,
 	 * to not read multiple times this value holds the inital value
 	 */
-	size_t synched_written;
-	size_t written;
-	size_t left;
-	size_t size;
-	size_t bytes_per_tval;
+	uint64_t synched_written;
+	uint64_t written;
+	uint64_t left;
+	uint64_t size;
+	uint64_t bytes_per_tval;
 
 	char   fmt_written[7];
 	char   fmt_left[7];
@@ -214,7 +220,7 @@ format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	sprintf(msg_buffer, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	sprintf(msg_buffer, "%3lu%% [%6s/%6s (%6s)] %6s/%lus - %s",
 	    synched_written * 100 / cur->data->body_length,
 	    fmt_written,
 	    fmt_size,

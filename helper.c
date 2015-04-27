@@ -14,7 +14,7 @@
  */
 extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
-extern const size_t BUFFSIZE_WRITE;
+extern const uint32_t BUFFSIZE_WRITE;
 
 int
 send_text(int socket, char *text, uint64_t length)
@@ -23,56 +23,37 @@ send_text(int socket, char *text, uint64_t length)
 		return STAT_OK;
 	}
 
+	uint64_t cur_pos;
 	ssize_t write_res;
-	int     sending;
+	size_t buff_size;
+	size_t sent_bytes;
+	int sending;
 
-	write_res = 0;
-	sending   = 1;
+	write_res  = 0;
+	sending    = 1;
+	buff_size  = 0;
+	sent_bytes = 0;
+	cur_pos    = 0;
 
-	/* >> */
-
-	size_t  sent;
-	sent = 0;
 	while (sending) {
-		write_res = write(socket, text + sent, length - sent);
-		if (write_res == -1) {
-			return WRITE_CLOSED;
-		} else if (write_res == 0) {
-			return ZERO_WRITTEN;
+		if (length - cur_pos > BUFFSIZE_WRITE) {
+			buff_size = BUFFSIZE_WRITE;
+		} else {
+			buff_size = (size_t)(length - cur_pos);
+			sending = 0;
 		}
-		sent = sent + (size_t)write_res;
-		if (sent != length) {
-			continue;
+		sent_bytes = 0;
+		while (sent_bytes < buff_size) {
+			write_res = write(socket, text + cur_pos + sent_bytes, buff_size - sent_bytes);
+			if (write_res == -1) {
+				return WRITE_CLOSED;
+			} else if (write_res == 0) {
+				return ZERO_WRITTEN;
+			}
+			sent_bytes = sent_bytes + (size_t)write_res;
 		}
-		sending = 0;
+		cur_pos += buff_size;
 	}
-
-	/* -- */
-
-	/* size_t buff_size = 0; */
-	/* size_t sent_bytes = 0; */
-	/* uint64_t cur_pos = 0; */
-	/* while (sending) { */
-	/* 	if (length - cur_pos > BUFFSIZE_WRITE) { */
-	/* 		buff_size = BUFFSIZE_WRITE; */
-	/* 	} else { */
-	/* 		buff_size = (size_t)(length - cur_pos); */
-	/* 		sending = 0; */
-	/* 	} */
-	/* 	sent_bytes = 0; */
-	/* 	while (sent_bytes < buff_size) { */
-	/* 		write_res = write(socket, text + cur_pos + sent_bytes, buff_size - sent_bytes); */
-	/* 		if (write_res == -1) { */
-	/* 			return WRITE_CLOSED; */
-	/* 		} else if (write_res == 0) { */
-	/* 			return ZERO_WRITTEN; */
-	/* 		} */
-	/* 		sent_bytes = sent_bytes + (size_t)write_res; */
-	/* 	} */
-	/* 	cur_pos += buff_size; */
-	/* } */
-
-	/* << */
 
 	return STAT_OK;
 }
@@ -206,7 +187,7 @@ format_size(uint64_t size, char fmt_size[7])
 		type = "b ";
 	}
 
-	sprintf(fmt_size, "%4llu%s", new_size, type);
+	sprintf(fmt_size, "%4lu%s", new_size, type);
 
 	return fmt_size;
 }
