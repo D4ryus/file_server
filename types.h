@@ -1,6 +1,8 @@
 #ifndef TYPES_H
 #define TYPES_H
 
+#include <stdint.h>
+
 /*
  * enums
  */
@@ -45,13 +47,13 @@ struct dir {
  * per request a data store is generated and then during execution filled
  */
 struct data_store {
-	char   ip[16];			/* ip from client */
-	int    port;			/* port from client */
-	int    socket;			/* socket descriptor */
-	char   *url;			/* requested file */
-	char   *head;			/* response header */
-	char   *body;			/* response body, if file filename */
-	size_t body_length;		/* length of response body / filesize */
+	char     ip[16];		/* ip from client */
+	int      port;			/* port from client */
+	int      socket;		/* socket descriptor */
+	char     *url;			/* requested file */
+	char     *head;			/* response header */
+	char     *body;			/* response body, if file filename */
+	uint64_t body_length;		/* length of response body / filesize */
 	enum  request_type req_type;	/* requested type */
 	enum  body_type    body_type;	/* type of body */
 	size_t written;			/* written data */

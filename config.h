@@ -14,7 +14,7 @@ char *ROOT_DIR = ".";
 /*
  * port if none specified
  */
-int PORT = 8283;
+uint16_t PORT = 8283;
 
 /*
  * port if none specified

@@ -81,7 +81,7 @@ dir_to_table(struct data_store *data, char *directory)
 		sprintf(buffer, table_ptr[1], /* table body */
 		    d->files[i]->time,
 		    d->files[i]->type,
-		    format_size((size_t)d->files[i]->size, fmt_size),
+		    format_size((uint64_t)d->files[i]->size, fmt_size),
 		    directory + strlen(ROOT_DIR),
 		    d->files[i]->name);
 		data->body = concat(data->body, buffer);

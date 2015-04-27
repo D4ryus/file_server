@@ -1,6 +1,8 @@
 #ifndef HELPER_H
 #define HELPER_H
 
+#include <stdint.h>
+
 #include "types.h"
 
 #define ERR_INFO __FILE__, __LINE__, __func__
@@ -11,7 +13,7 @@
  * WRITE_CLOSED (-1) : could not write, client closed connection
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
-int send_text(int, char *, size_t);
+int send_text(int, char *, uint64_t);
 
 /*
  * if negative number is return, error occured
@@ -38,7 +40,7 @@ int starts_with(const char *, const char *);
 /*
  * formats size into readable format
  */
-char *format_size(size_t, char[7]);
+char *format_size(uint64_t, char[7]);
 
 /*
  * mallocs given size but also checks if succeded, if not exits

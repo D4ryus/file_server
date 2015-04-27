@@ -214,7 +214,7 @@ format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	sprintf(msg_buffer, "%3lu%% [%6s/%6s (%6s)] %6s/%lus - %s",
+	sprintf(msg_buffer, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
 	    synched_written * 100 / cur->data->body_length,
 	    fmt_written,
 	    fmt_size,

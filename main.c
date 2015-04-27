@@ -160,7 +160,7 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit("user specified -p/--port "
 				    "without a port");
 			}
-			PORT = atoi(argv[i]);
+			PORT = (uint16_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-v") == 0)
 		    || (strcmp(argv[i], "--verbosity") == 0)) {
 			i++;

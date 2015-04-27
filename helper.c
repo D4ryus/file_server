@@ -17,20 +17,22 @@ extern FILE *_LOG_FILE;
 extern const size_t BUFFSIZE_WRITE;
 
 int
-send_text(int socket, char *text, size_t length)
+send_text(int socket, char *text, uint64_t length)
 {
 	if (strlen(text) == 0) {
 		return STAT_OK;
 	}
 
 	ssize_t write_res;
-	int	sending;
-	size_t	sent;
+	int     sending;
 
 	write_res = 0;
-	sent = 0;
-	sending = 1;
+	sending   = 1;
 
+	/* >> */
+
+	size_t  sent;
+	sent = 0;
 	while (sending) {
 		write_res = write(socket, text + sent, length - sent);
 		if (write_res == -1) {
@@ -45,6 +47,33 @@ send_text(int socket, char *text, size_t length)
 		sending = 0;
 	}
 
+	/* -- */
+
+	/* size_t buff_size = 0; */
+	/* size_t sent_bytes = 0; */
+	/* uint64_t cur_pos = 0; */
+	/* while (sending) { */
+	/* 	if (length - cur_pos > BUFFSIZE_WRITE) { */
+	/* 		buff_size = BUFFSIZE_WRITE; */
+	/* 	} else { */
+	/* 		buff_size = (size_t)(length - cur_pos); */
+	/* 		sending = 0; */
+	/* 	} */
+	/* 	sent_bytes = 0; */
+	/* 	while (sent_bytes < buff_size) { */
+	/* 		write_res = write(socket, text + cur_pos + sent_bytes, buff_size - sent_bytes); */
+	/* 		if (write_res == -1) { */
+	/* 			return WRITE_CLOSED; */
+	/* 		} else if (write_res == 0) { */
+	/* 			return ZERO_WRITTEN; */
+	/* 		} */
+	/* 		sent_bytes = sent_bytes + (size_t)write_res; */
+	/* 	} */
+	/* 	cur_pos += buff_size; */
+	/* } */
+
+	/* << */
+
 	return STAT_OK;
 }
 
@@ -53,8 +82,8 @@ send_file(struct data_store *data)
 {
 	ssize_t write_res;
 	int	sending;
-	size_t	read;
-	size_t	sent;
+	size_t	read_bytes;
+	size_t	sent_bytes;
 	char	buffer[BUFFSIZE_WRITE];
 	FILE	*f;
 	enum err_status ret_status;
@@ -69,13 +98,13 @@ send_file(struct data_store *data)
 	ret_status = STAT_OK;
 
 	while (sending) {
-		read = fread(buffer, 1, BUFFSIZE_WRITE, f);
-		if (read < BUFFSIZE_WRITE) {
+		read_bytes = fread(buffer, 1, BUFFSIZE_WRITE, f);
+		if (read_bytes < BUFFSIZE_WRITE) {
 			sending = 0;
 		}
-		sent = 0;
-		while (sent < read) {
-			write_res = write(data->socket, buffer + sent, read - sent);
+		sent_bytes = 0;
+		while (sent_bytes < read_bytes) {
+			write_res = write(data->socket, buffer + sent_bytes, read_bytes - sent_bytes);
 			if (write_res == -1) {
 				sending = 0;
 				ret_status = WRITE_CLOSED;
@@ -85,9 +114,9 @@ send_file(struct data_store *data)
 				ret_status = ZERO_WRITTEN;
 				break;
 			}
-			sent = sent + (size_t)write_res;
+			sent_bytes = sent_bytes + (size_t)write_res;
 		}
-		data->written += sent;
+		data->written += sent_bytes;
 	}
 	fclose(f);
 
@@ -139,23 +168,23 @@ starts_with(const char *line, const char *prefix)
 }
 
 char *
-format_size(size_t size, char format_size[7])
+format_size(uint64_t size, char fmt_size[7])
 {
 	char   *type;
-	size_t new_size;
-	size_t xb; /* 8xb */
-	size_t tb; /* 8tb */
-	size_t gb; /* 8gb */
-	size_t mb; /* 8mb */
-	size_t kb; /* 8kb */
+	uint64_t new_size;
+	uint64_t xb; /* 8xb */
+	uint64_t tb; /* 8tb */
+	uint64_t gb; /* 8gb */
+	uint64_t mb; /* 8mb */
+	uint64_t kb; /* 8kb */
 
 	new_size = 0;
 
-	xb = 1L << 53;
-	tb = 1L << 43;
-	gb = 1L << 33;
-	mb = 1L << 23;
-	kb = 1L << 13;
+	xb = (uint64_t)1 << 53;
+	tb = (uint64_t)1 << 43;
+	gb = (uint64_t)1 << 33;
+	mb = (uint64_t)1 << 23;
+	kb = (uint64_t)1 << 13;
 
 	if (size > xb) {
 		new_size = size >> 50;
@@ -177,9 +206,9 @@ format_size(size_t size, char format_size[7])
 		type = "b ";
 	}
 
-	sprintf(format_size, "%4lu%s", new_size, type);
+	sprintf(fmt_size, "%4llu%s", new_size, type);
 
-	return format_size;
+	return fmt_size;
 }
 
 void *
