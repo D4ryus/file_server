@@ -22,15 +22,44 @@ WINDOW *win_logging = NULL;
 
 static pthread_mutex_t ncurses_mutex;
 
+/*
+ * initialises ncurses main window
+ */
 void
-_ncurses_resize_handler(int sig)
+ncurses_init(void)
 {
-	WINDOW_RESIZED = 1;
-	endwin();
-	refresh();
-	ncurses_init_windows(0, 0);
+	if (!USE_NCURSES) {
+		return;
+	}
+
+	struct sigaction sa;
+
+	memset(&sa, 0, sizeof(struct sigaction));
+	sa.sa_handler = _ncurses_resize_handler;
+	sigaction(SIGWINCH, &sa, NULL);
+
+
+	pthread_mutex_init(&ncurses_mutex, NULL);
+
+	initscr();
+
+	start_color();
+	attron(COLOR_PAIR(1));
+	init_pair(1, COLOR_BLACK, COLOR_WHITE);
+	init_pair(2, COLOR_WHITE, COLOR_BLACK);
+
+	if (stdscr == NULL) {
+		err_quit(ERR_INFO,  "initscr() != NULL");
+	}
+
+	_ncurses_init_windows(0, 0);
+	scrollok(win_logging, true);
 }
 
+/*
+ * prints given info inside ncurses window
+ * if position is < 1 its a log message
+ */
 void
 ncurses_print_info(struct data_store *data, char *m_type, const char *time,
     const char *message, int position)
@@ -62,37 +91,9 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *time,
 	pthread_mutex_unlock(&ncurses_mutex);
 }
 
-void
-ncurses_init(void)
-{
-	if (!USE_NCURSES) {
-		return;
-	}
-
-	struct sigaction sa;
-
-	memset(&sa, 0, sizeof(struct sigaction));
-	sa.sa_handler = _ncurses_resize_handler;
-	sigaction(SIGWINCH, &sa, NULL);
-
-
-	pthread_mutex_init(&ncurses_mutex, NULL);
-
-	initscr();
-
-	start_color();
-	attron(COLOR_PAIR(1));
-	init_pair(1, COLOR_BLACK, COLOR_WHITE);
-	init_pair(2, COLOR_WHITE, COLOR_BLACK);
-
-	if (stdscr == NULL) {
-		err_quit(ERR_INFO,  "initscr() != NULL");
-	}
-
-	ncurses_init_windows(0, 0);
-	scrollok(win_logging, true);
-}
-
+/*
+ * start of printing status messages
+ */
 void
 ncurses_update_begin(int last_position)
 {
@@ -100,16 +101,19 @@ ncurses_update_begin(int last_position)
 		return;
 	}
 
-	/* TODO: do this one right */
-	if (last_position > 0) { /* only refresh if something changed */
+	/* if there where no messages last time, dont erase screen */
+	if (last_position > 0) {
 		pthread_mutex_lock(&ncurses_mutex);
 		werase(win_status);
 		pthread_mutex_unlock(&ncurses_mutex);
 	}
 }
 
+/*
+ * end of printing status messages
+ */
 void
-ncurses_update_end(int last_position)
+ncurses_update_end(void)
 {
 	if (!USE_NCURSES) {
 		return;
@@ -120,6 +124,9 @@ ncurses_update_end(int last_position)
 	pthread_mutex_unlock(&ncurses_mutex);
 }
 
+/*
+ * terminates ncurses window
+ */
 void
 ncurses_terminate()
 {
@@ -135,8 +142,23 @@ ncurses_terminate()
 	pthread_mutex_destroy(&ncurses_mutex);
 }
 
+/*
+ * handles resize signal
+ */
 void
-ncurses_init_windows(int heigth, int width)
+_ncurses_resize_handler(int sig)
+{
+	WINDOW_RESIZED = 1;
+	endwin();
+	refresh();
+	_ncurses_init_windows(0, 0);
+}
+
+/*
+ * initializes ncurses windows, called on startup and resize
+ */
+void
+_ncurses_init_windows(int heigth, int width)
 {
 	if (!USE_NCURSES) {
 		return;
