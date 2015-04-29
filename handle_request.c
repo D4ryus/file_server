@@ -262,7 +262,7 @@ generate_200_file(struct data_store *data, char *file)
 		data->head = concat(data->head, "HTTP/1.1 200 OK\r\n"
 		    "Content-Type: ");
 		data->head = concat(data->head,
-		    get_content_encoding(strrchr(file, '.')));
+		    get_content_encoding(strrchr(file, '.') + 1));
 		sprintf(content_length, "\r\nContent-Length: %llu\r\n\r\n",
 		    (long long unsigned int)sb.st_size);
 		data->head = concat(data->head, content_length);

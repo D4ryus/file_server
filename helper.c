@@ -292,6 +292,8 @@ get_content_encoding(const char *type)
 		return "application/gzip";
 	} else if (!strcmp(type, "zip")) {
 		return "application/zip";
+	} else if (!strcmp(type, "pdf")) {
+		return "application/pdf";
 	} else if (!strcmp(type, "mpeg") || !strcmp(type, "mpg") || !strcmp(type, "mpe")) {
 		return "video/mpeg";
 	} else if (!strcmp(type, "dwg")) {
@@ -324,8 +326,6 @@ get_content_encoding(const char *type)
 		return "application/octet-stream";
 	} else if (!strcmp(type, "oda")) {
 		return "application/oda";
-	} else if (!strcmp(type, "pdf")) {
-		return "application/pdf";
 	} else if (!strcmp(type, "ai") || !strcmp(type, "eps") || !strcmp(type, "ps")) {
 		return "application/postscript";
 	} else if (!strcmp(type, "rtc")) {
