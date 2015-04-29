@@ -28,6 +28,9 @@ extern const char *RESPONSE_403;
 extern int USE_NCURSES;
 #endif
 
+/*
+ * function where each thread starts execution with given data_store
+ */
 void *
 handle_request(void *ptr)
 {
@@ -148,6 +151,13 @@ exit:
 	return NULL;
 }
 
+/*
+ * reads from socket size bytes and write them to buffer
+ * if negative number is returned, error occured
+ * STAT_OK	 ( 0) : everything went fine.
+ * READ_CLOSED	 (-3) : client closed connection
+ * EMPTY_MESSAGE (-4) : nothing was read from socket
+ */
 int
 read_request(int socket, char *buffer, size_t size)
 {
@@ -165,6 +175,13 @@ read_request(int socket, char *buffer, size_t size)
 	return STAT_OK;
 }
 
+/*
+ * parses given request
+ * allocs given *url with size of requested filename
+ * if negative number is returned, error occured
+ * STAT_OK	 ( 0) : everything went fine.
+ * INV_GET	 (-5) : parse error
+ */
 int
 parse_request(char *request, enum request_type *req_type, char **url)
 {
@@ -209,6 +226,9 @@ parse_request(char *request, enum request_type *req_type, char **url)
 	return STAT_OK;
 }
 
+/*
+ * generates a response and saves it inside the data_store
+ */
 void
 generate_response(struct data_store *data)
 {
@@ -248,6 +268,9 @@ generate_response(struct data_store *data)
 	return;
 }
 
+/*
+ * generates a 200 OK HTTP response and saves it inside the data_store
+ */
 void
 generate_200_file(struct data_store *data, char *file)
 {
@@ -275,6 +298,9 @@ generate_200_file(struct data_store *data, char *file)
 	return;
 }
 
+/*
+ * generates a 200 OK HTTP response and saves it inside the data_store
+ */
 void
 generate_200_directory(struct data_store *data, char *directory)
 {
@@ -297,6 +323,9 @@ generate_200_directory(struct data_store *data, char *directory)
 	return;
 }
 
+/*
+ * generates a 404 NOT FOUND HTTP response and saves it inside the data_store
+ */
 void
 generate_404(struct data_store *data)
 {
@@ -311,6 +340,9 @@ generate_404(struct data_store *data)
 	return;
 }
 
+/*
+ * generates a 403 FORBIDDEN HTTP response and saves it inside the data_store
+ */
 void
 generate_403(struct data_store *data)
 {

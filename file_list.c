@@ -18,27 +18,46 @@ extern const int TABLE_BUFFER_SIZE;
 extern const char *TABLE_PLAIN[3];
 extern const char *TABLE_HTML[3];
 
-void
-free_dir(struct dir *d)
+/*
+ * creates a dir stuct with from given directory.
+ * returns NULL if permission is denied.
+ */
+struct dir *
+get_dir(char *directory)
 {
-	if (d == NULL) {
-		return;
-	}
+	DIR	      *dirp;
+	struct dirent *dp;
+	struct dir    *result;
+	int	      i;
 
-	if (d->name != NULL) {
-		free(d->name);
-	}
-
-	int i;
-	for (i = 0; i < d->length; i++) {
-		if (d->files[i]->name != NULL) {
-			free(d->files[i]->name);
+	dirp = opendir(directory);
+	if (dirp == NULL) {
+		if (errno == EACCES) {
+			return NULL;
 		}
-		free(d->files[i]);
+		err_quit(ERR_INFO, "opendir() returned NULL");
 	}
-	free(d);
+
+	result = (struct dir *)err_malloc(sizeof(struct dir));
+	result->length = 0;
+	result->name = err_malloc(strlen(directory) + 1);
+	strncpy(result->name, directory, strlen(directory) + 1);
+
+	for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
+		result = _add_file_to_dir(result, dp->d_name, directory);
+	}
+
+	closedir(dirp);
+
+	qsort(result->files, (size_t)result->length, sizeof(struct file *),
+	    _compare_files);
+
+	return result;
 }
 
+/*
+ * opens given directory and adds data to given data_store
+ */
 void
 dir_to_table(struct data_store *data, char *directory)
 {
@@ -96,8 +115,35 @@ dir_to_table(struct data_store *data, char *directory)
 	return;
 }
 
+/*
+ * free's dir struct + file list + file names
+ */
+void
+free_dir(struct dir *d)
+{
+	if (d == NULL) {
+		return;
+	}
+
+	if (d->name != NULL) {
+		free(d->name);
+	}
+
+	int i;
+	for (i = 0; i < d->length; i++) {
+		if (d->files[i]->name != NULL) {
+			free(d->files[i]->name);
+		}
+		free(d->files[i]);
+	}
+	free(d);
+}
+
+/*
+ * adds a file to the given dir struct, usses realloc
+ */
 struct dir *
-add_file_to_dir(struct dir *d, char *file, char *directory)
+_add_file_to_dir(struct dir *d, char *file, char *directory)
 {
 	if (file == NULL) {
 		err_quit(ERR_INFO, "tried to add file which was NULL");
@@ -155,41 +201,11 @@ add_file_to_dir(struct dir *d, char *file, char *directory)
 	return d;
 }
 
-struct dir *
-get_dir(char *directory)
-{
-	DIR	      *dirp;
-	struct dirent *dp;
-	struct dir    *result;
-	int	      i;
-
-	dirp = opendir(directory);
-	if (dirp == NULL) {
-		if (errno == EACCES) {
-			return NULL;
-		}
-		err_quit(ERR_INFO, "opendir() returned NULL");
-	}
-
-	result = (struct dir *)err_malloc(sizeof(struct dir));
-	result->length = 0;
-	result->name = err_malloc(strlen(directory) + 1);
-	strncpy(result->name, directory, strlen(directory) + 1);
-
-	for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
-		result = add_file_to_dir(result, dp->d_name, directory);
-	}
-
-	closedir(dirp);
-
-	qsort(result->files, (size_t)result->length, sizeof(struct file *),
-	    compare_files);
-
-	return result;
-}
-
+/*
+ * compare function to compare file structs, used for qsort
+ */
 int
-compare_files(const void *elem1, const void *elem2)
+_compare_files(const void *elem1, const void *elem2)
 {
 	const struct file *file1 = *(struct file * const *)elem1;
 	const struct file *file2 = *(struct file * const *)elem2;

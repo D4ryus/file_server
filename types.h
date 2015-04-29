@@ -69,14 +69,7 @@ struct status_list_node {
 	struct status_list_node *next;
 };
 
-/*
- * mallocs a new data_store and sets initial values
- */
 struct data_store *create_data_store(void);
-
-/*
- * savely frees the given datastore from memory
- */
 void free_data_store(struct data_store *);
 
 #endif

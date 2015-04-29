@@ -4,6 +4,9 @@
 #include "types.h"
 #include "helper.h"
 
+/*
+ * mallocs a new data_store and sets initial values
+ */
 struct data_store *
 create_data_store(void)
 {
@@ -28,6 +31,9 @@ create_data_store(void)
 	return data;
 }
 
+/*
+ * savely frees the given datastore from memory
+ */
 void
 free_data_store(struct data_store *data)
 {

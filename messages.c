@@ -26,6 +26,11 @@ static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
 
+/*
+ * initialize messages subsystem, which will create its own thread
+ * and init mutex variables. if NCURSES is enabled ncurses will be
+ * started also
+ */
 void
 init_messages(pthread_t *thread, const pthread_attr_t *attr)
 {
@@ -49,6 +54,10 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
 	}
 }
 
+/*
+ * wont end, will print every refresh_time seconds
+ * each element from the linkedlist
+ */
 void *
 print_loop(void *ignored)
 {
@@ -72,7 +81,7 @@ print_loop(void *ignored)
 sleep:
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-		ncurses_update_end(position);
+		ncurses_update_end();
 #endif
 		sleep((uint)UPDATE_TIMEOUT);
 	}
@@ -83,6 +92,9 @@ sleep:
 	pthread_mutex_destroy(&print_mutex);
 }
 
+/*
+ * prints info (ip port socket) + given type and message to stdout
+ */
 void
 print_info(struct data_store *data, const enum message_type type,
     const char *message, int position)
@@ -185,6 +197,9 @@ print_info(struct data_store *data, const enum message_type type,
 	pthread_mutex_unlock(&print_mutex);
 }
 
+/*
+ * formats a data_list_node and calls print_info
+ */
 void
 format_and_print(struct status_list_node *cur, const int position)
 {
@@ -232,6 +247,9 @@ format_and_print(struct status_list_node *cur, const int position)
 	print_info(cur->data, TRANSFER, msg_buffer, position);
 }
 
+/*
+ * adds a hook to the status print thread
+ */
 void
 add_hook(struct data_store *new_data)
 {
@@ -255,6 +273,9 @@ add_hook(struct data_store *new_data)
 	return;
 }
 
+/*
+ * removes a hook to the status print thread
+ */
 void
 remove_hook(struct data_store *del_data)
 {

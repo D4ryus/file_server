@@ -16,6 +16,12 @@ extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
 extern const uint32_t BUFFSIZE_WRITE;
 
+/*
+ * if negative number is return, error occured
+ * STAT_OK	( 0) : everything went fine.
+ * WRITE_CLOSED (-1) : could not write, client closed connection
+ * ZERO_WRITTEN (-2) : could not write, 0 bytes written
+ */
 int
 send_text(int socket, char *text, uint64_t length)
 {
@@ -58,6 +64,12 @@ send_text(int socket, char *text, uint64_t length)
 	return STAT_OK;
 }
 
+/*
+ * if negative number is return, error occured
+ * STAT_OK	( 0) : everything went fine.
+ * WRITE_CLOSED (-1) : could not write, client closed connection
+ * ZERO_WRITTEN (-2) : could not write, 0 bytes written
+ */
 int
 send_file(struct data_store *data)
 {
@@ -104,6 +116,9 @@ send_file(struct data_store *data)
 	return ret_status;
 }
 
+/*
+ * will reallocated dst and strcat src onto it
+ */
 char *
 concat(char *dst, const char *src)
 {
@@ -113,6 +128,9 @@ concat(char *dst, const char *src)
 	return dst;
 }
 
+/*
+ * checks if given string is a directory, if its a file 0 is returned
+ */
 int
 is_directory(const char *path)
 {
@@ -133,6 +151,9 @@ is_directory(const char *path)
 	return 0;
 }
 
+/*
+ * check if first string starts with second string
+ */
 int
 starts_with(const char *line, const char *prefix)
 {
@@ -148,6 +169,9 @@ starts_with(const char *line, const char *prefix)
 	return 1;
 }
 
+/*
+ * formats size into readable format
+ */
 char *
 format_size(uint64_t size, char fmt_size[7])
 {
@@ -192,6 +216,9 @@ format_size(uint64_t size, char fmt_size[7])
 	return fmt_size;
 }
 
+/*
+ * mallocs given size but also checks if succeded, if not exits
+ */
 void *
 err_malloc(size_t size)
 {
@@ -205,6 +232,9 @@ err_malloc(size_t size)
 	return tmp;
 }
 
+/*
+ * reallocs given size but also checks if succeded, if not exits
+ */
 void *
 err_realloc(void *ptr, size_t size)
 {
@@ -216,6 +246,9 @@ err_realloc(void *ptr, size_t size)
 	return ptr;
 }
 
+/*
+ * prints out given information to stderr and exits
+ */
 void
 err_quit(const char *file, const int line, const char *function, const char *msg)
 {
@@ -229,6 +262,9 @@ err_quit(const char *file, const int line, const char *function, const char *msg
 	exit(1);
 }
 
+/*
+ * prints usage and quits
+ */
 void
 usage_quit(const char *msg)
 {
@@ -271,6 +307,12 @@ usage_quit(const char *msg)
 	exit(1);
 }
 
+/*
+ * returns content type of given file type
+ * given "html" returns  "text/html"
+ * given "gz"	returns  "application/gzip"
+ * if type is not recognized, NULL will be returned
+ */
 char *
 get_content_encoding(const char *type)
 {
