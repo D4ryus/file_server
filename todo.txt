@@ -54,6 +54,7 @@ messages:
       [X] - enable optional logging which takes regular verbosity
       [X] - timestamp
       [X] - sync all messages
+      [ ] - interface for messages (ncurses/stdout/log_file/redis)
 
 ncurses:
       [X] - basic implementation
