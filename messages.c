@@ -80,7 +80,7 @@ print_loop(void *ignored)
 		}
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
-			format_and_print(cur, position);
+			_format_and_print(cur, position);
 
 			written += cur->data->last_written - last_written;
 		}
@@ -89,6 +89,7 @@ sleep:
 #ifdef NCURSES
 		ncurses_update_end(written);
 #endif
+		_clean_hooks();
 		sleep((uint)UPDATE_TIMEOUT);
 	}
 #ifdef NCURSES
@@ -203,11 +204,47 @@ print_info(struct data_store *data, const enum message_type type,
 	pthread_mutex_unlock(&print_mutex);
 }
 
+void
+add_hook(struct data_store *new_data)
+{
+	struct status_list_node *cur;
+	struct status_list_node *new_node;
+
+	new_node = err_malloc(sizeof(struct status_list_node));
+	new_node->remove_me = 0;
+	new_node->data = new_data;
+	new_node->next = NULL;
+
+	pthread_mutex_lock(&status_list_mutex);
+	if (first == NULL) {
+		first = new_node;
+	} else {
+		for (cur = first; cur->next != NULL; cur = cur->next)
+			; /* nothing */ 
+		cur->next = new_node;
+	}
+	pthread_mutex_unlock(&status_list_mutex);
+
+	return;
+}
+
+void
+cleanup_hook(struct data_store *rem_data)
+{
+	struct status_list_node *cur;
+
+	for (cur = first; cur != NULL; cur = cur->next) {
+		if (cur->data == rem_data) {
+			cur->remove_me = 1;
+		}
+	}
+}
+
 /*
  * formats a data_list_node and calls print_info
  */
 void
-format_and_print(struct status_list_node *cur, const int position)
+_format_and_print(struct status_list_node *cur, const int position)
 {
 	/*
 	 * later last_written is set and the initial written value is needed,
@@ -251,61 +288,37 @@ format_and_print(struct status_list_node *cur, const int position)
 	print_info(cur->data, TRANSFER, msg_buffer, position);
 }
 
-/*
- * adds a hook to the status print thread
- */
 void
-add_hook(struct data_store *new_data)
+_clean_hooks()
 {
 	struct status_list_node *cur;
-	struct status_list_node *new_node;
-
-	new_node = err_malloc(sizeof(struct status_list_node));
-	new_node->data = new_data;
-	new_node->next = NULL;
-
-	pthread_mutex_lock(&status_list_mutex);
-	if (first == NULL) {
-		first = new_node;
-	} else {
-		for (cur = first; cur->next != NULL; cur = cur->next)
-			; /* nothing */ 
-		cur->next = new_node;
-	}
-	pthread_mutex_unlock(&status_list_mutex);
-
-	return;
-}
-
-/*
- * removes a hook to the status print thread
- */
-void
-remove_hook(struct data_store *del_data)
-{
-	struct status_list_node *cur;
+	struct status_list_node *tmp;
 	struct status_list_node *last;
 
 	last = NULL;
 
-	if (first == NULL || del_data == NULL) {
+	if (first == NULL) {
 		return;
 	}
 
 	pthread_mutex_lock(&status_list_mutex);
-	for (cur = first; cur != NULL; cur = cur->next) {
-		if (cur->data == del_data) {
+	for (cur = first; cur != NULL;) {
+		if (cur->remove_me) {
 			if (cur == first) {
 				first = cur->next;
 			} else {
 				last->next = cur->next;
 			}
-			break;
+			tmp = cur;
+			cur = cur->next;
+			free_data_store(cur->data);
+			free(tmp);
+		} else {
+			last = cur;
+			cur = cur->next;
 		}
-		last = cur;
 	}
 	pthread_mutex_unlock(&status_list_mutex);
-	free(cur);
 
 	return;
 }

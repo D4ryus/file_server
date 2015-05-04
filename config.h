@@ -144,12 +144,6 @@ const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
 const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
 
 /*
- * minimum size in bytes of file to get printed on verbositiy lvl 3,
- * or inside the ncurses status area
- */
-const uint32_t MIN_STATUS_SIZE = 1048576; /* 1MB */
-
-/*
  * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
  * everything extending that limit will be thrown away.
  */

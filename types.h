@@ -65,6 +65,7 @@ struct data_store {
  * as stauts information, see messages.[ch]
  */
 struct status_list_node {
+	uint8_t remove_me;
 	struct data_store *data;
 	struct status_list_node *next;
 };

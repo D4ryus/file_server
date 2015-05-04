@@ -17,7 +17,6 @@
  */
 extern char *ROOT_DIR;
 extern int VERBOSITY;
-extern const uint32_t MIN_STATUS_SIZE;
 extern const uint32_t BUFFSIZE_READ;
 extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
@@ -64,10 +63,9 @@ handle_request(void *ptr)
 	generate_response(data);
 
 #ifdef NCURSES
-	if ( (USE_NCURSES || VERBOSITY >= 3)
-	    && data->body_length >= MIN_STATUS_SIZE) {
+	if (USE_NCURSES || VERBOSITY >= 3) {
 #else
-	if (VERBOSITY >= 3 && data->body_length >= MIN_STATUS_SIZE) {
+	if (VERBOSITY >= 3) {
 #endif
 		added_hook = 1;
 		add_hook(data);
@@ -142,11 +140,12 @@ exit:
 			break;
 	}
 
-	if (added_hook) {
-		remove_hook(data);
-	}
 	close(data->socket);
-	free_data_store(data);
+	if (added_hook) {
+		cleanup_hook(data);
+	} else {
+		free_data_store(data);
+	}
 
 	return NULL;
 }
