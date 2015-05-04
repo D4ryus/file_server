@@ -60,8 +60,8 @@ ncurses:
       [X] - basic implementation
       [X] - window for log
       [X] - window for status messages
+      [X] - total stats, ip, port, root dir
       [ ] - fancy top/bottom line (---(path)---(port)----)
-      [ ] - total stats, ip, port, root dir
       [ ] - scrollable windows
 
 tests:
