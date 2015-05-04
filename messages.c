@@ -63,6 +63,9 @@ print_loop(void *ignored)
 {
 	struct status_list_node *cur;
 	int position;
+	uint64_t last_written;
+	uint64_t written;
+
 	position = 0;
 
 	while (1) {
@@ -70,18 +73,21 @@ print_loop(void *ignored)
 		ncurses_update_begin(position);
 #endif
 		position = 0;
+		written  = 0;
 		pthread_mutex_lock(&status_list_mutex);
 		if (first == NULL) {
 			goto sleep;
 		}
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
+			last_written = cur->data->last_written;
 			format_and_print(cur, position);
-			/* TODO: sum up size here */
+
+			written += cur->data->last_written - last_written;
 		}
 sleep:
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-		ncurses_update_end();
+		ncurses_update_end(written);
 #endif
 		sleep((uint)UPDATE_TIMEOUT);
 	}
@@ -207,7 +213,6 @@ format_and_print(struct status_list_node *cur, const int position)
 	 * later last_written is set and the initial written value is needed,
 	 * to not read multiple times this value holds the inital value
 	 */
-	uint64_t synched_written;
 	uint64_t written;
 	uint64_t left;
 	uint64_t size;
@@ -221,14 +226,13 @@ format_and_print(struct status_list_node *cur, const int position)
 	char   msg_buffer[256];
 
 	/* read value only once from struct */
-	synched_written = cur->data->written;
-	written		= synched_written;
-	left		= cur->data->body_length - synched_written;
+	written		= cur->data->written;
+	left		= cur->data->body_length - written;
 	size		= cur->data->body_length;
-	bytes_per_tval	= (synched_written - cur->data->last_written) / UPDATE_TIMEOUT;
+	bytes_per_tval	= (written - cur->data->last_written) / UPDATE_TIMEOUT;
 
 	/* set last written to inital read value */
-	cur->data->last_written = cur->data->written;
+	cur->data->last_written = written;
 
 	format_size(written, fmt_written);
 	format_size(left, fmt_left);
@@ -236,7 +240,7 @@ format_and_print(struct status_list_node *cur, const int position)
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
 	sprintf(msg_buffer, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
-	    (unsigned int)(synched_written * 100 / cur->data->body_length),
+	    (unsigned int)(written * 100 / cur->data->body_length),
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,

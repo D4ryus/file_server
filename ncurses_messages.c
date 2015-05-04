@@ -16,11 +16,17 @@ extern int PORT;
 extern int USE_NCURSES;
 extern int LOGGING_WINDOW_HEIGTH;
 extern int WINDOW_RESIZED;
+extern size_t UPDATE_TIMEOUT;
 
 WINDOW *win_status  = NULL;
 WINDOW *win_logging = NULL;
 
 static pthread_mutex_t ncurses_mutex;
+
+static uint64_t written_all_time = 0;
+
+static int terminal_heigth;
+static int terminal_width;
 
 /*
  * initialises ncurses main window
@@ -52,7 +58,8 @@ ncurses_init(void)
 		err_quit(ERR_INFO,  "initscr() != NULL");
 	}
 
-	_ncurses_init_windows(0, 0);
+	getmaxyx(stdscr, terminal_heigth, terminal_width);
+	_ncurses_init_windows();
 	scrollok(win_logging, true);
 }
 
@@ -113,13 +120,29 @@ ncurses_update_begin(int last_position)
  * end of printing status messages
  */
 void
-ncurses_update_end(void)
+ncurses_update_end(uint64_t written)
 {
 	if (!USE_NCURSES) {
 		return;
 	}
 
+	char msg_buffer[256];
+	char fmt_written_all_time[7];
+	char fmt_bytes_per_tval[7];
+
+	written_all_time += written;
+
+	format_size(written_all_time, fmt_written_all_time);
+	format_size(written / UPDATE_TIMEOUT, fmt_bytes_per_tval);
+
+	sprintf(msg_buffer, "(%6s)_(%6s/%us)",
+	    fmt_written_all_time,
+	    fmt_bytes_per_tval,
+	    (unsigned int)UPDATE_TIMEOUT);
+
 	pthread_mutex_lock(&ncurses_mutex);
+	mvwprintw(stdscr, 1, terminal_width - (int)strlen(msg_buffer), "%s", msg_buffer);
+	refresh();
 	wrefresh(win_status);
 	pthread_mutex_unlock(&ncurses_mutex);
 }
@@ -143,22 +166,10 @@ ncurses_terminate()
 }
 
 /*
- * handles resize signal
- */
-void
-_ncurses_resize_handler(int sig)
-{
-	WINDOW_RESIZED = 1;
-	endwin();
-	refresh();
-	_ncurses_init_windows(0, 0);
-}
-
-/*
  * initializes ncurses windows, called on startup and resize
  */
 void
-_ncurses_init_windows(int heigth, int width)
+_ncurses_init_windows()
 {
 	if (!USE_NCURSES) {
 		return;
@@ -173,11 +184,7 @@ _ncurses_init_windows(int heigth, int width)
 	char *head_body_status;
 	char *head_body_log;
 
-	if (heigth == 0 && width == 0) {
-		getmaxyx(stdscr, heigth, width);
-	}
-
-	status_heigth = heigth - LOGGING_WINDOW_HEIGTH - 3; /* headers */
+	status_heigth = terminal_heigth - LOGGING_WINDOW_HEIGTH - 3; /* headers */
 
 	head_info = "File Server_(version 0.1)";
 	head_body_status = "Current file transfers:";
@@ -192,48 +199,63 @@ _ncurses_init_windows(int heigth, int width)
 
 	pthread_mutex_lock(&ncurses_mutex);
 	if (win_status == NULL) {
-		win_status = newwin(status_heigth, width, 2, 0);
+		win_status = newwin(status_heigth, terminal_width, 2, 0);
 		if (win_status == NULL) {
 			err_quit(ERR_INFO, "win_status is NULL");
 		}
 	}
 	if (win_logging == NULL) {
-		win_logging = newwin(LOGGING_WINDOW_HEIGTH, width,
-				  heigth - LOGGING_WINDOW_HEIGTH, 0);
+		win_logging = newwin(LOGGING_WINDOW_HEIGTH, terminal_width,
+				  terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
 		if (win_logging == NULL) {
 			err_quit(ERR_INFO, "win_logging is NULL");
 		}
 	}
 
 	getmaxyx(win_status, cur_stat_heigth, cur_stat_width);
-	if ((cur_stat_width != width) || (cur_stat_heigth != status_heigth)) {
-		wresize(win_status,  status_heigth,	    width);
-		wresize(win_logging, LOGGING_WINDOW_HEIGTH, width);
-		mvwin(win_logging, heigth - LOGGING_WINDOW_HEIGTH, 0);
+	if ((cur_stat_width != terminal_width) || (cur_stat_heigth != status_heigth)) {
+		wresize(win_status,  status_heigth,	    terminal_width);
+		wresize(win_logging, LOGGING_WINDOW_HEIGTH, terminal_width);
+		mvwin(win_logging, terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
 	}
 
 	werase(win_status);
 
-	for (i = 0; i < width; i++) {
+	for (i = 0; i < terminal_width; i++) {
 		mvprintw(0, i, "_");
 		mvprintw(1, i, "_");
-		mvprintw(heigth - LOGGING_WINDOW_HEIGTH - 1, i, "_");
+		mvprintw(terminal_heigth - LOGGING_WINDOW_HEIGTH - 1, i, "_");
 	}
-	if ((size_t)width > strlen(head_info)) {
-		mvaddnstr(0, 0, head_info, width);
+	if ((size_t)terminal_width > strlen(head_info)) {
+		mvaddnstr(0, 0, head_info, terminal_width);
 	}
-	if ((size_t)width > strlen(head_info) + strlen(head_data) + 1) {
-		mvaddnstr(0, (int)width  - (int)strlen(head_data), head_data, width);
+	if ((size_t)terminal_width > strlen(head_info) + strlen(head_data) + 1) {
+		mvaddnstr(0, (int)terminal_width  - (int)strlen(head_data),
+		    head_data, terminal_width);
 	}
-	if ((size_t)width > strlen(head_body_status)) {
-		mvaddnstr(1, 0, head_body_status, width);
+	if ((size_t)terminal_width > strlen(head_body_status)) {
+		mvaddnstr(1, 0, head_body_status, terminal_width);
 	}
-	if ((size_t)width > strlen(head_body_log)) {
-		mvaddnstr(heigth - LOGGING_WINDOW_HEIGTH - 1, 0, head_body_log, width);
+	if ((size_t)terminal_width > strlen(head_body_log)) {
+		mvaddnstr(terminal_heigth - LOGGING_WINDOW_HEIGTH - 1, 0,
+		    head_body_log, terminal_width);
 	}
 
 	refresh();
 	wrefresh(win_status);
 	wrefresh(win_logging);
 	pthread_mutex_unlock(&ncurses_mutex);
+}
+
+/*
+ * handles resize signal
+ */
+void
+_ncurses_resize_handler(int sig)
+{
+	WINDOW_RESIZED = 1;
+	endwin();
+	refresh();
+	getmaxyx(stdscr, terminal_heigth, terminal_width);
+	_ncurses_init_windows();
 }
