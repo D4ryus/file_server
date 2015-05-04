@@ -43,7 +43,8 @@ handle_request(void *ptr)
 	print_info(data, CONNECTED, "connection established", -1);
 
 	char read_buffer[BUFFSIZE_READ];
-	char message_buffer[64];
+	size_t message_buffer_size = 64;
+	char message_buffer[message_buffer_size];
 	enum err_status status;
 	int added_hook = 0;
 	char fmt_size[7];
@@ -63,9 +64,9 @@ handle_request(void *ptr)
 	generate_response(data);
 
 #ifdef NCURSES
-	if (USE_NCURSES || VERBOSITY >= 3) {
+	if ((USE_NCURSES || VERBOSITY >= 3) && (data->body_type == DATA)) {
 #else
-	if (VERBOSITY >= 3) {
+	if ((VERBOSITY >= 3) && (data->body_type == DATA)) {
 #endif
 		added_hook = 1;
 		add_hook(data);
@@ -95,15 +96,15 @@ handle_request(void *ptr)
 	switch (data->body_type) {
 		case DATA:
 		case TEXT:
-			sprintf(message_buffer, "%s %s",
+			snprintf(message_buffer, message_buffer_size, "%s %s",
 			   format_size(data->body_length, fmt_size), data->url);
 			break;
 		case ERR_404:
-			sprintf(message_buffer, "err404 %s",
+			snprintf(message_buffer, message_buffer_size, "err404 %s",
 			    data->url);
 			break;
 		case ERR_403:
-			sprintf(message_buffer, "err403 %s",
+			snprintf(message_buffer, message_buffer_size, "err403 %s",
 			    data->url);
 			break;
 		default:
@@ -274,7 +275,8 @@ void
 generate_200_file(struct data_store *data, char *file)
 {
 	struct stat sb;
-	char content_length[128];
+	size_t content_length_size = 128;
+	char content_length[content_length_size];
 
 	if (stat(file, &sb) == -1) {
 		err_quit(ERR_INFO, "stat() retuned -1");
@@ -285,7 +287,8 @@ generate_200_file(struct data_store *data, char *file)
 		    "Content-Type: ");
 		data->head = concat(data->head,
 		    get_content_encoding(strrchr(file, '.') + 1));
-		sprintf(content_length, "\r\nContent-Length: %llu\r\n\r\n",
+		snprintf(content_length, content_length_size,
+		    "\r\nContent-Length: %llu\r\n\r\n",
 		    (long long unsigned int)sb.st_size);
 		data->head = concat(data->head, content_length);
 	}

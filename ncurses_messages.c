@@ -126,7 +126,8 @@ ncurses_update_end(uint64_t written)
 		return;
 	}
 
-	char msg_buffer[256];
+	size_t msg_buffer_size = 256;
+	char msg_buffer[msg_buffer_size];
 	char fmt_written_all_time[7];
 	char fmt_bytes_per_tval[7];
 
@@ -135,7 +136,7 @@ ncurses_update_end(uint64_t written)
 	format_size(written_all_time, fmt_written_all_time);
 	format_size(written / UPDATE_TIMEOUT, fmt_bytes_per_tval);
 
-	sprintf(msg_buffer, "(%6s)_(%6s/%us)",
+	snprintf(msg_buffer, msg_buffer_size, "(%6s)_(%6s/%us)",
 	    fmt_written_all_time,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT);
@@ -191,7 +192,7 @@ _ncurses_init_windows()
 	head_body_log = "Log messages:";
 	/* port(5) + braces(4) + space(1) */
 	head_data = (char *)malloc(strlen(ROOT_DIR) + 10);
-	sprintf(head_data, "(%s)_(%d)", ROOT_DIR, PORT);
+	snprintf(head_data, strlen(ROOT_DIR) + 10, "(%s)_(%d)", ROOT_DIR, PORT);
 
 	if (status_heigth < 1) {
 		status_heigth = 1;

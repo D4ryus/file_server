@@ -260,7 +260,8 @@ _format_and_print(struct status_list_node *cur, const int position)
 	char   fmt_size[7];
 	char   fmt_bytes_per_tval[7];
 
-	char   msg_buffer[256];
+	size_t msg_buffer_size = 256;
+	char   msg_buffer[msg_buffer_size];
 
 	/* read value only once from struct */
 	written		= cur->data->written;
@@ -276,7 +277,7 @@ _format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	sprintf(msg_buffer, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	snprintf(msg_buffer, msg_buffer_size, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
 	    (unsigned int)(written * 100 / cur->data->body_length),
 	    fmt_written,
 	    fmt_size,
@@ -311,7 +312,7 @@ _clean_hooks()
 			}
 			tmp = cur;
 			cur = cur->next;
-			free_data_store(cur->data);
+			free_data_store(tmp->data);
 			free(tmp);
 		} else {
 			last = cur;

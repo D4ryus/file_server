@@ -83,10 +83,10 @@ const char *HTTP_BOT =
 
 /*
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
- * will be filled in with sprintf(). so if table is getting bigger change value
+ * will be filled in with snprintf(). so if table is getting bigger change value
  * accordingly.
  */
-const int TABLE_BUFFER_SIZE = 512;
+const size_t TABLE_BUFFER_SIZE = 512;
 
 /*
  * table head values which will be filed in at %s

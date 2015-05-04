@@ -211,7 +211,7 @@ format_size(uint64_t size, char fmt_size[7])
 		type = "b ";
 	}
 
-	sprintf(fmt_size, "%4llu%s", (long long unsigned int)new_size, type);
+	snprintf(fmt_size, 7, "%4llu%s", (long long unsigned int)new_size, type);
 
 	return fmt_size;
 }

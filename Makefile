@@ -9,7 +9,6 @@ EXECUTABLE = file_server
 GPROF_FILE = performance.txt
 
 CFLAGS = -Wall \
-         -O2 \
          -Wstrict-prototypes \
          -Wmissing-prototypes \
          -Wno-main \
@@ -41,6 +40,7 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
+         -O3
        # -Werror \
        # -pg \
        # -g3 \

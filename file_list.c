@@ -14,7 +14,7 @@
  * see config.h
  */
 extern char *ROOT_DIR;
-extern const int TABLE_BUFFER_SIZE;
+extern const size_t TABLE_BUFFER_SIZE;
 extern const char *TABLE_PLAIN[3];
 extern const char *TABLE_HTML[3];
 
@@ -86,7 +86,7 @@ dir_to_table(struct data_store *data, char *directory)
 		table_ptr = TABLE_PLAIN;
 	}
 
-	sprintf(buffer, table_ptr[0], /* table head, see config.h */
+	snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[0], /* table head, see config.h */
 	    "Last_modified",
 	    "Type",
 	    "Size",
@@ -97,7 +97,7 @@ dir_to_table(struct data_store *data, char *directory)
 		if (d->files[i]->name == NULL) {
 			continue;
 		}
-		sprintf(buffer, table_ptr[1], /* table body */
+		snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[1], /* table body */
 		    d->files[i]->time,
 		    d->files[i]->type,
 		    format_size((uint64_t)d->files[i]->size, fmt_size),
