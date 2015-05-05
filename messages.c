@@ -32,7 +32,7 @@ static pthread_mutex_t print_mutex;
  * started also
  */
 void
-init_messages(pthread_t *thread, const pthread_attr_t *attr)
+msg_init(pthread_t *thread, const pthread_attr_t *attr)
 {
 	int error;
 
@@ -47,7 +47,7 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
 		pthread_mutex_init(&status_list_mutex, NULL);
 		pthread_mutex_init(&print_mutex, NULL);
 
-		error = pthread_create(thread, attr, &print_loop, NULL);
+		error = pthread_create(thread, attr, &_msg_print_loop, NULL);
 		if (error != 0) {
 			err_quit(ERR_INFO, "pthread_create() != 0");
 		}
@@ -59,7 +59,7 @@ init_messages(pthread_t *thread, const pthread_attr_t *attr)
  * each element from the linkedlist
  */
 void *
-print_loop(void *ignored)
+_msg_print_loop(void *ignored)
 {
 	struct status_list_node *cur;
 	int position;
@@ -103,7 +103,7 @@ sleep:
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-print_info(struct data_store *data, const enum message_type type,
+msg_print_info(struct data_store *data, const enum message_type type,
     const char *message, int position)
 {
 	char str_time[20];
@@ -292,7 +292,7 @@ _format_and_print(struct status_list_node *cur, const int position)
 	    (unsigned int)UPDATE_TIMEOUT,
 	    cur->data->body + strlen(ROOT_DIR));
 
-	print_info(cur->data, TRANSFER, msg_buffer, position);
+	msg_print_info(cur->data, TRANSFER, msg_buffer, position);
 }
 
 /*

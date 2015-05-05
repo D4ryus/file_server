@@ -40,7 +40,7 @@ handle_request(void *ptr)
 		err_quit(ERR_INFO, "socket in handle_request is < 0");
 	}
 
-	print_info(data, CONNECTED, "connection established", -1);
+	msg_print_info(data, CONNECTED, "connection established", -1);
 
 	char read_buffer[BUFFSIZE_READ];
 	size_t message_buffer_size = 64;
@@ -111,7 +111,7 @@ handle_request(void *ptr)
 			strncpy(message_buffer, "no body_type set", 17);
 			break;
 	}
-	print_info(data, SENT, message_buffer, -1);
+	msg_print_info(data, SENT, message_buffer, -1);
 
 	/*
 	 * thread exit point, if status was set to error it will be printed,
@@ -121,21 +121,21 @@ handle_request(void *ptr)
 exit:
 	switch (status) {
 		case WRITE_CLOSED:
-			print_info(data, ERROR,
+			msg_print_info(data, ERROR,
 			    "could not write, client closed connection", -1);
 			break;
 		case ZERO_WRITTEN:
-			print_info(data, ERROR,
+			msg_print_info(data, ERROR,
 			    "could not write, 0 bytes written", -1);
 			break;
 		case READ_CLOSED:
-			print_info(data, ERROR, "could not read", -1);
+			msg_print_info(data, ERROR, "could not read", -1);
 			break;
 		case EMPTY_MESSAGE:
-			print_info(data, ERROR, "empty message", -1);
+			msg_print_info(data, ERROR, "empty message", -1);
 			break;
 		case INV_GET:
-			print_info(data, ERROR, "invalid GET", -1);
+			msg_print_info(data, ERROR, "invalid GET", -1);
 			break;
 		default:
 			break;
