@@ -69,7 +69,7 @@ handle_request(void *ptr)
 	if ((VERBOSITY >= 3) && (data->body_type == DATA)) {
 #endif
 		added_hook = 1;
-		add_hook(data);
+		hook_add(data);
 	}
 
 	status = send_text(data->socket, data->head, strlen(data->head));
@@ -143,7 +143,7 @@ exit:
 
 	close(data->socket);
 	if (added_hook) {
-		cleanup_hook(data);
+		hook_cleanup(data);
 	} else {
 		free_data_store(data);
 	}

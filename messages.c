@@ -89,7 +89,7 @@ sleep:
 #ifdef NCURSES
 		ncurses_update_end(written);
 #endif
-		_clean_hooks();
+		_hook_delete();
 		sleep((uint)UPDATE_TIMEOUT);
 	}
 #ifdef NCURSES
@@ -204,8 +204,11 @@ print_info(struct data_store *data, const enum message_type type,
 	pthread_mutex_unlock(&print_mutex);
 }
 
+/*
+ * adds a hook to the status_list_node
+ */
 void
-add_hook(struct data_store *new_data)
+hook_add(struct data_store *new_data)
 {
 	struct status_list_node *cur;
 	struct status_list_node *new_node;
@@ -228,8 +231,11 @@ add_hook(struct data_store *new_data)
 	return;
 }
 
+/*
+ * flags given data object for deletion (delete_me)
+ */
 void
-cleanup_hook(struct data_store *rem_data)
+hook_cleanup(struct data_store *rem_data)
 {
 	struct status_list_node *cur;
 
@@ -289,8 +295,11 @@ _format_and_print(struct status_list_node *cur, const int position)
 	print_info(cur->data, TRANSFER, msg_buffer, position);
 }
 
+/*
+ * removes all flagged (remove_me) data hooks
+ */
 void
-_clean_hooks()
+_hook_delete()
 {
 	struct status_list_node *cur;
 	struct status_list_node *tmp;
