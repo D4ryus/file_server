@@ -61,6 +61,7 @@ ncurses:
       [X] - window for log
       [X] - window for status messages
       [X] - total stats, ip, port, root dir
+      [ ] - total connections, total errors, todal 404, ...
       [ ] - fancy top/bottom line (---(path)---(port)----)
       [ ] - scrollable windows
 
