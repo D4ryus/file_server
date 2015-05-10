@@ -38,6 +38,10 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
+	if (UPDATE_TIMEOUT <= 0) {
+		err_quit(ERR_INFO, "UPDATE_TIMEOUT < 0");
+	}
+
 #ifdef NCURSES
 	ncurses_init();
 	if (USE_NCURSES || VERBOSITY >= 3) {
@@ -284,7 +288,8 @@ _format_and_print(struct status_list_node *cur, const int position)
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
 	snprintf(msg_buffer, msg_buffer_size, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
-	    (unsigned int)(written * 100 / cur->data->body_length),
+	    (unsigned int)(written * 100 /
+		(cur->data->body_length > 0 ? cur->data->body_length : 1)),
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,
