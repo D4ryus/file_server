@@ -187,6 +187,8 @@ parse_request(char *request, enum request_type *req_type, char **url)
 {
 	char   *tmp;
 	size_t length;
+	size_t i;
+	size_t url_pos;
 
 	tmp = strtok(request, "\n"); /* get first line */
 
@@ -207,7 +209,89 @@ parse_request(char *request, enum request_type *req_type, char **url)
 
 	(*url) = err_malloc(length + 1);
 	memset((*url), '\0', length + 1);
-	strncpy((*url), tmp, length);
+
+	for (i = 0, url_pos = 0; i < length; i++, url_pos++) {
+		if (*(tmp + i) != '%') {
+			(*url)[url_pos] = tmp[i];
+			continue;
+		}
+		/* check for url encoding */
+		if (starts_with(tmp + i, "%20")) {
+			(*url)[url_pos] = ' ';
+			i += 2;
+		} else if (starts_with(tmp + i, "%21")) {
+			(*url)[url_pos] = '!';
+			i += 2;
+		} else if (starts_with(tmp + i, "%23")) {
+			(*url)[url_pos] = '#';
+			i += 2;
+		} else if (starts_with(tmp + i, "%24")) {
+			(*url)[url_pos] = '$';
+			i += 2;
+		} else if (starts_with(tmp + i, "%25")) {
+			(*url)[url_pos] = '%';
+			i += 2;
+		} else if (starts_with(tmp + i, "%26")) {
+			(*url)[url_pos] = '&';
+			i += 2;
+		} else if (starts_with(tmp + i, "%27")) {
+			(*url)[url_pos] = '\'';
+			i += 2;
+		} else if (starts_with(tmp + i, "%28")) {
+			(*url)[url_pos] = '(';
+			i += 2;
+		} else if (starts_with(tmp + i, "%29")) {
+			(*url)[url_pos] = ')';
+			i += 2;
+		} else if (starts_with(tmp + i, "%2B")) {
+			(*url)[url_pos] = '+';
+			i += 2;
+		} else if (starts_with(tmp + i, "%2C")) {
+			(*url)[url_pos] = ',';
+			i += 2;
+		} else if (starts_with(tmp + i, "%2D")) {
+			(*url)[url_pos] = '-';
+			i += 2;
+		} else if (starts_with(tmp + i, "%2E")) {
+			(*url)[url_pos] = '.';
+			i += 2;
+		} else if (starts_with(tmp + i, "%3B")) {
+			(*url)[url_pos] = ';';
+			i += 2;
+		} else if (starts_with(tmp + i, "%3D")) {
+			(*url)[url_pos] = '=';
+			i += 2;
+		} else if (starts_with(tmp + i, "%40")) {
+			(*url)[url_pos] = '@';
+			i += 2;
+		} else if (starts_with(tmp + i, "%5B")) {
+			(*url)[url_pos] = '[';
+			i += 2;
+		} else if (starts_with(tmp + i, "%5D")) {
+			(*url)[url_pos] = ']';
+			i += 2;
+		} else if (starts_with(tmp + i, "%5E")) {
+			(*url)[url_pos] = '^';
+			i += 2;
+		} else if (starts_with(tmp + i, "%5F")) {
+			(*url)[url_pos] = '_';
+			i += 2;
+		} else if (starts_with(tmp + i, "%60")) {
+			(*url)[url_pos] = '`';
+			i += 2;
+		} else if (starts_with(tmp + i, "%7B")) {
+			(*url)[url_pos] = '{';
+			i += 2;
+		} else if (starts_with(tmp + i, "%7D")) {
+			(*url)[url_pos] = '}';
+			i += 2;
+		} else if (starts_with(tmp + i, "%7E")) {
+			(*url)[url_pos] = '~';
+			i += 2;
+		} else {
+			(*url)[url_pos] = tmp[i];
+		}
+	}
 
 	/* get requested type */
 	tmp = strtok(NULL, " ");
