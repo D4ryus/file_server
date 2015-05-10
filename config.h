@@ -127,7 +127,7 @@ const char *TABLE_HTML[3] = {
 			"<td align='center'>%s</td>"
 			"<td align='center'>%s</td>"
 			"<td align='right'>%6s</td>"
-			"<td align='left'><a href='%s/%s'>%5$s</a></td>"
+			"<td align='left'><a href=\"%s/%s\">%5$s</a></td>"
 		"</tr>",
 	/* table end */
 		"</tbody>"

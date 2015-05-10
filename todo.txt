@@ -15,6 +15,7 @@ fixes and code changes:
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
       [X] - HTTP Request escape sequenzes (space/...)!!
+      [ ] - support # in filename
       [ ] - quit/cleanup function
       [ ] - add startup information
       [ ] - add debugging option
