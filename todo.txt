@@ -14,7 +14,7 @@ fixes and code changes:
       [X] - implement 'gcc -M'
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
-      [ ] - HTTP Request escape sequenzes (space/...)!!
+      [X] - HTTP Request escape sequenzes (space/...)!!
       [ ] - quit/cleanup function
       [ ] - add startup information
       [ ] - add debugging option
