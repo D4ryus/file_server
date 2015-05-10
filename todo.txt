@@ -67,5 +67,10 @@ ncurses:
       [ ] - scrollable windows
 
 tests:
-      [ ] - make a test suite
       [ ] - configure git repo to automate tests
+      [ ] - all file endings
+      [ ] - files with size 0
+      [ ] - content test via checksums
+      [ ] - plain and html
+      [ ] - error 404/403
+      [ ] - all escapes
