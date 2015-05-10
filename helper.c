@@ -314,8 +314,16 @@ usage_quit(const char *msg)
  * if type is not recognized, NULL will be returned
  */
 char *
-get_content_encoding(const char *type)
+get_content_encoding(const char *file_name)
 {
+	char *type;
+
+	type = strrchr(file_name, '.');
+	if (type == NULL || strlen(type) == 1) {
+		return "application/octet-stream";
+	}
+	type = type + 1; // move over dot
+
 	if (type == NULL || !strcmp(type, "")) {
 		return "application/octet-stream";
 	} else if (!strcmp(type, "txt")) {
