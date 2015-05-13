@@ -13,10 +13,11 @@
  */
 extern char *ROOT_DIR;
 extern int PORT;
-extern int USE_NCURSES;
 extern int LOGGING_WINDOW_HEIGTH;
-extern int WINDOW_RESIZED;
 extern size_t UPDATE_TIMEOUT;
+
+int USE_NCURSES;
+int WINDOW_RESIZED;
 
 WINDOW *win_status  = NULL;
 WINDOW *win_logging = NULL;

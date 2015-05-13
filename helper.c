@@ -253,10 +253,12 @@ void
 err_quit(const char *file, const int line, const char *function, const char *msg)
 {
 	if (_LOG_FILE != NULL) {
-		fprintf(_LOG_FILE, "%s:%d:%s: error\n", file, line, function);
+		fprintf(_LOG_FILE, "%s:%d:%s: error: %s\n",
+		    file, line, function, msg);
 		fflush(_LOG_FILE);
 	} else {
-		fprintf(stderr, "%s:%d:%s: error: ", file, line, function);
+		fprintf(stderr, "%s:%d:%s: error: %s\n",
+		    file, line, function, msg);
 		perror(msg);
 	}
 	exit(1);

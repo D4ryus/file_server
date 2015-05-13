@@ -13,8 +13,16 @@
 #include "types.h"
 #include "helper.h"
 #include "config.h"
+
 #ifdef NCURSES
 #include "ncurses_messages.h"
+#endif
+
+FILE *_LOG_FILE = NULL;
+
+#ifdef NCURSES
+extern int USE_NCURSES;
+extern int WINDOW_RESIZED;
 #endif
 
 int main(int, const char **);
@@ -102,7 +110,7 @@ main(const int argc, const char *argv[])
 				   (struct sockaddr *) &cli_addr, &clilen);
 #ifdef NCURSES
 		/* ncurses uses signals on resize, so accept will continue */
-		if (WINDOW_RESIZED) {
+		if (USE_NCURSES && WINDOW_RESIZED) {
 			WINDOW_RESIZED = 0;
 			ncurses_organize_windows();
 			continue;
