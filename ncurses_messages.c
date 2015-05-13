@@ -44,7 +44,6 @@ ncurses_init(void)
 	sa.sa_handler = _ncurses_resize_handler;
 	sigaction(SIGWINCH, &sa, NULL);
 
-
 	pthread_mutex_init(&ncurses_mutex, NULL);
 
 	initscr();
@@ -55,12 +54,13 @@ ncurses_init(void)
 	init_pair(2, COLOR_WHITE, COLOR_BLACK);
 
 	if (stdscr == NULL) {
-		err_quit(ERR_INFO,  "initscr() != NULL");
+		err_quit(ERR_INFO, "initscr() == NULL");
 	}
 
-	getmaxyx(stdscr, terminal_heigth, terminal_width);
-	_ncurses_init_windows();
-	scrollok(win_logging, true);
+	ncurses_organize_windows();
+	if (win_logging) {
+		scrollok(win_logging, true);
+	}
 }
 
 /*
@@ -77,23 +77,27 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *time,
 
 	pthread_mutex_lock(&ncurses_mutex);
 	if (position < 0) {
-		scroll(win_logging);
-		mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
-		    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
-		    time,
-		    data->ip,
-		    data->port,
-		    data->socket,
-		    m_type,
-		    message);
-		wrefresh(win_logging);
+		if (win_logging) {
+			scroll(win_logging);
+			mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 1, 0,
+			    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
+			    time,
+			    data->ip,
+			    data->port,
+			    data->socket,
+			    m_type,
+			    message);
+			wrefresh(win_logging);
+		}
 	} else {
-		mvwprintw(win_status, position, 0,
-		    "[%15s:%-5d - %3d]: %s",
-		    data->ip,
-		    data->port,
-		    data->socket,
-		    message);
+		if (win_status) {
+			mvwprintw(win_status, position, 0,
+			    "[%15s:%-5d - %3d]: %s",
+			    data->ip,
+			    data->port,
+			    data->socket,
+			    message);
+		}
 	}
 	pthread_mutex_unlock(&ncurses_mutex);
 }
@@ -111,7 +115,9 @@ ncurses_update_begin(int last_position)
 	/* if there where no messages last time, dont erase screen */
 	if (last_position > 0) {
 		pthread_mutex_lock(&ncurses_mutex);
-		werase(win_status);
+		if (win_status) {
+			werase(win_status);
+		}
 		pthread_mutex_unlock(&ncurses_mutex);
 	}
 }
@@ -142,9 +148,12 @@ ncurses_update_end(uint64_t written)
 	    (unsigned int)UPDATE_TIMEOUT);
 
 	pthread_mutex_lock(&ncurses_mutex);
-	mvwprintw(stdscr, 1, terminal_width - (int)strlen(msg_buffer), "%s", msg_buffer);
-	refresh();
-	wrefresh(win_status);
+	if ((size_t)terminal_width > strlen(msg_buffer) && win_status) {
+		mvwprintw(stdscr, 1, terminal_width - (int)strlen(msg_buffer), "%s",
+		    msg_buffer);
+		refresh();
+		wrefresh(win_status);
+	}
 	pthread_mutex_unlock(&ncurses_mutex);
 }
 
@@ -170,7 +179,7 @@ ncurses_terminate()
  * initializes ncurses windows, called on startup and resize
  */
 void
-_ncurses_init_windows()
+ncurses_organize_windows()
 {
 	if (!USE_NCURSES) {
 		return;
@@ -185,20 +194,40 @@ _ncurses_init_windows()
 	char *head_body_status;
 	char *head_body_log;
 
+	/* reinitialize ncurses after resize */
+	endwin();
+	refresh();
+	getmaxyx(stdscr, terminal_heigth, terminal_width);
+
 	status_heigth = terminal_heigth - LOGGING_WINDOW_HEIGTH - 3; /* headers */
 
 	head_info = "File Server_(version 0.1)";
 	head_body_status = "Current file transfers:";
 	head_body_log = "Log messages:";
 	/* port(5) + braces(4) + space(1) */
-	head_data = (char *)malloc(strlen(ROOT_DIR) + 10);
+	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 10);
 	snprintf(head_data, strlen(ROOT_DIR) + 10, "(%s)_(%d)", ROOT_DIR, PORT);
 
+	/*
+	 * if terminal is to small to display information delete both windows set
+	 * them to NULL and return.
+	 */
 	if (status_heigth < 1) {
-		status_heigth = 1;
+		pthread_mutex_lock(&ncurses_mutex);
+		if (win_status != NULL) {
+			delwin(win_status);
+			win_status = NULL;
+		}
+		if (win_logging != NULL) {
+			delwin(win_logging);
+			win_logging = NULL;
+		}
+		pthread_mutex_unlock(&ncurses_mutex);
+		return;
 	}
 
 	pthread_mutex_lock(&ncurses_mutex);
+	/* check if windows are initialized, if not initialize them */
 	if (win_status == NULL) {
 		win_status = newwin(status_heigth, terminal_width, 2, 0);
 		if (win_status == NULL) {
@@ -213,15 +242,16 @@ _ncurses_init_windows()
 		}
 	}
 
+	/* check if terminal was just resized, than move windows */
 	getmaxyx(win_status, cur_stat_heigth, cur_stat_width);
 	if ((cur_stat_width != terminal_width) || (cur_stat_heigth != status_heigth)) {
-		wresize(win_status,  status_heigth,	    terminal_width);
+		wresize(win_status, status_heigth, terminal_width);
+		wclear(win_status);
 		wresize(win_logging, LOGGING_WINDOW_HEIGTH, terminal_width);
 		mvwin(win_logging, terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
 	}
 
-	werase(win_status);
-
+	/* print new info strings */
 	for (i = 0; i < terminal_width; i++) {
 		mvprintw(0, i, "_");
 		mvprintw(1, i, "_");
@@ -255,8 +285,4 @@ void
 _ncurses_resize_handler(int sig)
 {
 	WINDOW_RESIZED = 1;
-	endwin();
-	refresh();
-	getmaxyx(stdscr, terminal_heigth, terminal_width);
-	_ncurses_init_windows();
 }

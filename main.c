@@ -13,6 +13,9 @@
 #include "types.h"
 #include "helper.h"
 #include "config.h"
+#ifdef NCURSES
+#include "ncurses_messages.h"
+#endif
 
 int main(int, const char **);
 void parse_arguments(int, const char **);
@@ -101,6 +104,7 @@ main(const int argc, const char *argv[])
 		/* ncurses uses signals on resize, so accept will continue */
 		if (WINDOW_RESIZED) {
 			WINDOW_RESIZED = 0;
+			ncurses_organize_windows();
 			continue;
 		}
 #endif
