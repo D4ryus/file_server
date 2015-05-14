@@ -7,7 +7,7 @@
 #include <sys/types.h>
 
 #include "helper.h"
-#include "messages.h"
+#include "msg.h"
 
 /*
  * see config.h

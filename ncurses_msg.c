@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "ncurses_messages.h"
+#include "ncurses_msg.h"
 #include "helper.h"
 
 /*

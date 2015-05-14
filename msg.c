@@ -4,10 +4,10 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#include "messages.h"
+#include "msg.h"
 #include "helper.h"
 #ifdef NCURSES
-#include "ncurses_messages.h"
+#include "ncurses_msg.h"
 #endif
 
 /*
@@ -84,7 +84,7 @@ _msg_print_loop(void *ignored)
 		}
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
-			_format_and_print(cur, position);
+			_msg_format_and_print(cur, position);
 
 			written += cur->data->last_written - last_written;
 		}
@@ -93,7 +93,7 @@ sleep:
 #ifdef NCURSES
 		ncurses_update_end(written);
 #endif
-		_hook_delete();
+		_msg_hook_delete();
 		sleep((uint)UPDATE_TIMEOUT);
 	}
 #ifdef NCURSES
@@ -212,7 +212,7 @@ msg_print_info(struct data_store *data, const enum message_type type,
  * adds a hook to the status_list_node
  */
 void
-hook_add(struct data_store *new_data)
+msg_hook_add(struct data_store *new_data)
 {
 	struct status_list_node *cur;
 	struct status_list_node *new_node;
@@ -227,7 +227,7 @@ hook_add(struct data_store *new_data)
 		first = new_node;
 	} else {
 		for (cur = first; cur->next != NULL; cur = cur->next)
-			; /* nothing */ 
+			; /* nothing */
 		cur->next = new_node;
 	}
 	pthread_mutex_unlock(&status_list_mutex);
@@ -239,7 +239,7 @@ hook_add(struct data_store *new_data)
  * flags given data object for deletion (delete_me)
  */
 void
-hook_cleanup(struct data_store *rem_data)
+msg_hook_cleanup(struct data_store *rem_data)
 {
 	struct status_list_node *cur;
 
@@ -254,7 +254,7 @@ hook_cleanup(struct data_store *rem_data)
  * formats a data_list_node and calls print_info
  */
 void
-_format_and_print(struct status_list_node *cur, const int position)
+_msg_format_and_print(struct status_list_node *cur, const int position)
 {
 	/*
 	 * later last_written is set and the initial written value is needed,
@@ -265,13 +265,13 @@ _format_and_print(struct status_list_node *cur, const int position)
 	uint64_t size;
 	uint64_t bytes_per_tval;
 
-	char   fmt_written[7];
-	char   fmt_left[7];
-	char   fmt_size[7];
-	char   fmt_bytes_per_tval[7];
+	char fmt_written[7];
+	char fmt_left[7];
+	char fmt_size[7];
+	char fmt_bytes_per_tval[7];
 
 	size_t msg_buffer_size = 256;
-	char   msg_buffer[msg_buffer_size];
+	char msg_buffer[msg_buffer_size];
 
 	/* read value only once from struct */
 	written		= cur->data->written;
@@ -298,23 +298,25 @@ _format_and_print(struct status_list_node *cur, const int position)
 	    cur->data->body + strlen(ROOT_DIR));
 
 	msg_print_info(cur->data, TRANSFER, msg_buffer, position);
+
+	return;
 }
 
 /*
  * removes all flagged (remove_me) data hooks
  */
 void
-_hook_delete()
+_msg_hook_delete()
 {
 	struct status_list_node *cur;
 	struct status_list_node *tmp;
 	struct status_list_node *last;
 
-	last = NULL;
-
 	if (first == NULL) {
 		return;
 	}
+
+	last = NULL;
 
 	pthread_mutex_lock(&status_list_mutex);
 	for (cur = first; cur != NULL;) {

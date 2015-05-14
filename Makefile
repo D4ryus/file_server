@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJS = file_list.o handle_request.o helper.o main.o messages.o types.o
+OBJS = file_list.o handle_request.o helper.o main.o msg.o types.o
 
 EXECUTABLE = file_server
 
@@ -50,7 +50,7 @@ CFLAGS = -Wall \
 
 LFLAGS = -lpthread
 
-OBJS   += ncurses_messages.o
+OBJS   += ncurses_msg.o
 CFLAGS += -DNCURSES
 LFLAGS += -lcurses
 

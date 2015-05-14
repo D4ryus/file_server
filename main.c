@@ -9,13 +9,13 @@
 #include <arpa/inet.h>
 
 #include "handle_request.h"
-#include "messages.h"
+#include "msg.h"
 #include "types.h"
 #include "helper.h"
 #include "config.h"
 
 #ifdef NCURSES
-#include "ncurses_messages.h"
+#include "ncurses_msg.h"
 #endif
 
 FILE *_LOG_FILE = NULL;

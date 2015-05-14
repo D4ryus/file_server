@@ -10,7 +10,7 @@
 #include "helper.h"
 #include "handle_request.h"
 #include "file_list.h"
-#include "messages.h"
+#include "msg.h"
 
 /*
  * see config.h
@@ -69,7 +69,7 @@ handle_request(void *ptr)
 	if ((VERBOSITY >= 3) && (data->body_type == DATA)) {
 #endif
 		added_hook = 1;
-		hook_add(data);
+		msg_hook_add(data);
 	}
 
 	status = send_text(data->socket, data->head, strlen(data->head));
@@ -143,7 +143,7 @@ exit:
 
 	close(data->socket);
 	if (added_hook) {
-		hook_cleanup(data);
+		msg_hook_cleanup(data);
 	} else {
 		free_data_store(data);
 	}
