@@ -63,6 +63,7 @@ const char *HTTP_TOP =
 				 "charset=UTF-8'/>"
 		"</head>"
 		"<body>";
+
 /*
  * string which will be at the bottom of http table response
  */
@@ -136,7 +137,7 @@ const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
  * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
  * everything extending that limit will be thrown away.
  */
-const uint32_t BUFFSIZE_READ  = 2048;
+const uint32_t BUFFSIZE_READ = 2048;
 
 /*
  * if a file is transferd BUFFSIZE_WRITE describes the buffersize of

@@ -25,10 +25,10 @@ extern const char *TABLE_HTML[3];
 struct dir *
 get_dir(char *directory)
 {
-	DIR	      *dirp;
+	DIR *dirp;
+	int i;
 	struct dirent *dp;
-	struct dir    *result;
-	int	      i;
+	struct dir *result;
 
 	dirp = opendir(directory);
 	if (dirp == NULL) {
@@ -61,7 +61,7 @@ get_dir(char *directory)
 void
 dir_to_table(struct data_store *data, char *directory)
 {
-	int  i;
+	int i;
 	char buffer[TABLE_BUFFER_SIZE];
 	struct dir *d;
 	char fmt_size[7];

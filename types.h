@@ -28,9 +28,9 @@ enum err_status {
  * file information
  */
 struct file {
-	char  *name;
-	char  type[11];
-	char  time[20];
+	char *name;
+	char type[11];
+	char time[20];
 	off_t size;
 };
 
@@ -38,7 +38,7 @@ struct file {
  * contains multiple file structs
  */
 struct dir {
-	int  length;
+	int length;
 	char *name;
 	struct file *files[];
 };
@@ -54,10 +54,10 @@ struct data_store {
 	char     *head;			/* response header */
 	char     *body;			/* response body, if file filename */
 	uint64_t body_length;		/* length of response body / filesize */
-	enum  request_type req_type;	/* requested type */
-	enum  body_type    body_type;	/* type of body */
 	uint64_t written;		/* written data */
-	uint64_t last_written;		/* will be updated by status print thread */
+	uint64_t last_written;		/* will be updated by print thread */
+	enum request_type req_type;	/* requested type */
+	enum body_type    body_type;	/* type of body */
 };
 
 /*

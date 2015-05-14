@@ -29,14 +29,14 @@ send_text(int socket, char *text, uint64_t length)
 		return STAT_OK;
 	}
 
-	uint64_t cur_pos;
+	int sending;
 	ssize_t write_res;
 	size_t buff_size;
 	size_t sent_bytes;
-	int sending;
+	uint64_t cur_pos;
 
-	write_res  = 0;
 	sending    = 1;
+	write_res  = 0;
 	buff_size  = 0;
 	sent_bytes = 0;
 	cur_pos    = 0;
@@ -175,7 +175,7 @@ starts_with(const char *line, const char *prefix)
 char *
 format_size(uint64_t size, char fmt_size[7])
 {
-	char   *type;
+	char *type;
 	uint64_t new_size;
 	uint64_t xb; /* 8xb */
 	uint64_t tb; /* 8tb */

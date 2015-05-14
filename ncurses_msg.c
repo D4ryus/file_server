@@ -19,7 +19,7 @@ extern size_t UPDATE_TIMEOUT;
 int USE_NCURSES;
 int WINDOW_RESIZED;
 
-WINDOW *win_status  = NULL;
+WINDOW *win_status = NULL;
 WINDOW *win_logging = NULL;
 
 static pthread_mutex_t ncurses_mutex;

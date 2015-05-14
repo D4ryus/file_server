@@ -77,7 +77,7 @@ _msg_print_loop(void *ignored)
 		ncurses_update_begin(position);
 #endif
 		position = 0;
-		written  = 0;
+		written = 0;
 		pthread_mutex_lock(&status_list_mutex);
 		if (first == NULL) {
 			goto sleep;

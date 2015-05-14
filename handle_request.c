@@ -185,7 +185,7 @@ read_request(int socket, char *buffer, size_t size)
 int
 parse_request(char *request, enum request_type *req_type, char **url)
 {
-	char   *tmp;
+	char *tmp;
 	size_t length;
 	size_t i;
 	size_t url_pos;
