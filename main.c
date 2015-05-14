@@ -158,7 +158,7 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit("user specified -l/--log_file "
 				    "without a file");
 			}
-			LOG_FILE = malloc(strlen(argv[i]) + 1);
+			LOG_FILE = err_malloc(strlen(argv[i]) + 1);
 			strncpy(LOG_FILE, argv[i], strlen(argv[i]) + 1);
 #ifdef NCURSES
 		} else if ((strcmp(argv[i], "-n") == 0)

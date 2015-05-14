@@ -14,9 +14,9 @@ create_data_store(void)
 
 	data = err_malloc(sizeof(struct data_store));
 
-	data->ip[0]   = '\0';
-	data->port    = -1;
-	data->socket  = -1;
+	data->ip[0] = '\0';
+	data->port = -1;
+	data->socket = -1;
 	data->url = NULL;
 	data->head = err_malloc(sizeof(char));
 	data->head[0] = '\0';
