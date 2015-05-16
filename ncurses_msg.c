@@ -285,9 +285,6 @@ ncurses_organize_windows()
 		wclear(win_logging);
 		mvwin(win_logging, terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
 		for (i = 0; i < log_buf_size; i++) {
-			fprintf(stderr, "printing (%d): %s\n",
-			    i,
-			    log_buf[(log_buf_pos - i + log_buf_size) % log_buf_size]);
 			mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - (2 + i), 1,
 			    "%s", log_buf[(log_buf_pos - i + log_buf_size)
 			    % log_buf_size]);
@@ -321,7 +318,6 @@ _ncurses_push_log_buf(char *new_msg)
 {
 	pthread_mutex_lock(&ncurses_mutex);
 
-	fprintf(stderr, "pushing: %s\n", new_msg);
 	log_buf_pos++;
 	if (log_buf_pos >= log_buf_size) {
 		log_buf_pos -= log_buf_size;
