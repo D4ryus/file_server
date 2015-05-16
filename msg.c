@@ -91,7 +91,7 @@ _msg_print_loop(void *ignored)
 sleep:
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-		ncurses_update_end(written);
+		ncurses_update_end(written, position);
 #endif
 		_msg_hook_delete();
 		sleep((uint)UPDATE_TIMEOUT);
