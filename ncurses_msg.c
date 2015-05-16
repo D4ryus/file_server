@@ -64,6 +64,12 @@ ncurses_init(void)
 		err_quit(ERR_INFO, "initscr() == NULL");
 	}
 
+	if (has_colors()) {
+		start_color();
+		init_pair(1, COLOR_WHITE, COLOR_BLUE);
+		wbkgd(stdscr, COLOR_PAIR(1));
+	}
+
 	log_buf_size = LOGGING_WINDOW_HEIGTH - 2;
 	log_buf_pos = 0;
 	log_buf = err_malloc(sizeof(char *) * (size_t)log_buf_size);
@@ -292,7 +298,7 @@ ncurses_organize_windows()
 	move(0, 0);
 	clrtoeol();
 	if ((size_t)terminal_width > strlen(head_info) + 2) {
-		wprintw(stdscr, "%s", head_info);
+		mvwprintw(stdscr, 0, 0, "%s", head_info);
 	}
 	/* rootpath and port */
 	if ((size_t)terminal_width > strlen(head_info) + strlen(head_data) + 3) {
