@@ -155,18 +155,20 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	struct file *new_file;
 	struct tm *tmp;
 
-	new_file = err_malloc(sizeof(struct file));
-	new_file->name = err_malloc(strlen(file) + 1);
-	strncpy(new_file->name, file, strlen(file) + 1);
-
 	combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
 	memcpy(combined_path, directory, strlen(directory) + 1);
 	combined_path[strlen(directory)] = '/';
 	memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
 	if (stat(combined_path, &sb) == -1) {
-		err_quit(ERR_INFO, "stat() retuned -1");
+		warning(ERR_INFO, "stat() returned -1 (could be a dead symbolic link)");
+		free(combined_path);
+		return d;
 	}
 	free(combined_path);
+
+	new_file = err_malloc(sizeof(struct file));
+	new_file->name = err_malloc(strlen(file) + 1);
+	strncpy(new_file->name, file, strlen(file) + 1);
 
 	switch (sb.st_mode & S_IFMT) {
 		case S_IFREG:  strncpy(new_file->type, "file"      , 11); break;

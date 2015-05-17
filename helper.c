@@ -5,6 +5,7 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
 
 #include "helper.h"
 #include "msg.h"
@@ -253,15 +254,30 @@ void
 err_quit(const char *file, const int line, const char *function, const char *msg)
 {
 	if (_LOG_FILE != NULL) {
-		fprintf(_LOG_FILE, "%s:%d:%s: error: %s\n",
-		    file, line, function, msg);
+		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",
+		    file, line, function, msg, strerror(errno));
 		fflush(_LOG_FILE);
 	} else {
-		fprintf(stderr, "%s:%d:%s: error: %s\n",
-		    file, line, function, msg);
-		perror(msg);
+		fprintf(stderr, "%s:%d:%s: warning: %s: %s\n",
+		    file, line, function, msg, strerror(errno));
 	}
 	exit(1);
+}
+
+/*
+ * prints out given information to stderr
+ */
+void
+warning(const char *file, const int line, const char *function, const char *msg)
+{
+	if (_LOG_FILE != NULL) {
+		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",
+		    file, line, function, msg, strerror(errno));
+		fflush(_LOG_FILE);
+	} else {
+		fprintf(stderr, "%s:%d:%s: warning: %s: %s\n",
+		    file, line, function, msg, strerror(errno));
+	}
 }
 
 /*
