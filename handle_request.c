@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 
 #include "helper.h"
 #include "handle_request.h"
@@ -17,7 +16,7 @@
  */
 extern char *ROOT_DIR;
 extern int VERBOSITY;
-extern const uint32_t BUFFSIZE_READ;
+extern const size_t BUFFSIZE_READ;
 extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
 extern const char *RESPONSE_404;
@@ -107,7 +106,7 @@ handle_request(void *ptr)
 			    data->url);
 			break;
 		default:
-			strncpy(message_buffer, "no body_type set", 17);
+			strncpy(message_buffer, "no body_type set", (size_t)17);
 			break;
 	}
 	msg_print_info(data, SENT, message_buffer, -1);

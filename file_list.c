@@ -153,6 +153,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	struct stat sb;
 	struct file *new_file;
 	struct tm *tmp;
+	size_t n;
 
 	if (file == NULL) {
 		err_quit(ERR_INFO, "tried to add file which was NULL");
@@ -175,22 +176,23 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	new_file->name = err_malloc(strlen(file) + 1);
 	strncpy(new_file->name, file, strlen(file) + 1);
 
+	n = 11;
 	switch (sb.st_mode & S_IFMT) {
-		case S_IFREG:  strncpy(new_file->type, "file"      , 11); break;
-		case S_IFDIR:  strncpy(new_file->type, "directory" , 11); break;
-		case S_IFLNK:  strncpy(new_file->type, "symlink"   , 11); break;
-		case S_IFBLK:  strncpy(new_file->type, "blk_device", 11); break;
-		case S_IFCHR:  strncpy(new_file->type, "chr_device", 11); break;
-		case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , 11); break;
-		case S_IFSOCK: strncpy(new_file->type, "socket"    , 11); break;
-		default:       strncpy(new_file->type, "unknown"   , 11); break;
+		case S_IFREG:  strncpy(new_file->type, "file"      , n); break;
+		case S_IFDIR:  strncpy(new_file->type, "directory" , n); break;
+		case S_IFLNK:  strncpy(new_file->type, "symlink"   , n); break;
+		case S_IFBLK:  strncpy(new_file->type, "blk_device", n); break;
+		case S_IFCHR:  strncpy(new_file->type, "chr_device", n); break;
+		case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , n); break;
+		case S_IFSOCK: strncpy(new_file->type, "socket"    , n); break;
+		default:       strncpy(new_file->type, "unknown"   , n); break;
 	}
 
 	tmp = localtime(&sb.st_mtime);
 	if (tmp == NULL) {
 		err_quit(ERR_INFO, "localtime() returned NULL");
 	}
-	if (strftime(new_file->time, 20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
+	if (strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
 		err_quit(ERR_INFO, "strftime() returned 0");
 	}
 

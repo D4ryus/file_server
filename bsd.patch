@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 6edebba..6da3146 100644
+index 6edebba..270db07 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -35,13 +35,13 @@ CFLAGS = -Wall \
@@ -17,17 +17,14 @@ index 6edebba..6da3146 100644
         # -Werror \
         # -pg \
         # -Wpadded
-@@ -52,10 +52,6 @@ OBJS   += ncurses_msg.o
- CFLAGS += -DNCURSES
- LFLAGS += -lcurses
+@@ -54,7 +54,6 @@ LFLAGS += -lcurses
  
--CFLAGS += -std=c99
--CFLAGS += -pedantic
+ CFLAGS += -std=c99
+ CFLAGS += -pedantic
 -CFLAGS += -D_XOPEN_SOURCE=600
--
+ 
  .PHONY : all
  all : depend $(EXECUTABLE)
- 
 diff --git a/config.h b/config.h
 index 445e4c9..268023a 100644
 --- a/config.h
@@ -48,19 +45,9 @@ index 445e4c9..268023a 100644
  
  #endif
 diff --git a/file_list.c b/file_list.c
-index f4ec0a7..52ea0e1 100644
+index f4ec0a7..ccfd572 100644
 --- a/file_list.c
 +++ b/file_list.c
-@@ -13,8 +13,8 @@
- /*
-  * see config.h
-  */
--extern char *ROOT_DIR;
- extern const size_t TABLE_BUFFER_SIZE;
-+extern char *ROOT_DIR;
- extern const char *TABLE_PLAIN[3];
- extern const char *TABLE_HTML[3];
- 
 @@ -153,6 +153,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
  	struct stat sb;
  	struct file *new_file;
@@ -133,15 +120,11 @@ index 750938c..890e3a7 100644
  	}
  	msg_print_info(data, SENT, message_buffer, -1);
 diff --git a/helper.c b/helper.c
-index af1a351..8a3ee8f 100644
+index af1a351..5e5c43d 100644
 --- a/helper.c
 +++ b/helper.c
-@@ -1,10 +1,9 @@
- #include <stdlib.h>
-+#include <unistd.h>
- #include <stdio.h>
- #include <string.h>
--#include <unistd.h>
+@@ -4,7 +4,6 @@
+ #include <unistd.h>
  #include <time.h>
  #include <sys/stat.h>
 -#include <sys/types.h>
@@ -176,7 +159,7 @@ index af1a351..8a3ee8f 100644
  	return fmt_size;
  }
 diff --git a/main.c b/main.c
-index 5c8346c..c9718a5 100644
+index 5c8346c..248590f 100644
 --- a/main.c
 +++ b/main.c
 @@ -5,8 +5,9 @@
@@ -190,6 +173,25 @@ index 5c8346c..c9718a5 100644
  
  #include "handle_request.h"
  #include "msg.h"
+@@ -62,12 +63,12 @@ main(const int argc, const char *argv[])
+ 		err_quit(ERR_INFO, "pthread_attr_getstacksize() != 0");
+ 	}
+ 
+-	stack_size = PTHREAD_STACK_MIN << 1;
+-	/* printf("set pthread stacksize to %lu\n", stack_size); */
+-	error = pthread_attr_setstacksize(&attr, stack_size);
+-	if (error != 0) {
+-		err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
+-	}
++	//stack_size = PTHREAD_STACK_MIN << 1;
++	///* printf("set pthread stacksize to %lu\n", stack_size); */
++	//error = pthread_attr_setstacksize(&attr, stack_size);
++	//if (error != 0) {
++	//	err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
++	//}
+ 
+ 	/* ignore sigpipe singal on write, since i cant catch it inside a thread */
+ 	signal(SIGPIPE, SIG_IGN);
 @@ -83,7 +84,7 @@ main(const int argc, const char *argv[])
  	on = 1;
  	/* set socket options to make reuse of socket possible */
@@ -227,10 +229,19 @@ index 5c8346c..c9718a5 100644
  
  		error = pthread_create(&thread, &attr, &handle_request, data);
 diff --git a/msg.c b/msg.c
-index b98a249..97ed84a 100644
+index b98a249..98f1ddf 100644
 --- a/msg.c
 +++ b/msg.c
-@@ -101,6 +101,8 @@ sleep:
+@@ -3,6 +3,8 @@
+ #include <string.h>
+ #include <unistd.h>
+ #include <pthread.h>
++#include <time.h>
++#include <sys/types.h>
+ 
+ #include "msg.h"
+ #include "helper.h"
+@@ -101,6 +103,8 @@ sleep:
  #endif
  	pthread_mutex_destroy(&status_list_mutex);
  	pthread_mutex_destroy(&print_mutex);
@@ -239,7 +250,19 @@ index b98a249..97ed84a 100644
  }
  
  /*
-@@ -122,7 +124,7 @@ msg_print_info(struct data_store *data, const enum message_type type,
+@@ -117,14 +121,21 @@ msg_print_info(struct data_store *data, const enum message_type type,
+ 	struct tm *tmp;
+ 
+ 	t = time(NULL);
+-	tmp = localtime(&t);
++	if (t == -1) {
++		err_quit(ERR_INFO, "time() returned - 1");
++	}
++
++	tmp = err_malloc(sizeof(struct tm));
++	tmp = localtime_r(&t, tmp);
++
+ 	if (tmp == NULL) {
  		err_quit(ERR_INFO, "localtime() returned NULL");
  	}
  
@@ -247,7 +270,10 @@ index b98a249..97ed84a 100644
 +	if (strftime(str_time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
  		err_quit(ERR_INFO, "strftime() returned 0");
  	}
++	free(tmp);
  
+ 	switch (type) {
+ 		case ERROR:
 diff --git a/msg.h b/msg.h
 index d8caa7d..66ef8e2 100644
 --- a/msg.h

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <time.h>
+#include <sys/types.h>
 
 #include "msg.h"
 #include "helper.h"
@@ -101,6 +103,8 @@ sleep:
 #endif
 	pthread_mutex_destroy(&status_list_mutex);
 	pthread_mutex_destroy(&print_mutex);
+
+	return NULL;
 }
 
 /*
@@ -117,14 +121,21 @@ msg_print_info(struct data_store *data, const enum message_type type,
 	struct tm *tmp;
 
 	t = time(NULL);
-	tmp = localtime(&t);
+	if (t == -1) {
+		err_quit(ERR_INFO, "time() returned - 1");
+	}
+
+	tmp = err_malloc(sizeof(struct tm));
+	tmp = localtime_r(&t, tmp);
+
 	if (tmp == NULL) {
 		err_quit(ERR_INFO, "localtime() returned NULL");
 	}
 
-	if (strftime(str_time, 20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
+	if (strftime(str_time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
 		err_quit(ERR_INFO, "strftime() returned 0");
 	}
+	free(tmp);
 
 	switch (type) {
 		case ERROR:

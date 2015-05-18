@@ -5,8 +5,9 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <limits.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 #include "handle_request.h"
 #include "msg.h"
@@ -62,12 +63,12 @@ main(const int argc, const char *argv[])
 		err_quit(ERR_INFO, "pthread_attr_getstacksize() != 0");
 	}
 
-	stack_size = PTHREAD_STACK_MIN << 1;
-	/* printf("set pthread stacksize to %lu\n", stack_size); */
-	error = pthread_attr_setstacksize(&attr, stack_size);
-	if (error != 0) {
-		err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
-	}
+	//stack_size = PTHREAD_STACK_MIN << 1;
+	///* printf("set pthread stacksize to %lu\n", stack_size); */
+	//error = pthread_attr_setstacksize(&attr, stack_size);
+	//if (error != 0) {
+	//	err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
+	//}
 
 	/* ignore sigpipe singal on write, since i cant catch it inside a thread */
 	signal(SIGPIPE, SIG_IGN);
@@ -83,7 +84,7 @@ main(const int argc, const char *argv[])
 	on = 1;
 	/* set socket options to make reuse of socket possible */
 	error = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
-		    (const char *) &on, sizeof(on));
+		    (const char *)&on, (socklen_t)sizeof(on));
 	if (error == -1) {
 		err_quit(ERR_INFO, "setsockopt() retuned -1");
 	}
@@ -95,7 +96,7 @@ main(const int argc, const char *argv[])
 
 	/* bind socket */
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
-		    sizeof(serv_addr));
+		    (socklen_t)sizeof(serv_addr));
 	if (error < 0) {
 		err_quit(ERR_INFO, "bind() < 0");
 	}
@@ -107,7 +108,7 @@ main(const int argc, const char *argv[])
 	/* put each connection in a new detached thread with its own data_store */
 	while (1) {
 		client_socket = accept(server_socket,
-				   (struct sockaddr *) &cli_addr, &clilen);
+				   (struct sockaddr *)&cli_addr, &clilen);
 #ifdef NCURSES
 		/* ncurses uses signals on resize, so accept will continue */
 		if (USE_NCURSES && WINDOW_RESIZED) {
@@ -118,7 +119,7 @@ main(const int argc, const char *argv[])
 #endif
 		data = create_data_store();
 		data->socket = client_socket;
-		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), 16);
+		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
 
 		error = pthread_create(&thread, &attr, &handle_request, data);

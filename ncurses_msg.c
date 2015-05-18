@@ -94,7 +94,7 @@ ncurses_init(void)
  * if position is < 1 its a log message
  */
 void
-ncurses_print_info(struct data_store *data, char *m_type, const char *time,
+ncurses_print_info(struct data_store *data, char *m_type, const char *timestamp,
     const char *message, int position)
 {
 	size_t msg_buffer_size = 512;
@@ -114,7 +114,7 @@ ncurses_print_info(struct data_store *data, char *m_type, const char *time,
 			wclrtoeol(win_logging);
 			snprintf(msg_buffer, msg_buffer_size,
 			    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
-			    time,
+			    timestamp,
 			    data->ip,
 			    data->port,
 			    data->socket,

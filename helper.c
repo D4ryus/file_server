@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <errno.h>
 
 #include "helper.h"
@@ -15,7 +14,7 @@
  */
 extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
-extern const uint32_t BUFFSIZE_WRITE;
+extern const size_t BUFFSIZE_WRITE;
 
 /*
  * if negative number is return, error occured
@@ -92,7 +91,7 @@ send_file(struct data_store *data)
 	ret_status = STAT_OK;
 
 	while (sending) {
-		read_bytes = fread(buffer, 1, BUFFSIZE_WRITE, f);
+		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_WRITE, f);
 		if (read_bytes < BUFFSIZE_WRITE) {
 			sending = 0;
 		}
@@ -212,7 +211,7 @@ format_size(uint64_t size, char fmt_size[7])
 		type = "b ";
 	}
 
-	snprintf(fmt_size, 7, "%4llu%s", (long long unsigned int)new_size, type);
+	snprintf(fmt_size, (size_t)7, "%4llu%s", (long long unsigned int)new_size, type);
 
 	return fmt_size;
 }

@@ -1,6 +1,8 @@
 #ifndef MESSAGES_H
 #define MESSAGES_H
 
+#include <pthread.h>
+
 #include "types.h"
 
 void msg_init(pthread_t *, const pthread_attr_t *);
