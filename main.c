@@ -41,6 +41,7 @@ main(const int argc, const char *argv[])
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
 	struct data_store *data;
+	size_t stack_size;
 
 	parse_arguments(argc, argv);
 
@@ -56,7 +57,6 @@ main(const int argc, const char *argv[])
 		err_quit(ERR_INFO, "pthread_attr_setdetachstate() != 0");
 	}
 
-	size_t stack_size;
 	error =  pthread_attr_getstacksize(&attr, &stack_size);
 	if (error != 0) {
 		err_quit(ERR_INFO, "pthread_attr_getstacksize() != 0");

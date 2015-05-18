@@ -26,15 +26,15 @@ extern const uint32_t BUFFSIZE_WRITE;
 int
 send_text(int socket, char *text, uint64_t length)
 {
-	if (strlen(text) == 0) {
-		return STAT_OK;
-	}
-
 	int sending;
 	ssize_t write_res;
 	size_t buff_size;
 	size_t sent_bytes;
 	uint64_t cur_pos;
+
+	if (strlen(text) == 0) {
+		return STAT_OK;
+	}
 
 	sending    = 1;
 	write_res  = 0;

@@ -40,19 +40,21 @@ CFLAGS = -Wall \
          -Woverlength-strings \
          -Waddress \
          -ggdb \
+         -Wdeclaration-after-statement \
          -O3
        # -Werror \
        # -pg \
-       # -g3 \
-       # -g \
        # -Wpadded
-       # -Wdeclaration-after-statement
 
 LFLAGS = -lpthread
 
 OBJS   += ncurses_msg.o
 CFLAGS += -DNCURSES
 LFLAGS += -lcurses
+
+CFLAGS += -std=c99
+CFLAGS += -pedantic
+CFLAGS += -D_XOPEN_SOURCE=600
 
 .PHONY : all
 all : depend $(EXECUTABLE)

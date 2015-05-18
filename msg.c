@@ -94,7 +94,7 @@ sleep:
 		ncurses_update_end(written, position);
 #endif
 		_msg_hook_delete();
-		sleep((uint)UPDATE_TIMEOUT);
+		sleep((unsigned int)UPDATE_TIMEOUT);
 	}
 #ifdef NCURSES
 	ncurses_terminate();

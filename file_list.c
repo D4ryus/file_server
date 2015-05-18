@@ -121,6 +121,8 @@ dir_to_table(struct data_store *data, char *directory)
 void
 free_dir(struct dir *d)
 {
+	int i;
+
 	if (d == NULL) {
 		return;
 	}
@@ -129,14 +131,16 @@ free_dir(struct dir *d)
 		free(d->name);
 	}
 
-	int i;
 	for (i = 0; i < d->length; i++) {
 		if (d->files[i]->name != NULL) {
 			free(d->files[i]->name);
 		}
 		free(d->files[i]);
 	}
+
 	free(d);
+
+	return;
 }
 
 /*
@@ -145,22 +149,23 @@ free_dir(struct dir *d)
 struct dir *
 _add_file_to_dir(struct dir *d, char *file, char *directory)
 {
-	if (file == NULL) {
-		err_quit(ERR_INFO, "tried to add file which was NULL");
-		return d;
-	}
-
 	char *combined_path;
 	struct stat sb;
 	struct file *new_file;
 	struct tm *tmp;
+
+	if (file == NULL) {
+		err_quit(ERR_INFO, "tried to add file which was NULL");
+		return d;
+	}
 
 	combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
 	memcpy(combined_path, directory, strlen(directory) + 1);
 	combined_path[strlen(directory)] = '/';
 	memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
 	if (stat(combined_path, &sb) == -1) {
-		warning(ERR_INFO, "stat() returned -1 (could be a dead symbolic link)");
+		warning(ERR_INFO,
+		    "stat() returned -1 (could be a dead symbolic link)");
 		free(combined_path);
 		return d;
 	}

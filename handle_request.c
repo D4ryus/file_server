@@ -33,6 +33,12 @@ extern int USE_NCURSES;
 void *
 handle_request(void *ptr)
 {
+	char read_buffer[BUFFSIZE_READ];
+	size_t message_buffer_size = 64;
+	char message_buffer[message_buffer_size];
+	enum err_status status;
+	int added_hook = 0;
+	char fmt_size[7];
 	struct data_store *data;
 
 	data = (struct data_store *)ptr;
@@ -41,13 +47,6 @@ handle_request(void *ptr)
 	}
 
 	msg_print_info(data, CONNECTED, "connection established", -1);
-
-	char read_buffer[BUFFSIZE_READ];
-	size_t message_buffer_size = 64;
-	char message_buffer[message_buffer_size];
-	enum err_status status;
-	int added_hook = 0;
-	char fmt_size[7];
 
 	status = STAT_OK;
 

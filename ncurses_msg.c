@@ -45,12 +45,12 @@ static char *head_data;
 void
 ncurses_init(void)
 {
+	int i;
+	struct sigaction sa;
+
 	if (!USE_NCURSES) {
 		return;
 	}
-
-	int i;
-	struct sigaction sa;
 
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = _ncurses_resize_handler;
@@ -97,11 +97,13 @@ void
 ncurses_print_info(struct data_store *data, char *m_type, const char *time,
     const char *message, int position)
 {
+	size_t msg_buffer_size = 512;
+	char msg_buffer[msg_buffer_size];
+
 	if (!USE_NCURSES) {
 		return;
 	}
-	size_t msg_buffer_size = 512;
-	char msg_buffer[msg_buffer_size];
+
 	memset(msg_buffer, '\0', msg_buffer_size);
 
 	pthread_mutex_lock(&ncurses_mutex);
@@ -168,14 +170,14 @@ ncurses_update_begin(int last_position)
 void
 ncurses_update_end(uint64_t written, int clients)
 {
-	if (!USE_NCURSES) {
-		return;
-	}
-
 	size_t msg_buffer_size = 256;
 	char msg_buffer[msg_buffer_size];
 	char fmt_written_all_time[7];
 	char fmt_bytes_per_tval[7];
+
+	if (!USE_NCURSES) {
+		return;
+	}
 
 	written_all_time += written;
 
@@ -226,13 +228,13 @@ ncurses_terminate()
 void
 ncurses_organize_windows()
 {
-	if (!USE_NCURSES) {
-		return;
-	}
-
 	int i;
 	int cur_stat_heigth;
 	int cur_stat_width;
+
+	if (!USE_NCURSES) {
+		return;
+	}
 
 	/* reinitialize ncurses after resize */
 	endwin();
