@@ -50,7 +50,8 @@ send_text(int socket, char *text, uint64_t length)
 		}
 		sent_bytes = 0;
 		while (sent_bytes < buff_size) {
-			write_res = write(socket, text + cur_pos + sent_bytes, buff_size - sent_bytes);
+			write_res = write(socket, text + cur_pos + sent_bytes,
+				        buff_size - sent_bytes);
 			if (write_res == -1) {
 				return WRITE_CLOSED;
 			} else if (write_res == 0) {
@@ -97,7 +98,8 @@ send_file(struct data_store *data)
 		}
 		sent_bytes = 0;
 		while (sent_bytes < read_bytes) {
-			write_res = write(data->socket, buffer + sent_bytes, read_bytes - sent_bytes);
+			write_res = write(data->socket, buffer + sent_bytes,
+					read_bytes - sent_bytes);
 			if (write_res == -1) {
 				sending = 0;
 				ret_status = WRITE_CLOSED;
@@ -142,7 +144,8 @@ is_directory(const char *path)
 		} else if (s.st_mode & S_IFREG) {
 			return 0;
 		} else {
-			err_quit(ERR_INFO, "stat() has no file nor a directory");
+			err_quit(ERR_INFO,
+			    "stat() has no file nor a directory");
 		}
 	} else {
 		err_quit(ERR_INFO, "stat() retuned -1");
@@ -211,7 +214,8 @@ format_size(uint64_t size, char fmt_size[7])
 		type = "b ";
 	}
 
-	snprintf(fmt_size, (size_t)7, "%4llu%s", (long long unsigned int)new_size, type);
+	snprintf(fmt_size, (size_t)7, "%4llu%s",
+	    (long long unsigned int)new_size, type);
 
 	return fmt_size;
 }
@@ -250,7 +254,8 @@ err_realloc(void *ptr, size_t size)
  * prints out given information to stderr and exits
  */
 void
-err_quit(const char *file, const int line, const char *function, const char *msg)
+err_quit(const char *file, const int line, const char *function,
+    const char *msg)
 {
 	if (_LOG_FILE != NULL) {
 		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",

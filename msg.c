@@ -194,7 +194,8 @@ msg_print_info(struct data_store *data, const enum message_type type,
 			/* first (0) color is black, last (7) color is white */
 			position = (position % 6) + 1;
 		}
-		fprintf(stream, "\x1b[3%dm%-19s[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
+		fprintf(stream,
+		    "\x1b[3%dm%-19s[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
 		    position,
 		    str_time,
 		    data->ip,
@@ -298,7 +299,8 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	snprintf(msg_buffer, msg_buffer_size, "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	snprintf(msg_buffer, msg_buffer_size,
+	    "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
 	    (unsigned int)(written * 100 /
 		(cur->data->body_length > 0 ? cur->data->body_length : 1)),
 	    fmt_written,

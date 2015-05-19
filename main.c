@@ -70,7 +70,7 @@ main(const int argc, const char *argv[])
 	//	err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
 	//}
 
-	/* ignore sigpipe singal on write, since i cant catch it inside a thread */
+	/* ignore sigpipe on write, since i cant catch it inside a thread */
 	signal(SIGPIPE, SIG_IGN);
 
 	msg_init(&thread, &attr);
@@ -105,7 +105,7 @@ main(const int argc, const char *argv[])
 	listen(server_socket, 5);
 	clilen = sizeof(cli_addr);
 
-	/* put each connection in a new detached thread with its own data_store */
+	/* put each conn in a new detached thread with its own data_store */
 	while (1) {
 		client_socket = accept(server_socket,
 				   (struct sockaddr *)&cli_addr, &clilen);
@@ -146,7 +146,8 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--dir") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit("user specified -d/--dir without a path");
+				usage_quit(
+				    "user specified -d/--dir without a path");
 			}
 			root_arg = i;
 		} else if ((strcmp(argv[i], "-h") == 0)
@@ -196,7 +197,8 @@ parse_arguments(const int argc, const char *argv[])
 		err_quit(ERR_INFO, "realpath on ROOT_DIR returned NULL");
 	}
 	if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
-		err_quit(ERR_INFO, "you tried to share /, no sir, thats not happening");
+		err_quit(ERR_INFO,
+		    "you tried to share /, no sir, thats not happening");
 	}
 
 	if (LOG_FILE != NULL) {

@@ -59,7 +59,7 @@ const char *HTTP_TOP =
 				"rel='stylesheet'"
 				"type='text/css'>"
 			"<meta http-equiv='content-type'"
-				 "content='text/html;"
+				 "content='text/html';"
 				 "charset=UTF-8'/>"
 		"</head>"
 		"<body>";

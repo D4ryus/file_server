@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <sys/stat.h>
+#include <limits.h>
 
 #include "helper.h"
 #include "handle_request.h"
@@ -94,16 +95,17 @@ handle_request(void *ptr)
 	switch (data->body_type) {
 		case DATA:
 		case TEXT:
-			snprintf(message_buffer, message_buffer_size, "%s %s",
-			   format_size(data->body_length, fmt_size), data->url);
+			snprintf(message_buffer, message_buffer_size,
+			   "%s %s", format_size(data->body_length, fmt_size),
+			   data->url);
 			break;
 		case ERR_404:
-			snprintf(message_buffer, message_buffer_size, "err404 %s",
-			    data->url);
+			snprintf(message_buffer, message_buffer_size,
+			    "err404 %s", data->url);
 			break;
 		case ERR_403:
-			snprintf(message_buffer, message_buffer_size, "err403 %s",
-			    data->url);
+			snprintf(message_buffer, message_buffer_size,
+			    "err403 %s", data->url);
 			break;
 		default:
 			strncpy(message_buffer, "no body_type set", (size_t)17);

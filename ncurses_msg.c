@@ -246,8 +246,8 @@ ncurses_organize_windows()
 	status_heigth = terminal_heigth - LOGGING_WINDOW_HEIGTH - 1;
 
 	/*
-	 * if terminal is to small to display information delete both windows set
-	 * them to NULL and return.
+	 * if terminal is to small to display information delete both windows
+	 * set them to NULL and return.
 	 */
 	if (status_heigth < 1) {
 		if (win_status != NULL) {
@@ -297,7 +297,8 @@ ncurses_organize_windows()
 		mvwprintw(stdscr, 0, 0, "%s", head_info);
 	}
 	/* rootpath and port */
-	if ((size_t)terminal_width > strlen(head_info) + strlen(head_data) + 3) {
+	if ((size_t)terminal_width > strlen(head_info)
+	    + strlen(head_data) + 3) {
 		mvwprintw(stdscr, 0,
 		    (int)terminal_width - (int)strlen(head_data),
 		    "%s", head_data);

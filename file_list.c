@@ -86,7 +86,8 @@ dir_to_table(struct data_store *data, char *directory)
 		table_ptr = TABLE_PLAIN;
 	}
 
-	snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[0], /* table head, see config.h */
+	/* table head, see config.h */
+	snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[0],
 	    "Last_modified",
 	    "Type",
 	    "Size",
@@ -97,7 +98,8 @@ dir_to_table(struct data_store *data, char *directory)
 		if (d->files[i]->name == NULL) {
 			continue;
 		}
-		snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[1], /* table body */
+		/* table body */
+		snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[1],
 		    d->files[i]->time,
 		    d->files[i]->type,
 		    format_size((uint64_t)d->files[i]->size, fmt_size),
@@ -192,7 +194,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	if (tmp == NULL) {
 		err_quit(ERR_INFO, "localtime() returned NULL");
 	}
-	if (strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
+	if (!strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp)) {
 		err_quit(ERR_INFO, "strftime() returned 0");
 	}
 
@@ -200,7 +202,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 
 	/* remalloc directory struct to fit the new filepointer */
 	d = (struct dir *)err_realloc(d, sizeof(struct dir) +
-			      ((size_t)(d->length + 1) * sizeof(struct file *)));
+			     ((size_t)(d->length + 1) * sizeof(struct file *)));
 
 	/* set new ptr to new_file */
 	d->files[d->length] = new_file;
