@@ -77,7 +77,7 @@ run_$(EXECUTABLE) : $(EXECUTABLE)
 	./$<
 
 perf :
-	gprof $(EXECUTABLE) -p gmon.out > $(GPROF_FILE)
+	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
 
 graph : perf
 	gprof2dot $(GPROF_FILE) -n0 -e0 > graph.dot
