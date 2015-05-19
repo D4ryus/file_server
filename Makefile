@@ -40,17 +40,17 @@ CFLAGS = -Wall \
          -Waddress \
          -ggdb \
          -Wdeclaration-after-statement \
+         -pg \
          -O3
        # -Wredundant-decls \
        # -Werror \
-       # -pg \
        # -Wpadded
 
 LFLAGS = -lpthread
 
 OBJS   += ncurses_msg.o
 CFLAGS += -DNCURSES
-LFLAGS += -lcurses
+LFLAGS += -lcurses -pg
 
 # CFLAGS += -std=c99
 # CFLAGS += -pedantic
@@ -76,6 +76,9 @@ clean :
 run_$(EXECUTABLE) : $(EXECUTABLE)
 	./$<
 
-perf : clean $(EXECUTABLE)
-	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
-	$(EDITOR) $(GPROF_FILE)
+perf :
+	gprof $(EXECUTABLE) -p gmon.out > $(GPROF_FILE)
+
+graph : perf
+	gprof2dot $(GPROF_FILE) -n0 -e0 > graph.dot
+	dot -Tsvg graph.dot -o graph.svg
