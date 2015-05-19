@@ -86,6 +86,8 @@ ncurses_init(void)
 	ncurses_organize_windows();
 	if (win_logging) {
 		scrollok(win_logging, true);
+	} else {
+		err_quit(ERR_INFO, "window to small");
 	}
 }
 
@@ -229,13 +231,12 @@ void
 ncurses_organize_windows()
 {
 	int i;
-	int cur_stat_heigth;
-	int cur_stat_width;
 
 	if (!USE_NCURSES) {
 		return;
 	}
 
+	pthread_mutex_lock(&ncurses_mutex);
 	/* reinitialize ncurses after resize */
 	endwin();
 	refresh();
@@ -249,7 +250,6 @@ ncurses_organize_windows()
 	 * them to NULL and return.
 	 */
 	if (status_heigth < 1) {
-		pthread_mutex_lock(&ncurses_mutex);
 		if (win_status != NULL) {
 			delwin(win_status);
 			win_status = NULL;
@@ -262,13 +262,14 @@ ncurses_organize_windows()
 		return;
 	}
 
-	pthread_mutex_lock(&ncurses_mutex);
 	/* check if windows are initialized, if not initialize them */
 	if (win_status == NULL) {
 		win_status = newwin(status_heigth, terminal_width, 1, 0);
 		if (win_status == NULL) {
 			err_quit(ERR_INFO, "win_status is NULL");
 		}
+	} else {
+		wresize(win_status, status_heigth, terminal_width);
 	}
 	if (win_logging == NULL) {
 		win_logging = newwin(LOGGING_WINDOW_HEIGTH, terminal_width,
@@ -276,21 +277,17 @@ ncurses_organize_windows()
 		if (win_logging == NULL) {
 			err_quit(ERR_INFO, "win_logging is NULL");
 		}
+	} else {
+		wresize(win_logging, LOGGING_WINDOW_HEIGTH, terminal_width);
 	}
 
-	/* check if terminal was just resized, if so reprint log window */
-	getmaxyx(win_status, cur_stat_heigth, cur_stat_width);
-	if ((cur_stat_width != terminal_width) || (cur_stat_heigth != status_heigth)) {
-		wresize(win_status, status_heigth, terminal_width);
-		wclear(win_status);
-		wresize(win_logging, LOGGING_WINDOW_HEIGTH, terminal_width);
-		wclear(win_logging);
-		mvwin(win_logging, terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
-		for (i = 0; i < log_buf_size; i++) {
-			mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - (2 + i), 1,
-			    "%s", log_buf[(log_buf_pos - i + log_buf_size)
-			    % log_buf_size]);
-		}
+	wclear(win_status);
+	wclear(win_logging);
+	mvwin(win_logging, terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
+	for (i = 0; i < log_buf_size; i++) {
+		mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - (2 + i), 1,
+		    "%s", log_buf[(log_buf_pos - i + log_buf_size)
+		    % log_buf_size]);
 	}
 
 	/* name and version */
