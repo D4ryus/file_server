@@ -61,6 +61,7 @@ const char *HTTP_TOP =
 			"<meta http-equiv='content-type'"
 				 "content='text/html';"
 				 "charset=UTF-8'/>"
+			"<title>file_server version 0.2</title>"
 		"</head>"
 		"<center>"
 			"<h4>file_server version 0.2</h4>"
