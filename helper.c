@@ -23,7 +23,7 @@ extern const size_t BUFFSIZE_WRITE;
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
 int
-send_text(int socket, char *text, uint64_t length)
+send_text(int socket, const char *text, uint64_t length)
 {
 	int sending;
 	ssize_t write_res;
