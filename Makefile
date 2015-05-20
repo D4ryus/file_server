@@ -82,4 +82,4 @@ perf :
 graph : perf
 	gprof2dot $(GPROF_FILE) -n0 -e0 > graph.dot
 	dot -Tsvg graph.dot -o graph.svg
-	sfdp -Gsize=67! -Goverlap=prism -Tpng graph.dot > graph.png
+	sfdp -Gsize=100! -Gsplines=true -Goverlap=prism -Tpng graph.dot > graph.png
