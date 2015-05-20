@@ -62,13 +62,16 @@ const char *HTTP_TOP =
 				 "content='text/html';"
 				 "charset=UTF-8'/>"
 		"</head>"
-		"<body>";
+		"<center>"
+			"<h4>file_server version 0.2</h4>"
+			"<body>";
 
 /*
  * string which will be at the bottom of http table response
  */
 const char *HTTP_BOT =
-		"</body>"
+			"</body>"
+		"</center>"
 	"</html>";
 
 /*
@@ -102,8 +105,7 @@ const char *TABLE_HTML[3] = {
 			"background: #eee;"
 		"}"
 	"</style>"
-	"<table style size='100%'>"
-		"<tbody>"
+	"<table>"
 		"<thead>"
 			"<tr>"
 				"<th align='left'>%s</th>"
@@ -111,14 +113,15 @@ const char *TABLE_HTML[3] = {
 				"<th align='left'>%s</th>"
 				"<th align='left'>%s</th>"
 			"</tr>"
-		"</thead>",
+		"</thead>"
+		"<tbody>",
 	/* table body */
-		"<tr>"
-			"<td align='center'>%s</td>"
-			"<td align='center'>%s</td>"
-			"<td align='right'>%6s</td>"
-			"<td align='left'><a href=\"%s/%s\">%5$s</a></td>"
-		"</tr>",
+			"<tr>"
+				"<td align='center'>%s</td>"
+				"<td align='center'>%s</td>"
+				"<td align='right'>%6s</td>"
+				"<td align='left'><a href=\"%s/%s\">%5$s</a></td>"
+			"</tr>",
 	/* table end */
 		"</tbody>"
 	"</table>"};
