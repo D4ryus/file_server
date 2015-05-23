@@ -70,7 +70,7 @@ depend:
 
 .PHONY : clean
 clean :
-	rm $(OBJS) $(EXECUTABLE)
+	rm $(OBJS) $(EXECUTABLE) .depend
 
 # targets to run
 run_$(EXECUTABLE) : $(EXECUTABLE)
