@@ -13,7 +13,7 @@
 #endif
 
 /*
- * see config.h
+ * see globals.h
  */
 extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
@@ -111,7 +111,7 @@ sleep:
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-msg_print_info(struct data_store *data, const enum message_type type,
+msg_print_info(struct client_info *data, const enum message_type type,
     const char *message, int position)
 {
 	char str_time[20];
@@ -150,6 +150,9 @@ msg_print_info(struct data_store *data, const enum message_type type,
 		case TRANSFER:
 			m_type = "trn";
 			break;
+		case POST:
+			m_type = "pos";
+			break;
 		default:
 			m_type = "";
 			break;
@@ -160,6 +163,7 @@ msg_print_info(struct data_store *data, const enum message_type type,
 #endif
 
 	switch (type) {
+		case POST:
 		case ERROR:
 			if (VERBOSITY < 1) {
 				return;
@@ -224,7 +228,7 @@ msg_print_info(struct data_store *data, const enum message_type type,
  * adds a hook to the status_list_node
  */
 void
-msg_hook_add(struct data_store *new_data)
+msg_hook_add(struct client_info *new_data)
 {
 	struct status_list_node *cur;
 	struct status_list_node *new_node;
@@ -251,14 +255,25 @@ msg_hook_add(struct data_store *new_data)
  * flags given data object for deletion (delete_me)
  */
 void
-msg_hook_cleanup(struct data_store *rem_data)
+msg_hook_cleanup(struct client_info *rem_data)
 {
 	struct status_list_node *cur;
+	int found;
+
+	found = 0;
 
 	for (cur = first; cur != NULL; cur = cur->next) {
 		if (cur->data == rem_data) {
 			cur->remove_me = 1;
+			found = 1;
 		}
+	}
+
+	if (!found) {
+		if (rem_data->requested_path != NULL) {
+			free(rem_data->requested_path);
+		}
+		free(rem_data);
 	}
 }
 
@@ -287,8 +302,8 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 
 	/* read value only once from struct */
 	written		= cur->data->written;
-	left		= cur->data->body_length - written;
-	size		= cur->data->body_length;
+	left		= cur->data->size - written;
+	size		= cur->data->size;
 	bytes_per_tval	= (written - cur->data->last_written) / UPDATE_TIMEOUT;
 
 	/* set last written to inital read value */
@@ -302,13 +317,13 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	snprintf(msg_buffer, msg_buffer_size,
 	    "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
 	    (unsigned int)(written * 100 /
-		(cur->data->body_length > 0 ? cur->data->body_length : 1)),
+		(cur->data->size > 0 ? cur->data->size : 1)),
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    cur->data->body + strlen(ROOT_DIR));
+	    cur->data->requested_path + strlen(ROOT_DIR));
 
 	msg_print_info(cur->data, TRANSFER, msg_buffer, position);
 
@@ -341,7 +356,10 @@ _msg_hook_delete()
 			}
 			tmp = cur;
 			cur = cur->next;
-			free_data_store(tmp->data);
+			if (tmp->data->requested_path != NULL) {
+				free(tmp->data->requested_path);
+			}
+			free(tmp->data);
 			free(tmp);
 		} else {
 			last = cur;

@@ -9,12 +9,12 @@
 
 #include "file_list.h"
 #include "helper.h"
+#include "defines.h"
 
 /*
- * see config.h
+ * see globals.h
  */
 extern char *ROOT_DIR;
-extern const size_t TABLE_BUFFER_SIZE;
 extern const char *TABLE_PLAIN[3];
 extern const char *TABLE_HTML[3];
 
@@ -56,43 +56,49 @@ get_dir(char *directory)
 }
 
 /*
- * opens given directory and adds data to given data_store
+ * returns given directory as formated string
  */
-void
-dir_to_table(struct data_store *data, char *directory)
+char *
+dir_to_table(enum request_type type, char *requ)
 {
 	int i;
 	char buffer[TABLE_BUFFER_SIZE];
 	struct dir *d;
 	char fmt_size[7];
 	const char **table_ptr;
+	char *table_buffer;
+	char *directory;
+
+	directory = NULL;
+	directory = concat(concat(directory, ROOT_DIR), requ);
 
 	d = get_dir(directory);
 
 	if (d == NULL) {
-		data->body = concat(data->body,
-		    "Cannot open this directory, permission denied.");
-		data->body_length = strlen(data->body);
-		return;
+		err_quit(ERR_INFO, "cannot open directory");
 	}
 
 	if (d->files == NULL) {
 		err_quit(ERR_INFO, "get_dir()->files are NULL");
 	}
 
-	if (data->req_type == HTTP) {
+	if (type == HTTP) {
 		table_ptr = TABLE_HTML;
 	} else {
 		table_ptr = TABLE_PLAIN;
 	}
 
-	/* table head, see config.h */
+	memset(buffer, '\0', TABLE_BUFFER_SIZE);
+	/* table head, see globals.h */
 	snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[0],
 	    "Last_modified",
 	    "Type",
 	    "Size",
 	    "Filename");
-	data->body = concat(data->body, buffer);
+
+	table_buffer = NULL;
+	table_buffer = concat(table_buffer, buffer);
+	memset(buffer, '\0', TABLE_BUFFER_SIZE);
 
 	for (i = 0; i < d->length; i++) {
 		if (d->files[i]->name == NULL) {
@@ -103,18 +109,17 @@ dir_to_table(struct data_store *data, char *directory)
 		    d->files[i]->time,
 		    d->files[i]->type,
 		    format_size((uint64_t)d->files[i]->size, fmt_size),
-		    directory + strlen(ROOT_DIR),
+		    requ,
 		    d->files[i]->name);
-		data->body = concat(data->body, buffer);
+		table_buffer = concat(table_buffer, buffer);
+		memset(buffer, '\0', TABLE_BUFFER_SIZE);
 	}
 
-	data->body = concat(data->body, table_ptr[2]); /* table end */
-
-	data->body_length = strlen(data->body);
+	table_buffer = concat(table_buffer, table_ptr[2]); /* table end */
 
 	free_dir(d);
 
-	return;
+	return table_buffer;
 }
 
 /*

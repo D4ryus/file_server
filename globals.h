@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
 /*
  * default values
@@ -55,9 +55,6 @@ const char *HTTP_TOP =
 	"<!DOCTYPE html>"
 	"<html>"
 		"<head>"
-			"<link href='http://fonts.googleapis.com/css?family=Iceland'"
-				"rel='stylesheet'"
-				"type='text/css'>"
 			"<meta http-equiv='content-type'"
 				 "content='text/html';"
 				 "charset=UTF-8'/>"
@@ -76,19 +73,13 @@ const char *HTTP_BOT =
 	"</html>";
 
 /*
- * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
- * will be filled in with snprintf(). so if table is getting bigger change value
- * accordingly.
- */
-const size_t TABLE_BUFFER_SIZE = 512;
-
-/*
  * table head values which will be filed in at %s
  * given values are:
  * "Last modified" "Type" "Size" "Filename"
  * the body part will be repeaded for each file found inside the directory
  * given values are:
  * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]"
+ * the buffer limit is defined in defines.h
  */
 const char *TABLE_PLAIN[3] = {
 	/* table head */
@@ -138,15 +129,18 @@ const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
 const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
 
 /*
- * on new connection BUFFSIZE_READ -1 bytes are read from the socket,
- * everything extending that limit will be thrown away.
+ * html response for http status 201 (file created),
+ * needed for POST messages
  */
-const size_t BUFFSIZE_READ = 2048;
-
-/*
- * if a file is transferd BUFFSIZE_WRITE describes the buffersize of
- * bytes read and then written to the socket.
- */
-const size_t BUFFSIZE_WRITE = 8192;
+const char *RESPONSE_201=
+"<html>"
+	"<center>"
+		"<h1>its done!</h1>"
+		"<body>"
+		"<a href='http://gimli:8283/upload.html'>load up another file</a><br>"
+		"<a href='http://gimli:8283/'>go back to where u came from</a>"
+		"</body>"
+	"</center>"
+"</html>";
 
 #endif

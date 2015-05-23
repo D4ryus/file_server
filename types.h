@@ -6,22 +6,43 @@
 /*
  * enums
  */
-enum message_type {CONNECTED, SENT, ERROR, TRANSFER};
+enum message_type {CONNECTED, SENT, ERROR, TRANSFER, POST};
 
 enum request_type {PLAIN, HTTP};
 
-enum body_type {DATA, TEXT, ERR_404 = 404, ERR_403 = 403};
+enum response_type {FILE_200, DIR_200, TXT_403, TXT_404};
 
 /*
- * intern error enum, uses as function return value
+ * intern error enum, used as return value from functions
  */
 enum err_status {
-	STAT_OK       =  0,
-	WRITE_CLOSED  = -1,
-	ZERO_WRITTEN  = -2,
-	READ_CLOSED   = -3,
-	EMPTY_MESSAGE = -4,
-	INV_GET       = -5
+	STAT_OK            =   0,
+	WRITE_CLOSED       =  -1,
+	ZERO_WRITTEN       =  -2,
+	CLOSED_CON         =  -3,
+	EMPTY_MESSAGE      =  -4,
+	INV_REQ_TYPE       =  -5,
+	INV_GET            =  -6,
+	INV_POST           =  -7,
+	CON_LENGTH_MISSING =  -8,
+	BOUNDARY_MISSING   =  -9,
+	REFERER_MISSING    = -10,
+	FILESIZE_ZERO      = -11,
+	WRONG_BOUNDRY      = -12,
+	LINE_LIMIT_EXT     = -13
+};
+
+/*
+ * per request a data store is generated and then during execution filled
+ */
+struct client_info {
+	char     ip[16];		/* ip from client */
+	int      port;			/* port from client */
+	int      socket;		/* socket descriptor */
+	char     *requested_path;	/* requested path */
+	uint64_t size;			/* file size */
+	uint64_t written;		/* written data */
+	uint64_t last_written;		/* will be updated by print thread */
 };
 
 /*
@@ -44,33 +65,13 @@ struct dir {
 };
 
 /*
- * per request a data store is generated and then during execution filled
- */
-struct data_store {
-	char     ip[16];		/* ip from client */
-	int      port;			/* port from client */
-	int      socket;		/* socket descriptor */
-	char     *url;			/* requested file */
-	char     *head;			/* response header */
-	char     *body;			/* response body, if file filename */
-	uint64_t body_length;		/* length of response body / filesize */
-	uint64_t written;		/* written data */
-	uint64_t last_written;		/* will be updated by print thread */
-	enum request_type req_type;	/* requested type */
-	enum body_type    body_type;	/* type of body */
-};
-
-/*
- * Linked list containing all data_store structs which should be printed
- * as stauts information, see messages.[ch]
+ * Linked list containing all client_info structs which should be printed
+ * as status information, see messages.[ch]
  */
 struct status_list_node {
 	uint8_t remove_me;
-	struct data_store *data;
+	struct client_info *data;
 	struct status_list_node *next;
 };
-
-struct data_store *create_data_store(void);
-void free_data_store(struct data_store *);
 
 #endif

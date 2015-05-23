@@ -9,7 +9,7 @@
 #include "helper.h"
 
 /*
- * see config.h
+ * see globals.h
  */
 extern char *ROOT_DIR;
 extern int PORT;
@@ -96,7 +96,7 @@ ncurses_init(void)
  * if position is < 1 its a log message
  */
 void
-ncurses_print_info(struct data_store *data, char *m_type, const char *timestamp,
+ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp,
     const char *message, int position)
 {
 	size_t msg_buffer_size = 512;

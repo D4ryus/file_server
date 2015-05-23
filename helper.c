@@ -5,16 +5,17 @@
 #include <time.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <limits.h>
 
 #include "helper.h"
 #include "msg.h"
+#include "defines.h"
 
 /*
- * see config.h
+ * see globals.h
  */
 extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
-extern const size_t BUFFSIZE_WRITE;
 
 /*
  * if negative number is return, error occured
@@ -72,7 +73,7 @@ send_text(int socket, const char *text, uint64_t length)
  * ZERO_WRITTEN (-2) : could not write, 0 bytes written
  */
 int
-send_file(struct data_store *data)
+send_file(int socket, char *filename, uint64_t *written)
 {
 	ssize_t write_res;
 	int	sending;
@@ -81,8 +82,13 @@ send_file(struct data_store *data)
 	char	buffer[BUFFSIZE_WRITE];
 	FILE	*f;
 	enum err_status ret_status;
+	char *full_path;
 
-	f = fopen(data->body, "rb");
+
+	full_path = NULL;
+	full_path = concat(concat(full_path, ROOT_DIR), filename);
+
+	f = fopen(full_path, "rb");
 	if (f == NULL) {
 		err_quit(ERR_INFO, "fopen() retuned NULL");
 	}
@@ -98,7 +104,7 @@ send_file(struct data_store *data)
 		}
 		sent_bytes = 0;
 		while (sent_bytes < read_bytes) {
-			write_res = write(data->socket, buffer + sent_bytes,
+			write_res = write(socket, buffer + sent_bytes,
 					read_bytes - sent_bytes);
 			if (write_res == -1) {
 				sending = 0;
@@ -111,11 +117,33 @@ send_file(struct data_store *data)
 			}
 			sent_bytes = sent_bytes + (size_t)write_res;
 		}
-		data->written += sent_bytes;
+		if (written != NULL) {
+			(*written) += sent_bytes;
+		}
 	}
 	fclose(f);
 
 	return ret_status;
+}
+
+/*
+ * evaluates string to uint64_t, on error 0 is returned
+ */
+uint64_t
+err_string_to_val(char *str)
+{
+	char *endptr;
+	uint64_t val;
+
+	errno = 0;
+	val = strtoull(str, &endptr, 10);
+
+	if ((errno == ERANGE && (val == ULLONG_MAX))
+	    || (errno != 0 && val == 0)) {
+		return 0;
+	}
+
+	return val;
 }
 
 /*
@@ -124,8 +152,13 @@ send_file(struct data_store *data)
 char *
 concat(char *dst, const char *src)
 {
-	dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
-	strncat(dst, src, strlen(src));
+	if (dst == NULL) {
+		dst = err_malloc(strlen(src) + 1);
+		strncpy(dst, src, strlen(src) + 1);
+	} else {
+		dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
+		strncat(dst, src, strlen(src));
+	}
 
 	return dst;
 }
@@ -258,11 +291,11 @@ err_quit(const char *file, const int line, const char *function,
     const char *msg)
 {
 	if (_LOG_FILE != NULL) {
-		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",
+		fprintf(_LOG_FILE, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
 		fflush(_LOG_FILE);
 	} else {
-		fprintf(stderr, "%s:%d:%s: warning: %s: %s\n",
+		fprintf(stderr, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
 	}
 	exit(1);

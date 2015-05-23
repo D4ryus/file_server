@@ -13,7 +13,7 @@
 #include "msg.h"
 #include "types.h"
 #include "helper.h"
-#include "config.h"
+#include "globals.h"
 
 #ifdef NCURSES
 #include "ncurses_msg.h"
@@ -41,8 +41,8 @@ main(const int argc, const char *argv[])
 	socklen_t clilen;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
-	struct data_store *data;
-	size_t stack_size;
+	struct client_info *data;
+	/* size_t stack_size; */
 
 	parse_arguments(argc, argv);
 
@@ -57,18 +57,6 @@ main(const int argc, const char *argv[])
 	if (error != 0) {
 		err_quit(ERR_INFO, "pthread_attr_setdetachstate() != 0");
 	}
-
-	error =  pthread_attr_getstacksize(&attr, &stack_size);
-	if (error != 0) {
-		err_quit(ERR_INFO, "pthread_attr_getstacksize() != 0");
-	}
-
-	//stack_size = PTHREAD_STACK_MIN << 1;
-	///* printf("set pthread stacksize to %lu\n", stack_size); */
-	//error = pthread_attr_setstacksize(&attr, stack_size);
-	//if (error != 0) {
-	//	err_quit(ERR_INFO, "pthread_attr_setstacksize() != 0");
-	//}
 
 	/* ignore sigpipe on write, since i cant catch it inside a thread */
 	signal(SIGPIPE, SIG_IGN);
@@ -117,7 +105,7 @@ main(const int argc, const char *argv[])
 			continue;
 		}
 #endif
-		data = create_data_store();
+		data = err_malloc(sizeof(struct client_info));
 		data->socket = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
