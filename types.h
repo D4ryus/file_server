@@ -29,7 +29,10 @@ enum err_status {
 	REFERER_MISSING    = -10,
 	FILESIZE_ZERO      = -11,
 	WRONG_BOUNDRY      = -12,
-	LINE_LIMIT_EXT     = -13
+	LINE_LIMIT_EXT     = -13,
+	POST_NO_FILENAME   = -14,
+	NO_FREE_SPOT       = -15,
+	FILE_ERROR         = -16
 };
 
 /*

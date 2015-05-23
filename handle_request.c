@@ -17,6 +17,7 @@
  * see globals.h
  */
 extern char *ROOT_DIR;
+extern char *UPLOAD_DIR;
 extern int VERBOSITY;
 extern const size_t BUFFSIZE_READ;
 extern const char *HTTP_TOP;
@@ -60,7 +61,11 @@ handle_request(void *ptr)
 	}
 
 	if (starts_with(cur_line, "POST")) {
-		error = handle_post(data, cur_line);
+		if (UPLOAD_DIR != NULL) {
+			error = handle_post(data, cur_line);
+		} else {
+			error = INV_REQ_TYPE;
+		}
 	} else if (starts_with(cur_line, "GET")) {
 		error = handle_get(data, cur_line);
 	} else {
@@ -139,6 +144,21 @@ exit_thread:
 		case LINE_LIMIT_EXT:
 			msg_print_info(data, ERROR,
 			    "http header extended line limit",
+			    -1);
+			break;
+		case POST_NO_FILENAME:
+			msg_print_info(data, ERROR,
+			    "missing filename in post message",
+			    -1);
+			break;
+		case NO_FREE_SPOT:
+			msg_print_info(data, ERROR,
+			    "the posted filename already exists (10 times)",
+			    -1);
+			break;
+		case FILE_ERROR:
+			msg_print_info(data, ERROR,
+			    "could not write to post content to file",
 			    -1);
 			break;
 		default:
@@ -255,7 +275,8 @@ handle_post(struct client_info *data, char *request)
 	char *boundary;
 	char *referer;
 	char *content_length;
-	uint64_t file_size;
+	uint64_t max_length;
+	uint64_t content_read;
 
 	cur_line = NULL;
 	error = STAT_OK;
@@ -264,31 +285,51 @@ handle_post(struct client_info *data, char *request)
 		return INV_POST;
 	}
 
-	error = parse_http_header(data->socket, &boundary, &referer,
+	error = parse_post_header(data->socket, &boundary, &referer,
 		    &content_length);
 	if (error) {
 		return error;
 	}
 
-	file_size = err_string_to_val(content_length);
-	if (file_size <= 0) {
+	max_length = err_string_to_val(content_length);
+	if (max_length == 0) {
 		return FILESIZE_ZERO;
 	}
 
 	/* END of HEADER */
 
+	content_read = 0;
 	error = get_line(data->socket, &cur_line);
 	if (error) {
 		return error;
 	}
+	content_read += strlen(cur_line) + 2;
 
 	if (!starts_with(cur_line, "--")
 	         || (strcmp(cur_line + 2, boundary) != 0)) {
-		error = WRONG_BOUNDRY;
-		return error;
+		return WRONG_BOUNDRY;
 	}
 	free(cur_line);
-	cur_line = NULL;
+
+	do {
+		char *filename;
+		error = parse_file_header(data->socket, &filename,
+			    &content_read);
+		if (error) {
+			return error;
+		}
+		error = save_file_from_post(data->socket, filename, boundary,
+			    &content_read, max_length);
+		if (error) {
+			return error;
+		}
+		error = get_line(data->socket, &cur_line);
+		if (error) {
+			return error;
+		}
+		content_read += strlen(cur_line) + 2;
+	} while (strlen(cur_line) == 0
+		    && strcmp(cur_line, "--") != 0)
 
 	error = send_201(data->socket);
 	msg_print_info(data, POST, "someone posted!", -1);
@@ -303,13 +344,215 @@ handle_post(struct client_info *data, char *request)
 	return error;
 }
 
+/*
+ * given file is created inside the UPLOAD_DIR folder, if exists file with name
+ * filename_0 is created, if also exists filename_1 is created (up to filename_9)
+ * if no free fileame is found NO_FREE_SPOT is returned
+ */
 int
-parse_http_header(int socket, char **boundary, char **referer,
+save_file_from_post(int socket, char *filename, char *boundary,
+    uint64_t *content_read, uint64_t max_length)
+{
+	enum err_status error;
+	char *full_filename;
+	char str_number[2];
+	int number;
+	int i;
+	FILE *fd;
+
+	ssize_t err;
+	size_t written;
+
+	char buff[BUFFSIZE_READ];
+	int cur_buf_pos;
+
+	char *bound_buff;
+	int cur_bound_buf_pos;
+
+	error = STAT_OK;
+	full_filename = NULL;
+	full_filename = concat(concat(concat(full_filename, UPLOAD_DIR), "/"),
+			    filename);
+
+	/* in case file exists */
+	number = 0;
+	if (access(full_filename, F_OK) != -1) {
+		snprintf(str_number, "%i", 2, number++);
+		full_filename = concat(concat(full_filename, "_"), str_number);
+	}
+	/* count up until a free filename is found */
+	while (access(full_filename, F_OK) != -1 && number < 10) {
+		snprintf(str_number, "%i", 2, number++);
+		full_filename[strlen(full_filename) - 1] = str_number[0];
+	}
+	if (number >= 10) {
+		free(full_filename);
+		return NO_FREE_SPOT;
+	}
+
+	fd = fopen(full_filename, "rb");
+
+	bound_buff = NULL;
+	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
+
+	cur_buf_pos = 0;
+	cur_bound_buf_pos = 0;
+
+	/* read as long as we are not extending max_length */
+	while ((*content_read) < max_length) {
+		/* read 1 character from socket */
+		err = read(socket, &cur_char, (size_t)1);
+		(*content_read)++;
+		if (err < 1) {
+			error = CLOSED_CON;
+			goto stop_transfer;
+		}
+		/* check if current character is matching the bound string */
+		if (cur_char == bound_buff[cur_bound_buf_pos]) {
+			cur_bound_buf_pos++;
+			/* if every character has matched the bound_buff string stop */
+			if (cur_bound_buf_pos == strlen(bound_buff)) {
+				error = STAT_OK;
+				goto stop_transfer;
+			}
+			continue;
+		/*
+		 * if it didn't match check if it has matched some, if so
+		 * write them to buff
+		 */
+		}
+		for (i = 0; i < cur_bound_buf_pos; i++) {
+			buff[cur_buf_pos] = bound_buff[i];
+			/*
+			 * lets see if we extend the buffer, if so write
+			 * content to file 
+			 */
+			if (++cur_buf_pos == BUFFSIZE_READ) {
+				written = 0;
+				while (written != cur_buf_pos) {
+					err = write(fd, buff, cur_buf_pos);
+					if (err < 1) {
+						error = FILE_ERROR;
+						goto stop_transfer;
+					}
+					written += (size_t)err;
+				}
+				cur_buf_bos = 0;
+			}
+		}
+		buff[cur_buf_pos] = cur_char;
+		/*
+		 * lets see if we extend the buffer, if so write
+		 * content to file
+		 */
+		if (++cur_buf_pos == BUFFSIZE_READ) {
+			written = 0;
+			while (written != cur_buf_pos) {
+				err = write(fd, buff, cur_buf_pos);
+				if (err < 1) {
+					error = FILE_ERROR;
+					goto stop_transfer;
+				}
+				written += (size_t)err;
+			}
+			cur_buf_bos = 0;
+		}
+	}
+
+stop_transfer:
+	free(bound_buff);
+	fclose(fd);
+	if (error) {
+		unlink(full_filename);
+	}
+	free(full_filename);
+
+	return error;
+}
+
+/*
+ * parses the http header of a file and sets filename accordingly.
+ * content_read is counted up by size of read bytes..
+ * if filename is missing or not found POST_NO_FILENAME is returned.
+ */
+int
+parse_file_header(int socket, char **filename, uint64_t *content_read)
+{
+	char *cur_line;
+	char *STR_DIS;
+	size_t str_len;
+	enum err_status error;
+	char *file_start;
+	char *file_end;
+
+	STR_DIS = "Content-Disposition: form-data;";
+	error = STAT_OK;
+	(*filename) = NULL;
+
+	error = get_line(socket, &cur_line);
+	if (error) {
+		return error;
+	}
+	(*content_read) += strlen(cur_line) + 2;
+
+	while (strlen(cur_line) != 0) {
+		if (error) {
+			return error;
+		}
+		if (starts_with(cur_line, STR_DIS)) {
+			/* got that string */
+			file_start = strstr(cur_line, "filename=\"");
+			if (file_start == NULL) {
+				error = POST_NO_FILENAME;
+				break;
+			}
+			file_start += strlen("filename=\"");
+			file_end = strchr(file_start, '"');
+			if (file_end == NULL) {
+				error = POST_NO_FILENAME;
+				break;
+			}
+			str_len = (file_end - file_start) - 1;
+			if (str_len == 0) {
+				error = POST_NO_FILENAME;
+				break;
+			}
+			(*filename) = err_malloc(str_len + 1);
+			memset((*filename), '\0', str_len + 1);
+			strncpy((*filename), file_start, str_len);
+		}
+		free(cur_line);
+		cur_line = NULL;
+		error = get_line(socket, &cur_line);
+		if (error) {
+			break;
+		}
+		(*content_read) += strlen(cur_line) + 2;
+	}
+	if (cur_line != NULL) {
+		free(cur_line);
+	}
+
+	if (error) {
+		if ((*filename) != NULL) {
+			free((*filename));
+			(*filename) = NULL;
+		}
+	}
+	if  ((*filename) == NULL) {
+		error = POST_NO_FILENAME;
+	}
+
+	return error;
+}
+
+int
+parse_post_header(int socket, char **boundary, char **referer,
     char **content_length)
 {
 	char *cur_line;
 	enum err_status error;
-	size_t n;
+	size_t str_len;
 	char *STR_REF;
 	char *STR_COL;
 	char *STR_BOU;
@@ -329,34 +572,34 @@ parse_http_header(int socket, char **boundary, char **referer,
 
 	while (strlen(cur_line) != 0) {
 		if (starts_with(cur_line, STR_COL)) {
-			n = strlen(cur_line + strlen(STR_COL));
-			if (n - strlen(STR_COL) < 1) {
+			str_len = strlen(cur_line + strlen(STR_COL));
+			if (str_len - strlen(STR_COL) < 1) {
 				error = CON_LENGTH_MISSING;
 				break;
 			}
-			(*content_length) = err_malloc(n + 1);
+			(*content_length) = err_malloc(str_len + 1);
 			strncpy((*content_length), cur_line
-			    + strlen(STR_COL), n + 1);
+			    + strlen(STR_COL), str_len + 1);
 		}
 		if (starts_with(cur_line, STR_BOU)) {
-			n = strlen(cur_line + strlen(STR_BOU));
-			if (n - strlen(STR_BOU) < 1) {
+			str_len = strlen(cur_line + strlen(STR_BOU));
+			if (str_len - strlen(STR_BOU) < 1) {
 				error = BOUNDARY_MISSING;
 				break;
 			}
-			(*boundary) = err_malloc(n + 1);
+			(*boundary) = err_malloc(str_len + 1);
 			strncpy((*boundary), cur_line
-			    + strlen(STR_BOU), n + 1);
+			    + strlen(STR_BOU), str_len + 1);
 		}
 		if (starts_with(cur_line, STR_REF)) {
-			n = strlen(cur_line + strlen(STR_REF));
-			if (n - strlen(STR_REF) < 1) {
+			str_len = strlen(cur_line + strlen(STR_REF));
+			if (str_len - strlen(STR_REF) < 1) {
 				error = REFERER_MISSING;
 				break;
 			}
-			(*referer) = err_malloc(n + 1);
+			(*referer) = err_malloc(str_len + 1);
 			strncpy((*referer), cur_line
-			    + strlen(STR_REF), n + 1);
+			    + strlen(STR_REF), str_len + 1);
 		}
 		free(cur_line);
 		cur_line = NULL;
@@ -368,7 +611,6 @@ parse_http_header(int socket, char **boundary, char **referer,
 	if (cur_line != NULL) {
 		free(cur_line);
 	}
-	cur_line = NULL;
 
 	if  ((*content_length) == NULL) {
 		error = CON_LENGTH_MISSING;
@@ -603,7 +845,8 @@ get_response_type(char **request)
 	}
 
 	full_requested_path = NULL;
-	full_requested_path = concat(concat(full_requested_path, ROOT_DIR), (*request));
+	full_requested_path = concat(concat(full_requested_path, ROOT_DIR),
+				  (*request));
 
 	requested_path = realpath(full_requested_path, NULL);
 	if (requested_path == NULL) {
@@ -622,11 +865,13 @@ get_response_type(char **request)
 		(*request) = NULL;
 		(*request) = concat((*request), requested_path
 			         + strlen(ROOT_DIR));
-	} else {
+	}
+	if (requested_path != NULL) {
 		free(requested_path);
 	}
-	free(requested_path);
-	free(full_requested_path);
+	if (full_requested_path != NULL) {
+		free(full_requested_path);
+	}
 
 	return ret;
 }
@@ -646,22 +891,24 @@ send_200_file_head(int socket, enum request_type type, char *filename,
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
-	head = NULL;
-
 	if (stat(full_path, &sb) == -1) {
 		err_quit(ERR_INFO, "stat() retuned -1");
 	}
+	free(full_path);
 	(*size) = (uint64_t)sb.st_size;
 
 	if (type != HTTP) {
 		return STAT_OK;
 	}
 
-	head = concat(head, "HTTP/1.1 200 OK\r\n"
-	                    "Content-Type: ");
-	head = concat(head, get_content_encoding(filename));
-	head = concat(head, "\r\n");
+	head = NULL;
+	head = concat(
+		   concat(
+		       concat(head, "HTTP/1.1 200 OK\r\n" "Content-Type: "),
+		       get_content_encoding(filename)),
+		   "\r\n");
 	error = send_http_head(socket, head, (*size));
+	free(head);
 	if (error) {
 		return error;
 	}

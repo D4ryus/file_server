@@ -11,9 +11,15 @@
 #define TABLE_BUFFER_SIZE 1024
 
 /*
- * if a file is transferd BUFFSIZE_WRITE describes the buffersize of
- * bytes read and then written to the socket.
+ * if a file is transferd (get) BUFFSIZE_WRITE describes the buffersize of
+ * bytes read from file and then written to the socket.
  */
 #define BUFFSIZE_WRITE 8192
+
+/*
+ * if a file is transferd (post) BUFFSIZE_READ describes the buffersize of
+ * bytes read from socket and then written to the file.
+ */
+#define BUFFSIZE_READ 8192
 
 #endif

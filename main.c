@@ -20,6 +20,7 @@
 #endif
 
 FILE *_LOG_FILE = NULL;
+char *UPLOAD_DIR = NULL;
 
 #ifdef NCURSES
 extern int USE_NCURSES;
@@ -123,7 +124,11 @@ void
 parse_arguments(const int argc, const char *argv[])
 {
 	int i;
-	int root_arg = 0;
+	int root_arg;
+	int upload_arg;
+
+	root_arg = 0;
+	upload_arg = 0;
 
 	for (i = 1; i < argc; i++) {
 		if ((strcmp(argv[i], "-c") == 0)
@@ -137,6 +142,15 @@ parse_arguments(const int argc, const char *argv[])
 				    "user specified -d/--dir without a path");
 			}
 			root_arg = i;
+		} else if ((strcmp(argv[i], "-u") == 0)
+		    || (strcmp(argv[i], "--upload") == 0)) {
+			i++;
+			if (argc <= i) {
+				usage_quit(
+				    "user specified -u/--upload without"
+				    " a path");
+			}
+			upload_arg = i;
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
 			usage_quit(NULL);
@@ -186,6 +200,14 @@ parse_arguments(const int argc, const char *argv[])
 	if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
 		err_quit(ERR_INFO,
 		    "you tried to share /, no sir, thats not happening");
+	}
+
+	if (upload_arg != 0) {
+		UPLOAD_DIR = realpath(argv[upload_arg], NULL);
+		if (UPLOAD_DIR == NULL) {
+			err_quit(ERR_INFO, "realpath on UPLOAD_DIR "
+					   "returned NULL");
+		}
 	}
 
 	if (LOG_FILE != NULL) {

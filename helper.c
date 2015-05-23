@@ -89,6 +89,7 @@ send_file(int socket, char *filename, uint64_t *written)
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
 	f = fopen(full_path, "rb");
+	free(full_path);
 	if (f == NULL) {
 		err_quit(ERR_INFO, "fopen() retuned NULL");
 	}
