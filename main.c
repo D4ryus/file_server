@@ -35,14 +35,13 @@ main(const int argc, const char *argv[])
 	int server_socket;
 	int client_socket;
 	int on;
-	int error;
+	enum err_status error;
 	pthread_t thread;
 	pthread_attr_t attr;
 	socklen_t clilen;
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
 	struct client_info *data;
-	/* size_t stack_size; */
 
 	parse_arguments(argc, argv);
 
@@ -59,7 +58,7 @@ main(const int argc, const char *argv[])
 	}
 
 	/* ignore sigpipe on write, since i cant catch it inside a thread */
-	signal(SIGPIPE, SIG_IGN);
+	/* signal(SIGPIPE, SIG_IGN); */
 
 	msg_init(&thread, &attr);
 

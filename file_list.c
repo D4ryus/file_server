@@ -59,7 +59,7 @@ get_dir(char *directory)
  * returns given directory as formated string
  */
 char *
-dir_to_table(enum request_type type, char *requ)
+dir_to_table(enum request_type type, char *dir)
 {
 	int i;
 	char buffer[TABLE_BUFFER_SIZE];
@@ -68,11 +68,20 @@ dir_to_table(enum request_type type, char *requ)
 	const char **table_ptr;
 	char *table_buffer;
 	char *directory;
+	char *requ;
+
+	if (strcmp(dir, "/") == 0) {
+		requ = "";
+	} else {
+		requ = dir;
+	}
 
 	directory = NULL;
 	directory = concat(concat(directory, ROOT_DIR), requ);
 
 	d = get_dir(directory);
+
+	free(directory);
 
 	if (d == NULL) {
 		err_quit(ERR_INFO, "cannot open directory");

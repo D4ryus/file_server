@@ -29,7 +29,7 @@ extern const char *RESPONSE_201;
 extern int USE_NCURSES;
 #endif
 
-#define MSG_BUFFER_SIZE 64
+#define MSG_BUFFER_SIZE 256
 
 /*
  * function where each thread starts execution with given client_info
@@ -194,7 +194,7 @@ handle_get(struct client_info *data, char *request)
 				    MSG_BUFFER_SIZE,
 				    "%s %s",
 				    format_size(data->size, fmt_size),
-				    data->requested_path + strlen(ROOT_DIR));
+				    data->requested_path);
 			}
 			break;
 		case DIR_200:
@@ -207,7 +207,7 @@ handle_get(struct client_info *data, char *request)
 				    MSG_BUFFER_SIZE,
 				    "%s %s",
 				    format_size(data->size, fmt_size),
-				    data->requested_path + strlen(ROOT_DIR));
+				    data->requested_path);
 			}
 			break;
 		case TXT_403:
@@ -251,7 +251,7 @@ int
 handle_post(struct client_info *data, char *request)
 {
 	char *cur_line;
-	int error;
+	enum err_status error;
 	char *boundary;
 	char *referer;
 	char *content_length;
@@ -308,7 +308,7 @@ parse_http_header(int socket, char **boundary, char **referer,
     char **content_length)
 {
 	char *cur_line;
-	int error;
+	enum err_status error;
 	size_t n;
 	char *STR_REF;
 	char *STR_COL;
@@ -599,7 +599,6 @@ get_response_type(char **request)
 		return TXT_404;
 	}
 	if (strcmp((*request), "/") == 0) {
-		(*request)[0] = '\0';
 		return DIR_200;
 	}
 
@@ -641,7 +640,7 @@ send_200_file_head(int socket, enum request_type type, char *filename,
 {
 	struct stat sb;
 	char *head;
-	int error;
+	enum err_status error;
 	char *full_path;
 
 	full_path = NULL;
@@ -678,7 +677,7 @@ int
 send_200_directory(int socket, enum request_type type, char *directory,
     uint64_t *size)
 {
-	int error;
+	enum err_status error;
 	char *body;
 	char *table;
 	char *head;
@@ -717,7 +716,7 @@ send_200_directory(int socket, enum request_type type, char *directory,
 int
 send_404(int socket, enum request_type type, uint64_t *size)
 {
-	int error;
+	enum err_status error;
 	char *head;
 
 	head = "HTTP/1.1 404 Not Found\r\n"
@@ -742,7 +741,7 @@ send_404(int socket, enum request_type type, uint64_t *size)
 int
 send_403(int socket, enum request_type type, uint64_t *size)
 {
-	int error;
+	enum err_status error;
 	char *head;
 
 	head = "HTTP/1.1 403 Forbidden\r\n"
@@ -767,7 +766,7 @@ send_403(int socket, enum request_type type, uint64_t *size)
 int
 send_201(int socket)
 {
-	int error;
+	enum err_status error;
 	char *head;
 	uint64_t size;
 
@@ -791,7 +790,7 @@ send_201(int socket)
 int
 send_http_head(int socket, char* head, uint64_t content_length)
 {
-	int error;
+	enum err_status error;
 	char tmp[MSG_BUFFER_SIZE];
 
 	snprintf(tmp, MSG_BUFFER_SIZE,

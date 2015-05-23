@@ -79,7 +79,6 @@ ncurses_init(void)
 	}
 
 	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 23);
-	/* port(5) + braces(4) + space(1) */
 	snprintf(head_data, strlen(ROOT_DIR) + 23,
 	    "Shared: %s on Port: %d", ROOT_DIR, PORT);
 

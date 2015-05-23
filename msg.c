@@ -36,7 +36,7 @@ static pthread_mutex_t print_mutex;
 void
 msg_init(pthread_t *thread, const pthread_attr_t *attr)
 {
-	int error;
+	enum err_status error;
 
 	error = 0;
 
