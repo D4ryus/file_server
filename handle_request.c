@@ -794,7 +794,7 @@ send_http_head(int socket, char* head, uint64_t content_length)
 	int error;
 	char tmp[MSG_BUFFER_SIZE];
 
-	snprintf(tmp, tmp_size,
+	snprintf(tmp, MSG_BUFFER_SIZE,
 	    "Content-Length: %llu\r\n\r\n",
 	    (long long unsigned int)content_length);
 
