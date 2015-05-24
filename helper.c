@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
+#include <sys/socket.h>
 
 #include "helper.h"
 #include "msg.h"
@@ -18,24 +19,22 @@ extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
 
 /*
- * if negative number is return, error occured
- * STAT_OK	( 0) : everything went fine.
- * WRITE_CLOSED (-1) : could not write, client closed connection
- * ZERO_WRITTEN (-2) : could not write, 0 bytes written
+ * returns:
+ * STAT_OK      : everything went fine.
+ * WRITE_CLOSED : could not write, client closed connection
+ * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_text(int socket, const char *text, uint64_t length)
+send_data(int socket, const char *data, uint64_t length)
 {
 	int sending;
+	size_t max;
 	ssize_t write_res;
 	size_t buff_size;
 	size_t sent_bytes;
 	uint64_t cur_pos;
 
-	if (strlen(text) == 0) {
-		return STAT_OK;
-	}
-
+	max = (size_t)-1;
 	sending    = 1;
 	write_res  = 0;
 	buff_size  = 0;
@@ -43,16 +42,17 @@ send_text(int socket, const char *text, uint64_t length)
 	cur_pos    = 0;
 
 	while (sending) {
-		if (length - cur_pos > BUFFSIZE_WRITE) {
-			buff_size = BUFFSIZE_WRITE;
+		/* check if length is longer than size_t */
+		if (length - cur_pos > (uint64_t)max) {
+			buff_size = max;
 		} else {
 			buff_size = (size_t)(length - cur_pos);
 			sending = 0;
 		}
 		sent_bytes = 0;
 		while (sent_bytes < buff_size) {
-			write_res = write(socket, text + cur_pos + sent_bytes,
-				        buff_size - sent_bytes);
+			write_res = send(socket, data + cur_pos + sent_bytes,
+				        buff_size - sent_bytes, 0);
 			if (write_res == -1) {
 				return WRITE_CLOSED;
 			} else if (write_res == 0) {
@@ -68,23 +68,21 @@ send_text(int socket, const char *text, uint64_t length)
 
 /*
  * if negative number is return, error occured
- * STAT_OK	( 0) : everything went fine.
- * WRITE_CLOSED (-1) : could not write, client closed connection
- * ZERO_WRITTEN (-2) : could not write, 0 bytes written
+ * STAT_OK      : everything went fine.
+ * WRITE_CLOSED : could not write, client closed connection
+ * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
 send_file(int socket, char *filename, uint64_t *written)
 {
-	ssize_t write_res;
-	int	sending;
-	size_t	read_bytes;
-	size_t	sent_bytes;
-	char	buffer[BUFFSIZE_WRITE];
-	FILE	*fd;
-	enum err_status ret_status;
+	int sending;
+	char buffer[BUFFSIZE_READ];
+	size_t read_bytes;
+	FILE *fd;
 	char *full_path;
+	enum err_status error;
 
-
+	error = STAT_OK;
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
@@ -94,37 +92,27 @@ send_file(int socket, char *filename, uint64_t *written)
 		err_quit(ERR_INFO, "fopen() retuned NULL");
 	}
 
-	write_res = 0;
 	sending = 1;
-	ret_status = STAT_OK;
+	read_bytes = 0;
 
 	while (sending) {
-		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_WRITE, fd);
-		if (read_bytes < BUFFSIZE_WRITE) {
-			sending = 0;
-		}
-		sent_bytes = 0;
-		while (sent_bytes < read_bytes) {
-			write_res = write(socket, buffer + sent_bytes,
-					read_bytes - sent_bytes);
-			if (write_res == -1) {
-				sending = 0;
-				ret_status = WRITE_CLOSED;
-				break;
-			} else if (write_res == 0) {
-				sending = 0;
-				ret_status = ZERO_WRITTEN;
+		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_READ, fd);
+		if (read_bytes < BUFFSIZE_READ) {
+			if (ferror(fd) != 0) {
+				error = FILE_ERROR;
 				break;
 			}
-			sent_bytes = sent_bytes + (size_t)write_res;
+			sending = 0;
 		}
-		if (written != NULL) {
-			(*written) += sent_bytes;
+		error = send_data(socket, buffer, (uint64_t)read_bytes);
+		if (error) {
+			break;
 		}
+		(*written) += read_bytes;
 	}
 	fclose(fd);
 
-	return ret_status;
+	return error;
 }
 
 /*

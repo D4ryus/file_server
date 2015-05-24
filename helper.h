@@ -7,7 +7,7 @@
 
 #define ERR_INFO __FILE__, __LINE__, __func__
 
-int send_text(int, const char *, uint64_t);
+int send_data(int, const char *, uint64_t);
 int send_file(int, char *, uint64_t *);
 uint64_t err_string_to_val(char *);
 char *concat(char *, const char *);

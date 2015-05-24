@@ -128,7 +128,7 @@ ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp
 		}
 	} else {
 		/* TODO: Implement Scrolling for status window */
-		if (win_status && position + 1 < status_heigth - 2) {
+		if (win_status && position + 1 < status_heigth - 1) {
 			mvwprintw(win_status, position + 1, 1,
 			    "[%15s:%-5d - %3d]: %s",
 			    data->ip,

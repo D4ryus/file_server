@@ -270,6 +270,7 @@ msg_hook_cleanup(struct client_info *rem_data)
 		if (rem_data->requested_path != NULL) {
 			free(rem_data->requested_path);
 		}
+		close(rem_data->socket);
 		free(rem_data);
 	}
 }
@@ -358,6 +359,7 @@ _msg_hook_delete()
 			if (tmp->data->requested_path != NULL) {
 				free(tmp->data->requested_path);
 			}
+			close(tmp->data->socket);
 			free(tmp->data);
 			free(tmp);
 		} else {

@@ -21,33 +21,6 @@ extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
 
 /*
- * sends the given http header with added Content_Length attribute
- */
-int
-send_http_head(int socket, char* head, uint64_t content_length)
-{
-	enum err_status error;
-	char tmp[MSG_BUFFER_SIZE];
-
-	snprintf(tmp, MSG_BUFFER_SIZE,
-	    "Content-Length: %llu\r\n\r\n",
-	    (long long unsigned int)content_length);
-
-	error = send_text(socket, head, (uint64_t)strlen(head));
-	if (error) {
-		return error;
-	}
-
-	error = send_text(socket, tmp,
-	    (uint64_t)strlen(tmp));
-	if (error) {
-		return error;
-	}
-
-	return STAT_OK;
-}
-
-/*
  * sends a 200 OK HTTP header response
  * if type == PLAIN no http header will be sent (only size will be set)
  * size is set to content_length
@@ -60,6 +33,7 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
 	char *head;
 	enum err_status error;
 	char *full_path;
+	char content_length[64];
 
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
@@ -74,13 +48,19 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
 		return STAT_OK;
 	}
 
+	snprintf(content_length, 64,
+	    "\r\nContent-Length: %llu\r\n\r\n",
+	    (long long unsigned int)sb.st_size);
+
 	head = NULL;
-	head = concat(
-		   concat(
-		       concat(head, "HTTP/1.1 200 OK\r\n" "Content-Type: "),
-		       get_content_encoding(filename)),
-		   "\r\n");
-	error = send_http_head(socket, head, (*size));
+	head = concat(concat(concat(
+		   head, "HTTP/1.1 200 OK\r\n"
+			 "Cache-Control: no-cache\r\n"
+			 "Connection: close\r\n"
+			 "Content-Type: "), get_content_encoding(filename)),
+			 content_length);
+
+	error = send_data(socket, head, (uint64_t)strlen(head));
 	free(head);
 	if (error) {
 		return error;
@@ -103,9 +83,9 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
 	char *body;
 	char *table;
 	char *head;
-	    
-	head = "HTTP/1.1 200 OK\r\n"
-	       "Content-Type: text/html\r\n";
+	char content_length[64];
+
+	head = NULL;
 	body = NULL;
 
 	if (type == HTTP) {
@@ -117,16 +97,26 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
 	if (type == HTTP) {
 		body = concat(body, HTTP_BOT);
 	}
-	(*size) = strlen(body);
 
+	(*size) = (uint64_t)strlen(body);
 	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(body));
+		snprintf(content_length, 64,
+		    "Content-Length: %llu\r\n\r\n",
+		    (long long unsigned int)(*size));
+
+		head = concat(concat(head, "HTTP/1.1 200 OK\r\n"
+					   "Cache-Control: no-cache\r\n"
+					   "Connection: close\r\n"
+					   "Content-Type: text/html\r\n"),
+					   content_length);
+		error = send_data(socket, head, (uint64_t)strlen(head));
+		free(head);
 		if (error) {
 			return error;
 		}
 	}
 
-	error = send_text(socket, body, (*size));
+	error = send_data(socket, body, (*size));
 	free(body);
 
 	return error;
@@ -142,19 +132,29 @@ send_404(int socket, enum request_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
+	char content_length[64];
 
-	head = "HTTP/1.1 404 Not Found\r\n"
-	       "Content-Type: text/plain\r\n";
-	(*size) = strlen(RESPONSE_404);
+	head = NULL;
 
+	(*size) = (uint64_t)strlen(RESPONSE_404);
 	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(RESPONSE_404));
+		snprintf(content_length, 64,
+		    "Content-Length: %llu\r\n\r\n",
+		    (long long unsigned int)(*size));
+
+		head = concat(concat(head, "HTTP/1.1 404 Not Found\r\n"
+					   "Cache-Control: no-cache\r\n"
+					   "Connection: close\r\n"
+					   "Content-Type: text/plain\r\n"),
+					   content_length);
+		error = send_data(socket, head, (uint64_t)strlen(head));
+		free(head);
 		if (error) {
 			return error;
 		}
 	}
 
-	error = send_text(socket, RESPONSE_404, (*size));
+	error = send_data(socket, RESPONSE_404, (*size));
 
 	return error;
 }
@@ -169,19 +169,29 @@ send_403(int socket, enum request_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
+	char content_length[64];
 
-	head = "HTTP/1.1 403 Forbidden\r\n"
-	       "Content-Type: text/plain\r\n";
-	(*size) = strlen(RESPONSE_403);
+	head = NULL;
 
+	(*size) = (uint64_t)strlen(RESPONSE_403);
 	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(RESPONSE_403));
+		snprintf(content_length, 64,
+		    "Content-Length: %llu\r\n\r\n",
+		    (long long unsigned int)(*size));
+
+		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
+					   "Cache-Control: no-cache\r\n"
+					   "Connection: close\r\n"
+					   "Content-Type: text/plain\r\n"),
+					   content_length);
+
+		error = send_data(socket, head, (uint64_t)strlen(head));
 		if (error) {
 			return error;
 		}
 	}
 
-	error = send_text(socket, RESPONSE_403, (*size));
+	error = send_data(socket, RESPONSE_403, (*size));
 
 	return error;
 }
@@ -196,19 +206,28 @@ send_201(int socket, enum request_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
+	char content_length[64];
 
-	head = "HTTP/1.1 201 Created\r\n"
-	       "Content-Type: text/html\r\n";
+	head = NULL;
+
 	(*size) = (uint64_t)strlen(RESPONSE_201);
-
 	if (type == HTTP) {
-		error = send_http_head(socket, head, (*size));
+		snprintf(content_length, 64,
+		    "Content-Length: %llu\r\n\r\n",
+		    (long long unsigned int)(*size));
+
+		head = concat(concat(head, "HTTP/1.1 201 Created\r\n"
+					   "Cache-Control: no-cache\r\n"
+					   "Connection: close\r\n"
+					   "Content-Type: text/html\r\n"),
+					   content_length);
+		error = send_data(socket, head, (uint64_t)strlen(head));
 		if (error) {
 			return error;
 		}
 	}
 
-	error = send_text(socket, RESPONSE_201, (*size));
+	error = send_data(socket, RESPONSE_201, (*size));
 
 	return error;
 }

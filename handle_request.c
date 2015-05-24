@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "defines.h"
 #include "helper.h"
@@ -93,11 +94,6 @@ handle_request(void *ptr)
 	}
 	free(cur_line);
 	cur_line = NULL;
-
-	/*
-	 * exit of thread, closes socket and prints out error msg
-	 */
-	close(data->socket);
 
 	if (error) {
 		msg_print_info(data, ERROR,
@@ -412,7 +408,7 @@ save_file_from_post(int socket, char *filename, char *boundary,
 	/* read as long as we are not extending max_length */
 	while ((*content_read) < max_length) {
 		/* read 1 character from socket */
-		err = read(socket, &cur_char, (size_t)1);
+		err = recv(socket, &cur_char, (size_t)1, 0);
 		(*content_read)++;
 		if (err < 1) {
 			error = CLOSED_CON;
@@ -736,7 +732,7 @@ get_line(int socket, char **buff)
 	memset((*buff), '\0', buf_size);
 
 	for (bytes_read = 0 ;; bytes_read++) {
-		err = read(socket, &cur_char, (size_t)1);
+		err = recv(socket, &cur_char, (size_t)1, 0);
 		if (err < 1) {
 			free((*buff));
 			(*buff) = NULL;

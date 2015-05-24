@@ -58,9 +58,6 @@ main(const int argc, const char *argv[])
 		err_quit(ERR_INFO, "pthread_attr_setdetachstate() != 0");
 	}
 
-	/* ignore sigpipe on write, since i cant catch it inside a thread */
-	/* signal(SIGPIPE, SIG_IGN); */
-
 	msg_init(&thread, &attr);
 
 	/* get a socket */
