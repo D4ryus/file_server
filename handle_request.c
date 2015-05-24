@@ -21,6 +21,9 @@ extern int VERBOSITY;
 extern int USE_NCURSES;
 #endif
 
+/*
+ * corresponding error messages to err_status, see types.h
+ */
 const char *err_msg[] =
 {
 /* STAT_OK            */ "no error detected",
@@ -207,6 +210,7 @@ handle_post(struct client_info *data, char *request)
 	char *referer;
 	char *content_length;
 	char *filename;
+	char *free_me;
 	uint64_t tmp;
 
 	cur_line = NULL;
@@ -226,6 +230,7 @@ handle_post(struct client_info *data, char *request)
 	data->size = err_string_to_val(content_length);
 	free(content_length);
 	if (data->size == 0) {
+		free(boundary);
 		return FILESIZE_ZERO;
 	}
 
@@ -233,6 +238,7 @@ handle_post(struct client_info *data, char *request)
 
 	error = get_line(data->socket, &cur_line);
 	if (error) {
+		free(boundary);
 		return error;
 	}
 
@@ -244,26 +250,44 @@ handle_post(struct client_info *data, char *request)
 	data->written += strlen(cur_line) + 2;
 	free(cur_line);
 
+	/*
+	 * go through all sent files and parse their headers and then save
+	 * file_content to disc
+	 */
 	do {
 		error = parse_file_header(data->socket, &(filename),
 			    &(data->written));
 		if (error) {
+			free(boundary);
 			return error;
 		}
-		data->requested_path = filename;
+		/*
+		 * updated requested_path to current filename, and delete the
+		 * old one
+		 */
+		if (data->requested_path != NULL) {
+			free_me = data->requested_path;
+			data->requested_path = filename;
+			free(free_me);
+		} else {
+			data->requested_path = filename;
+		}
 		error = save_file_from_post(data->socket, filename, boundary,
 			    &(data->written), data->size);
-		free(boundary);
 		if (error) {
+			free(boundary);
 			return error;
 		}
 		error = get_line(data->socket, &cur_line);
 		if (error) {
+			free(boundary);
 			return error;
 		}
 		data->written += strlen(cur_line) + 2;
 	} while (strlen(cur_line) == 0
 		    && strcmp(cur_line, "--") != 0);
+
+	free(boundary);
 
 	error = send_201(data->socket, HTTP, &(tmp));
 
