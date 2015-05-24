@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJS = file_list.o handle_request.o helper.o main.o msg.o
+OBJS = file_list.o handle_request.o helper.o main.o msg.o http_response.o
 
 EXECUTABLE = file_server
 

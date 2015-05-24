@@ -1,16 +1,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
 #include <unistd.h>
-#include <pthread.h>
-#include <sys/stat.h>
-#include <limits.h>
 
 #include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
-#include "file_list.h"
+#include "http_response.h"
 #include "msg.h"
 
 /*
@@ -19,18 +15,10 @@
 extern char *ROOT_DIR;
 extern char *UPLOAD_DIR;
 extern int VERBOSITY;
-extern const size_t BUFFSIZE_READ;
-extern const char *HTTP_TOP;
-extern const char *HTTP_BOT;
-extern const char *RESPONSE_404;
-extern const char *RESPONSE_403;
-extern const char *RESPONSE_201;
 
 #ifdef NCURSES
 extern int USE_NCURSES;
 #endif
-
-#define MSG_BUFFER_SIZE 256
 
 /*
  * function where each thread starts execution with given client_info
@@ -201,8 +189,8 @@ handle_get(struct client_info *data, char *request)
 
 			error = send_200_file_head(data->socket,
 				    req_type,
-				    data->requested_path,
-				    &(data->size));
+				    &(data->size),
+				    data->requested_path);
 			if (error) {
 				return error;
 			}
@@ -220,8 +208,8 @@ handle_get(struct client_info *data, char *request)
 		case DIR_200:
 			error = send_200_directory(data->socket,
 				    req_type,
-				    data->requested_path,
-				    &(data->size));
+				    &(data->size),
+				    data->requested_path);
 			if (!error) {
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
@@ -275,8 +263,10 @@ handle_post(struct client_info *data, char *request)
 	char *boundary;
 	char *referer;
 	char *content_length;
+	uint64_t sent;
 	uint64_t max_length;
 	uint64_t content_read;
+	char *filename;
 
 	cur_line = NULL;
 	error = STAT_OK;
@@ -312,7 +302,6 @@ handle_post(struct client_info *data, char *request)
 	free(cur_line);
 
 	do {
-		char *filename;
 		error = parse_file_header(data->socket, &filename,
 			    &content_read);
 		if (error) {
@@ -329,9 +318,9 @@ handle_post(struct client_info *data, char *request)
 		}
 		content_read += strlen(cur_line) + 2;
 	} while (strlen(cur_line) == 0
-		    && strcmp(cur_line, "--") != 0)
+		    && strcmp(cur_line, "--") != 0);
 
-	error = send_201(data->socket);
+	error = send_201(data->socket, HTTP, &sent);
 	msg_print_info(data, POST, "someone posted!", -1);
 
 	/*
@@ -340,132 +329,6 @@ handle_post(struct client_info *data, char *request)
 	 * removed before thread exit's
 	 * error is returned
 	 */
-
-	return error;
-}
-
-/*
- * given file is created inside the UPLOAD_DIR folder, if exists file with name
- * filename_0 is created, if also exists filename_1 is created (up to filename_9)
- * if no free fileame is found NO_FREE_SPOT is returned
- */
-int
-save_file_from_post(int socket, char *filename, char *boundary,
-    uint64_t *content_read, uint64_t max_length)
-{
-	enum err_status error;
-	char *full_filename;
-	char str_number[2];
-	int number;
-	int i;
-	FILE *fd;
-
-	ssize_t err;
-	size_t written;
-
-	char buff[BUFFSIZE_READ];
-	int cur_buf_pos;
-
-	char *bound_buff;
-	int cur_bound_buf_pos;
-
-	error = STAT_OK;
-	full_filename = NULL;
-	full_filename = concat(concat(concat(full_filename, UPLOAD_DIR), "/"),
-			    filename);
-
-	/* in case file exists */
-	number = 0;
-	if (access(full_filename, F_OK) != -1) {
-		snprintf(str_number, "%i", 2, number++);
-		full_filename = concat(concat(full_filename, "_"), str_number);
-	}
-	/* count up until a free filename is found */
-	while (access(full_filename, F_OK) != -1 && number < 10) {
-		snprintf(str_number, "%i", 2, number++);
-		full_filename[strlen(full_filename) - 1] = str_number[0];
-	}
-	if (number >= 10) {
-		free(full_filename);
-		return NO_FREE_SPOT;
-	}
-
-	fd = fopen(full_filename, "rb");
-
-	bound_buff = NULL;
-	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
-
-	cur_buf_pos = 0;
-	cur_bound_buf_pos = 0;
-
-	/* read as long as we are not extending max_length */
-	while ((*content_read) < max_length) {
-		/* read 1 character from socket */
-		err = read(socket, &cur_char, (size_t)1);
-		(*content_read)++;
-		if (err < 1) {
-			error = CLOSED_CON;
-			goto stop_transfer;
-		}
-		/* check if current character is matching the bound string */
-		if (cur_char == bound_buff[cur_bound_buf_pos]) {
-			cur_bound_buf_pos++;
-			/* if every character has matched the bound_buff string stop */
-			if (cur_bound_buf_pos == strlen(bound_buff)) {
-				error = STAT_OK;
-				goto stop_transfer;
-			}
-			continue;
-		/*
-		 * if it didn't match check if it has matched some, if so
-		 * write them to buff
-		 */
-		}
-		for (i = 0; i < cur_bound_buf_pos; i++) {
-			buff[cur_buf_pos] = bound_buff[i];
-			/*
-			 * lets see if we extend the buffer, if so write
-			 * content to file 
-			 */
-			if (++cur_buf_pos == BUFFSIZE_READ) {
-				written = 0;
-				while (written != cur_buf_pos) {
-					err = write(fd, buff, cur_buf_pos);
-					if (err < 1) {
-						error = FILE_ERROR;
-						goto stop_transfer;
-					}
-					written += (size_t)err;
-				}
-				cur_buf_bos = 0;
-			}
-		}
-		buff[cur_buf_pos] = cur_char;
-		/*
-		 * lets see if we extend the buffer, if so write
-		 * content to file
-		 */
-		if (++cur_buf_pos == BUFFSIZE_READ) {
-			written = 0;
-			while (written != cur_buf_pos) {
-				err = write(fd, buff, cur_buf_pos);
-				if (err < 1) {
-					error = FILE_ERROR;
-					goto stop_transfer;
-				}
-				written += (size_t)err;
-			}
-			cur_buf_bos = 0;
-		}
-	}
-
-stop_transfer:
-	free(bound_buff);
-	fclose(fd);
-	if (error) {
-		unlink(full_filename);
-	}
-	free(full_filename);
 
 	return error;
 }
@@ -512,7 +375,9 @@ parse_file_header(int socket, char **filename, uint64_t *content_read)
 				error = POST_NO_FILENAME;
 				break;
 			}
-			str_len = (file_end - file_start) - 1;
+			str_len = (file_end - file_start) > 0 ?
+			    (size_t)(file_end - file_start) :
+			    0;
 			if (str_len == 0) {
 				error = POST_NO_FILENAME;
 				break;
@@ -542,6 +407,138 @@ parse_file_header(int socket, char **filename, uint64_t *content_read)
 	if  ((*filename) == NULL) {
 		error = POST_NO_FILENAME;
 	}
+
+	return error;
+}
+
+/*
+ * given file is created inside the UPLOAD_DIR folder, if exists file with name
+ * filename_0 is created, if also exists filename_1 is created (up to filename_9)
+ * if no free fileame is found NO_FREE_SPOT is returned
+ */
+int
+save_file_from_post(int socket, char *filename, char *boundary,
+    uint64_t *content_read, uint64_t max_length)
+{
+	enum err_status error;
+	char *full_filename;
+	char number;
+	size_t i;
+	FILE *fd;
+	size_t filename_length;
+	char cur_char;
+	size_t file_written;
+	ssize_t err;
+	char buff[BUFFSIZE_READ];
+	size_t cur_buf_pos;
+	char *bound_buff;
+	size_t cur_bound_buf_pos;
+
+	error = STAT_OK;
+	full_filename = NULL;
+	full_filename = concat(concat(concat(full_filename, UPLOAD_DIR), "/"),
+			    filename);
+
+	/* in case file exists */
+	number = '0';
+	if (access(full_filename, F_OK) == 0) {
+		filename_length = strlen(full_filename);
+		full_filename = err_realloc(full_filename, filename_length + 2);
+		full_filename[filename_length] = '_';
+		full_filename[filename_length + 1] = number;
+		full_filename[filename_length + 2] = '\0';
+		/* count up until a free filename is found */
+		while (access(full_filename, F_OK) == 0 && number <= '9') {
+			full_filename[filename_length  + 1] = ++number;
+		}
+		if (number > '9') {
+			free(full_filename);
+			return NO_FREE_SPOT;
+		}
+	}
+
+	fd = fopen(full_filename, "w+");
+	if (fd == NULL) {
+		err_quit(ERR_INFO, "fopen() retuned NULL");
+	}
+
+	bound_buff = NULL;
+	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
+
+	cur_buf_pos = 0;
+	cur_bound_buf_pos = 0;
+
+	/* read as long as we are not extending max_length */
+	while ((*content_read) < max_length) {
+		/* read 1 character from socket */
+		err = read(socket, &cur_char, (size_t)1);
+		(*content_read)++;
+		if (err < 1) {
+			error = CLOSED_CON;
+			goto stop_transfer;
+		}
+		/* check if current character is matching the bound string */
+		if (cur_char == bound_buff[cur_bound_buf_pos]) {
+			cur_bound_buf_pos++;
+			/* if every character has matched the bound_buff string stop */
+			if (cur_bound_buf_pos == strlen(bound_buff)) {
+				error = STAT_OK;
+				goto stop_transfer;
+			}
+			continue;
+		}
+		/*
+		 * if the cur_bound_buf_pos is != 0 we matched some char to
+		 * bound_buf, write them to buff.
+		 */
+		for (i = 0; i < cur_bound_buf_pos; i++) {
+			/* write to buffer */
+			buff[cur_buf_pos] = bound_buff[i];
+			/*
+			 * lets see if we extend the buffer, if so write
+			 * content to file
+			 */
+			if (++cur_buf_pos == BUFFSIZE_READ) {
+				file_written = fwrite(buff, 1, cur_buf_pos, fd);
+				if (file_written != cur_buf_pos) {
+					error = FILE_ERROR;
+					goto stop_transfer;
+				}
+				cur_buf_pos = 0;
+			}
+		}
+		cur_bound_buf_pos = 0;
+		buff[cur_buf_pos] = cur_char;
+		/*
+		 * lets see if we extend the buffer, if so write
+		 * content to file
+		 */
+		if (++cur_buf_pos == BUFFSIZE_READ) {
+			file_written = fwrite(buff, 1, cur_buf_pos, fd);
+			if (file_written != cur_buf_pos) {
+				error = FILE_ERROR;
+				goto stop_transfer;
+			}
+			cur_buf_pos = 0;
+		}
+	}
+
+stop_transfer:
+	if ((*content_read) == max_length) {
+		error = BOUNDARY_MISSING;
+	} else if (cur_buf_pos != 0) {
+		file_written = fwrite(buff, 1, cur_buf_pos, fd);
+		if (file_written != cur_buf_pos) {
+			error = FILE_ERROR;
+			goto stop_transfer;
+		}
+	}
+	free(bound_buff);
+	fclose(fd);
+	if (error) {
+		unlink(full_filename);
+	}
+	free(full_filename);
 
 	return error;
 }
@@ -876,184 +873,3 @@ get_response_type(char **request)
 	return ret;
 }
 
-/*
- * generates a 200 OK HTTP response and saves it inside the client_info
- */
-int
-send_200_file_head(int socket, enum request_type type, char *filename,
-    uint64_t *size)
-{
-	struct stat sb;
-	char *head;
-	enum err_status error;
-	char *full_path;
-
-	full_path = NULL;
-	full_path = concat(concat(full_path, ROOT_DIR), filename);
-
-	if (stat(full_path, &sb) == -1) {
-		err_quit(ERR_INFO, "stat() retuned -1");
-	}
-	free(full_path);
-	(*size) = (uint64_t)sb.st_size;
-
-	if (type != HTTP) {
-		return STAT_OK;
-	}
-
-	head = NULL;
-	head = concat(
-		   concat(
-		       concat(head, "HTTP/1.1 200 OK\r\n" "Content-Type: "),
-		       get_content_encoding(filename)),
-		   "\r\n");
-	error = send_http_head(socket, head, (*size));
-	free(head);
-	if (error) {
-		return error;
-	}
-
-
-	return STAT_OK;
-}
-
-/*
- * sends a 200 OK resposne with attached directory table
- */
-int
-send_200_directory(int socket, enum request_type type, char *directory,
-    uint64_t *size)
-{
-	enum err_status error;
-	char *body;
-	char *table;
-	char *head;
-	    
-	head = "HTTP/1.1 200 OK\r\n"
-	       "Content-Type: text/html\r\n";
-	body = NULL;
-
-	if (type == HTTP) {
-		body = concat(body, HTTP_TOP);
-	}
-	table = dir_to_table(type, directory);
-	body = concat(body, table);
-	free(table);
-	if (type == HTTP) {
-		body = concat(body, HTTP_BOT);
-	}
-	(*size) = strlen(body);
-
-	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(body));
-		if (error) {
-			return error;
-		}
-	}
-
-	error = send_text(socket, body, (*size));
-	free(body);
-
-	return error;
-}
-
-/*
- * generates a 404 NOT FOUND HTTP response and saves it inside the client_info
- */
-int
-send_404(int socket, enum request_type type, uint64_t *size)
-{
-	enum err_status error;
-	char *head;
-
-	head = "HTTP/1.1 404 Not Found\r\n"
-	       "Content-Type: text/plain\r\n";
-	(*size) = strlen(RESPONSE_404);
-
-	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(RESPONSE_404));
-		if (error) {
-			return error;
-		}
-	}
-
-	error = send_text(socket, RESPONSE_404, (*size));
-
-	return error;
-}
-
-/*
- * generates a 403 FORBIDDEN HTTP response and saves it inside the client_info
- */
-int
-send_403(int socket, enum request_type type, uint64_t *size)
-{
-	enum err_status error;
-	char *head;
-
-	head = "HTTP/1.1 403 Forbidden\r\n"
-	       "Content-Type: text/plain\r\n";
-	(*size) = strlen(RESPONSE_403);
-
-	if (type == HTTP) {
-		error = send_http_head(socket, head, strlen(RESPONSE_403));
-		if (error) {
-			return error;
-		}
-	}
-
-	error = send_text(socket, RESPONSE_403, (*size));
-
-	return error;
-}
-
-/*
- * will send a 201 Created
- */
-int
-send_201(int socket)
-{
-	enum err_status error;
-	char *head;
-	uint64_t size;
-
-	head = "HTTP/1.1 201 Created\r\n"
-	       "Content-Type: text/html\r\n";
-	size = (uint64_t)strlen(RESPONSE_201);
-
-	error = send_http_head(socket, head, size);
-	if (error) {
-		return error;
-	}
-
-	error = send_text(socket, RESPONSE_201, size);
-
-	return error;
-}
-
-/*
- * sends a http header with added Content_Length and Content_Type
- */
-int
-send_http_head(int socket, char* head, uint64_t content_length)
-{
-	enum err_status error;
-	char tmp[MSG_BUFFER_SIZE];
-
-	snprintf(tmp, MSG_BUFFER_SIZE,
-	    "Content-Length: %llu\r\n\r\n",
-	    (long long unsigned int)content_length);
-
-	error = send_text(socket, head, (uint64_t)strlen(head));
-	if (error) {
-		return error;
-	}
-
-	error = send_text(socket, tmp,
-	    (uint64_t)strlen(tmp));
-	if (error) {
-		return error;
-	}
-
-	return STAT_OK;
-}

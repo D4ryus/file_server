@@ -22,4 +22,9 @@
  */
 #define BUFFSIZE_READ 8192
 
+/*
+ * size of several message buffer, for example the one used to print on stdout.
+ */
+#define MSG_BUFFER_SIZE 256
+
 #endif

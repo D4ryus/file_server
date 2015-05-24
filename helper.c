@@ -80,7 +80,7 @@ send_file(int socket, char *filename, uint64_t *written)
 	size_t	read_bytes;
 	size_t	sent_bytes;
 	char	buffer[BUFFSIZE_WRITE];
-	FILE	*f;
+	FILE	*fd;
 	enum err_status ret_status;
 	char *full_path;
 
@@ -88,9 +88,9 @@ send_file(int socket, char *filename, uint64_t *written)
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
-	f = fopen(full_path, "rb");
+	fd = fopen(full_path, "rb");
 	free(full_path);
-	if (f == NULL) {
+	if (fd == NULL) {
 		err_quit(ERR_INFO, "fopen() retuned NULL");
 	}
 
@@ -99,7 +99,7 @@ send_file(int socket, char *filename, uint64_t *written)
 	ret_status = STAT_OK;
 
 	while (sending) {
-		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_WRITE, f);
+		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_WRITE, fd);
 		if (read_bytes < BUFFSIZE_WRITE) {
 			sending = 0;
 		}
@@ -122,7 +122,7 @@ send_file(int socket, char *filename, uint64_t *written)
 			(*written) += sent_bytes;
 		}
 	}
-	fclose(f);
+	fclose(fd);
 
 	return ret_status;
 }
