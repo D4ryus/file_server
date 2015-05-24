@@ -235,13 +235,13 @@ handle_post(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
-	data->written += strlen(cur_line) + 2;
 
 	if (!starts_with(cur_line, "--")
 	         || (strcmp(cur_line + 2, boundary) != 0)) {
 		free(boundary);
 		return WRONG_BOUNDRY;
 	}
+	data->written += strlen(cur_line) + 2;
 	free(cur_line);
 
 	do {
@@ -407,44 +407,49 @@ save_file_from_post(int socket, char *filename, char *boundary,
 
 	/* read as long as we are not extending max_length */
 	while ((*content_read) < max_length) {
-		/* read 1 character from socket */
 		err = recv(socket, &cur_char, (size_t)1, 0);
 		(*content_read)++;
 		if (err < 1) {
 			error = CLOSED_CON;
 			goto stop_transfer;
 		}
+continue_without_read:
 		/* check if current character is matching the bound string */
 		if (cur_char == bound_buff[cur_bound_buf_pos]) {
 			cur_bound_buf_pos++;
-			/* if every character has matched the bound_buff string stop */
+			/*
+			 * if every character has matched the bound_buff string
+			 * stop
+			 */
 			if (cur_bound_buf_pos == strlen(bound_buff)) {
 				error = STAT_OK;
 				goto stop_transfer;
 			}
 			continue;
-		}
 		/*
-		 * if the cur_bound_buf_pos is != 0 we matched some char to
-		 * bound_buf, write them to buff.
+		 * if the cur_char is not matching write all matched (if any)
+		 * to buffer
 		 */
-		for (i = 0; i < cur_bound_buf_pos; i++) {
-			/* write to buffer */
-			buff[cur_buf_pos] = bound_buff[i];
-			/*
-			 * lets see if we extend the buffer, if so write
-			 * content to file
-			 */
-			if (++cur_buf_pos == BUFFSIZE_READ) {
-				file_written = fwrite(buff, 1, cur_buf_pos, fd);
-				if (file_written != cur_buf_pos) {
-					error = FILE_ERROR;
-					goto stop_transfer;
+		} else if (cur_bound_buf_pos != 0) {
+			for (i = 0; i < cur_bound_buf_pos; i++) {
+				/* write to buffer */
+				buff[cur_buf_pos] = bound_buff[i];
+				/*
+				 * lets see if we extend the buffer, if so write
+				 * content to file
+				 */
+				if (++cur_buf_pos == BUFFSIZE_READ) {
+					file_written = fwrite(buff, 1, cur_buf_pos, fd);
+					if (file_written != cur_buf_pos) {
+						error = FILE_ERROR;
+						goto stop_transfer;
+					}
+					cur_buf_pos = 0;
 				}
-				cur_buf_pos = 0;
 			}
+			cur_bound_buf_pos = 0;
+			goto continue_without_read;
 		}
-		cur_bound_buf_pos = 0;
 		buff[cur_buf_pos] = cur_char;
 		/*
 		 * lets see if we extend the buffer, if so write
@@ -464,7 +469,7 @@ save_file_from_post(int socket, char *filename, char *boundary,
 	 * should be a boundry before we read content_length from stream.
 	 * and there is a -- after the last boundary
 	 */
-	error = BOUNDARY_MISSING;
+	error = WRONG_BOUNDRY;
 
 stop_transfer:
 	free(bound_buff);
