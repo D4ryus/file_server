@@ -36,7 +36,7 @@ main(const int argc, const char *argv[])
 	int server_socket;
 	int client_socket;
 	int on;
-	enum err_status error;
+	int error;
 	pthread_t thread;
 	pthread_attr_t attr;
 	socklen_t clilen;

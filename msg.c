@@ -6,6 +6,7 @@
 #include <time.h>
 #include <sys/types.h>
 
+#include "defines.h"
 #include "msg.h"
 #include "helper.h"
 #ifdef NCURSES
@@ -81,16 +82,12 @@ _msg_print_loop(void *ignored)
 		position = 0;
 		written = 0;
 		pthread_mutex_lock(&status_list_mutex);
-		if (first == NULL) {
-			goto sleep;
-		}
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
 			_msg_format_and_print(cur, position);
 
 			written += cur->data->last_written - last_written;
 		}
-sleep:
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
 		ncurses_update_end(written, position);
@@ -297,8 +294,7 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	char fmt_size[7];
 	char fmt_bytes_per_tval[7];
 
-	size_t msg_buffer_size = 256;
-	char msg_buffer[msg_buffer_size];
+	char msg_buffer[MSG_BUFFER_SIZE];
 
 	/* read value only once from struct */
 	written		= cur->data->written;
@@ -314,7 +310,7 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	snprintf(msg_buffer, msg_buffer_size,
+	snprintf(msg_buffer, MSG_BUFFER_SIZE,
 	    "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
 	    (unsigned int)(written * 100 /
 		(cur->data->size > 0 ? cur->data->size : 1)),
@@ -323,7 +319,10 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    cur->data->requested_path + strlen(ROOT_DIR));
+	    (cur->data->requested_path == NULL) ?
+	    "-" :
+	    cur->data->requested_path
+	    );
 
 	msg_print_info(cur->data, TRANSFER, msg_buffer, position);
 

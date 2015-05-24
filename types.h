@@ -16,23 +16,23 @@ enum response_type {FILE_200, DIR_200, TXT_403, TXT_404};
  * intern error enum, used as return value from functions
  */
 enum err_status {
-	STAT_OK            =   0,
-	WRITE_CLOSED       =  -1,
-	ZERO_WRITTEN       =  -2,
-	CLOSED_CON         =  -3,
-	EMPTY_MESSAGE      =  -4,
-	INV_REQ_TYPE       =  -5,
-	INV_GET            =  -6,
-	INV_POST           =  -7,
-	CON_LENGTH_MISSING =  -8,
-	BOUNDARY_MISSING   =  -9,
-	REFERER_MISSING    = -10,
-	FILESIZE_ZERO      = -11,
-	WRONG_BOUNDRY      = -12,
-	LINE_LIMIT_EXT     = -13,
-	POST_NO_FILENAME   = -14,
-	NO_FREE_SPOT       = -15,
-	FILE_ERROR         = -16
+	STAT_OK            =  0,
+	WRITE_CLOSED       =  1,
+	ZERO_WRITTEN       =  2,
+	CLOSED_CON         =  3,
+	EMPTY_MESSAGE      =  4,
+	INV_REQ_TYPE       =  5,
+	INV_GET            =  6,
+	INV_POST           =  7,
+	CON_LENGTH_MISSING =  8,
+	BOUNDARY_MISSING   =  9,
+	REFERER_MISSING    = 10,
+	FILESIZE_ZERO      = 11,
+	WRONG_BOUNDRY      = 12,
+	LINE_LIMIT_EXT     = 13,
+	POST_NO_FILENAME   = 14,
+	NO_FREE_SPOT       = 15,
+	FILE_ERROR         = 16
 };
 
 /*

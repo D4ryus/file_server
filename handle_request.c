@@ -20,6 +20,27 @@ extern int VERBOSITY;
 extern int USE_NCURSES;
 #endif
 
+const char *err_msg[] =
+{
+/* STAT_OK            */ "no error detected",
+/* WRITE_CLOSED       */ "could not write, client closed connection",
+/* ZERO_WRITTEN       */ "could not write, 0 bytes written",
+/* CLOSED_CON         */ "client closed connection",
+/* EMPTY_MESSAGE      */ "empty message",
+/* INV_REQ_TYPE       */ "invalid Request Type",
+/* INV_GET            */ "invalid GET",
+/* INV_POST           */ "invalid POST",
+/* CON_LENGTH_MISSING */ "Content_Length missing",
+/* BOUNDARY_MISSING   */ "boundary missing",
+/* REFERER_MISSING    */ "referer missing",
+/* FILESIZE_ZERO      */ "filesize is 0 or error ocurred",
+/* WRONG_BOUNDRY      */ "wrong boundry specified",
+/* LINE_LIMIT_EXT     */ "http header extended line limit",
+/* POST_NO_FILENAME   */ "missing filename in post message",
+/* NO_FREE_SPOT       */ "the posted filename already exists (10 times)",
+/* FILE_ERROR         */ "could not write the post content to file"
+};
+
 /*
  * function where each thread starts execution with given client_info
  */
@@ -37,15 +58,26 @@ handle_request(void *ptr)
 	}
 	msg_print_info(data, CONNECTED, "connection established", -1);
 
-	/* set everything to 0 */
+	error = get_line(data->socket, &cur_line);
+	if (error) {
+		msg_print_info(data, ERROR,
+		    err_msg[error],
+		    -1);
+		free(data);
+		return NULL;
+	}
+
 	data->requested_path = NULL;
 	data->size = 0;
 	data->written = 0;
 	data->last_written = 0;
 
-	error = get_line(data->socket, &cur_line);
-	if (error) {
-		goto exit_thread;
+#ifdef NCURSES
+	if (USE_NCURSES || VERBOSITY >= 3) {
+#else
+	if (VERBOSITY >= 3) {
+#endif
+		msg_hook_add(data);
 	}
 
 	if (starts_with(cur_line, "POST")) {
@@ -65,93 +97,12 @@ handle_request(void *ptr)
 	/*
 	 * exit of thread, closes socket and prints out error msg
 	 */
-exit_thread:
 	close(data->socket);
 
-	switch (error) {
-		case WRITE_CLOSED:
-			msg_print_info(data, ERROR,
-			    "could not write, client closed connection",
-			    -1);
-			break;
-		case ZERO_WRITTEN:
-			msg_print_info(data, ERROR,
-			    "could not write, 0 bytes written",
-			    -1);
-			break;
-		case CLOSED_CON:
-			msg_print_info(data, ERROR,
-			    "Client closed connection",
-			    -1);
-			break;
-		case EMPTY_MESSAGE:
-			msg_print_info(data, ERROR,
-			    "empty message",
-			    -1);
-			break;
-		case INV_REQ_TYPE:
-			msg_print_info(data, ERROR,
-			    "invalid Request Type",
-			    -1);
-			break;
-		case INV_GET:
-			msg_print_info(data, ERROR,
-			    "invalid GET",
-			    -1);
-			break;
-		case INV_POST:
-			msg_print_info(data, ERROR,
-			    "invalid POST",
-			    -1);
-			break;
-		case CON_LENGTH_MISSING:
-			msg_print_info(data, ERROR,
-			    "Content_Length missing",
-			    -1);
-			break;
-		case BOUNDARY_MISSING:
-			msg_print_info(data, ERROR,
-			    "boundary missing",
-			    -1);
-			break;
-		case REFERER_MISSING:
-			msg_print_info(data, ERROR,
-			    "referer missing",
-			    -1);
-			break;
-		case FILESIZE_ZERO:
-			msg_print_info(data, ERROR,
-			    "filesize is 0 or error ocurred",
-			    -1);
-			break;
-		case WRONG_BOUNDRY:
-			msg_print_info(data, ERROR,
-			    "wrong boundry specified",
-			    -1);
-			break;
-		case LINE_LIMIT_EXT:
-			msg_print_info(data, ERROR,
-			    "http header extended line limit",
-			    -1);
-			break;
-		case POST_NO_FILENAME:
-			msg_print_info(data, ERROR,
-			    "missing filename in post message",
-			    -1);
-			break;
-		case NO_FREE_SPOT:
-			msg_print_info(data, ERROR,
-			    "the posted filename already exists (10 times)",
-			    -1);
-			break;
-		case FILE_ERROR:
-			msg_print_info(data, ERROR,
-			    "could not write to post content to file",
-			    -1);
-			break;
-		default:
-			/* not reached */
-			break;
+	if (error) {
+		msg_print_info(data, ERROR,
+		    err_msg[error],
+		    -1);
 	}
 
 	msg_hook_cleanup(data);
@@ -167,26 +118,25 @@ handle_get(struct client_info *data, char *request)
 	char fmt_size[7];
 	enum response_type res_type;
 	enum request_type req_type;
+	char *requ_path_tmp;
 
 	error = STAT_OK;
 
-	error = parse_get(request, &(req_type), &(data->requested_path));
+	requ_path_tmp = NULL;
+	error = parse_get(request, &(req_type), &(requ_path_tmp));
 	if (error) {
 		return error;
 	}
 
-	res_type = get_response_type(&(data->requested_path));
+	res_type = get_response_type(&(requ_path_tmp));
+
+	if (res_type == FILE_200  || res_type == DIR_200) {
+		data->requested_path = requ_path_tmp;
+		requ_path_tmp = NULL;
+	}
 
 	switch (res_type) {
 		case FILE_200:
-#ifdef NCURSES
-			if (USE_NCURSES || VERBOSITY >= 3) {
-#else
-			if (VERBOSITY >= 3) {
-#endif
-				msg_hook_add(data);
-			}
-
 			error = send_200_file_head(data->socket,
 				    req_type,
 				    &(data->size),
@@ -216,6 +166,7 @@ handle_get(struct client_info *data, char *request)
 				    "%s %s",
 				    format_size(data->size, fmt_size),
 				    data->requested_path);
+				data->written = data->size;
 			}
 			break;
 		case TXT_403:
@@ -225,6 +176,7 @@ handle_get(struct client_info *data, char *request)
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
 				    "err403");
+				data->written = data->size;
 			}
 			break;
 		case TXT_404:
@@ -234,6 +186,7 @@ handle_get(struct client_info *data, char *request)
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
 				    "err404");
+				data->written = data->size;
 			}
 			break;
 		default:
@@ -246,12 +199,6 @@ handle_get(struct client_info *data, char *request)
 	}
 	msg_print_info(data, SENT, message_buffer, -1);
 
-	/*
-	 * thread exit point
-	 * socket will be closed, memory will be cleaned and error hook will be
-	 * removed before thread exit's
-	 * error is returned
-	 */
 	return STAT_OK;
 }
 
@@ -263,10 +210,8 @@ handle_post(struct client_info *data, char *request)
 	char *boundary;
 	char *referer;
 	char *content_length;
-	uint64_t sent;
-	uint64_t max_length;
-	uint64_t content_read;
 	char *filename;
+	uint64_t tmp;
 
 	cur_line = NULL;
 	error = STAT_OK;
@@ -280,35 +225,39 @@ handle_post(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
+	/* TODO: USE REFERER */
 
-	max_length = err_string_to_val(content_length);
-	if (max_length == 0) {
+	data->size = err_string_to_val(content_length);
+	free(content_length);
+	if (data->size == 0) {
 		return FILESIZE_ZERO;
 	}
 
 	/* END of HEADER */
 
-	content_read = 0;
 	error = get_line(data->socket, &cur_line);
 	if (error) {
 		return error;
 	}
-	content_read += strlen(cur_line) + 2;
+	data->written += strlen(cur_line) + 2;
 
 	if (!starts_with(cur_line, "--")
 	         || (strcmp(cur_line + 2, boundary) != 0)) {
+		free(boundary);
 		return WRONG_BOUNDRY;
 	}
 	free(cur_line);
 
 	do {
-		error = parse_file_header(data->socket, &filename,
-			    &content_read);
+		error = parse_file_header(data->socket, &(filename),
+			    &(data->written));
 		if (error) {
 			return error;
 		}
+		data->requested_path = filename;
 		error = save_file_from_post(data->socket, filename, boundary,
-			    &content_read, max_length);
+			    &(data->written), data->size);
+		free(boundary);
 		if (error) {
 			return error;
 		}
@@ -316,19 +265,11 @@ handle_post(struct client_info *data, char *request)
 		if (error) {
 			return error;
 		}
-		content_read += strlen(cur_line) + 2;
+		data->written += strlen(cur_line) + 2;
 	} while (strlen(cur_line) == 0
 		    && strcmp(cur_line, "--") != 0);
 
-	error = send_201(data->socket, HTTP, &sent);
-	msg_print_info(data, POST, "someone posted!", -1);
-
-	/*
-	 * thread exit point
-	 * socket will be closed, memory will be cleaned and error hook will be
-	 * removed before thread exit's
-	 * error is returned
-	 */
+	error = send_201(data->socket, HTTP, &(tmp));
 
 	return error;
 }
@@ -522,18 +463,23 @@ save_file_from_post(int socket, char *filename, char *boundary,
 			cur_buf_pos = 0;
 		}
 	}
+	/*
+	 * if content_read >= max_length a error occured, since there
+	 * should be a boundry before we read content_length from stream.
+	 * and there is a -- after the last boundary
+	 */
+	error = BOUNDARY_MISSING;
 
 stop_transfer:
-	if ((*content_read) == max_length) {
-		error = BOUNDARY_MISSING;
-	} else if (cur_buf_pos != 0) {
+	free(bound_buff);
+	/* check if data is left in buffer */
+	if (cur_buf_pos != 0) {
 		file_written = fwrite(buff, 1, cur_buf_pos, fd);
 		if (file_written != cur_buf_pos) {
 			error = FILE_ERROR;
 			goto stop_transfer;
 		}
 	}
-	free(bound_buff);
 	fclose(fd);
 	if (error) {
 		unlink(full_filename);

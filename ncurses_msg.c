@@ -7,6 +7,7 @@
 
 #include "ncurses_msg.h"
 #include "helper.h"
+#include "defines.h"
 
 /*
  * see globals.h
@@ -98,14 +99,13 @@ void
 ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp,
     const char *message, int position)
 {
-	size_t msg_buffer_size = 512;
-	char msg_buffer[msg_buffer_size];
+	char msg_buffer[MSG_BUFFER_SIZE];
 
 	if (!USE_NCURSES) {
 		return;
 	}
 
-	memset(msg_buffer, '\0', msg_buffer_size);
+	memset(msg_buffer, '\0', MSG_BUFFER_SIZE);
 
 	pthread_mutex_lock(&ncurses_mutex);
 	if (position < 0) {
@@ -113,7 +113,7 @@ ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp
 			scroll(win_logging);
 			wmove(win_logging, LOGGING_WINDOW_HEIGTH - 2, 0);
 			wclrtoeol(win_logging);
-			snprintf(msg_buffer, msg_buffer_size,
+			snprintf(msg_buffer, MSG_BUFFER_SIZE,
 			    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
 			    timestamp,
 			    data->ip,
@@ -128,7 +128,7 @@ ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp
 		}
 	} else {
 		/* TODO: Implement Scrolling for status window */
-		if (win_status && position + 1 < status_heigth - 1) {
+		if (win_status && position + 1 < status_heigth - 2) {
 			mvwprintw(win_status, position + 1, 1,
 			    "[%15s:%-5d - %3d]: %s",
 			    data->ip,
@@ -171,8 +171,7 @@ ncurses_update_begin(int last_position)
 void
 ncurses_update_end(uint64_t written, int clients)
 {
-	size_t msg_buffer_size = 256;
-	char msg_buffer[msg_buffer_size];
+	char msg_buffer[MSG_BUFFER_SIZE];
 	char fmt_written_all_time[7];
 	char fmt_bytes_per_tval[7];
 
@@ -185,7 +184,7 @@ ncurses_update_end(uint64_t written, int clients)
 	format_size(written_all_time, fmt_written_all_time);
 	format_size(written / UPDATE_TIMEOUT, fmt_bytes_per_tval);
 
-	snprintf(msg_buffer, msg_buffer_size, "(%d)-(%6s)-(%6s/%us)",
+	snprintf(msg_buffer, MSG_BUFFER_SIZE, "(%d)-(%6s)-(%6s/%us)",
 	    clients,
 	    fmt_written_all_time,
 	    fmt_bytes_per_tval,
