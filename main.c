@@ -114,6 +114,9 @@ main(const int argc, const char *argv[])
 	}
 
 	free(ROOT_DIR);
+	if (UPLOAD_DIR != NULL) {
+		free(UPLOAD_DIR);
+	}
 	close(server_socket);
 }
 

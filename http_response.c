@@ -222,6 +222,7 @@ send_201(int socket, enum request_type type, uint64_t *size)
 					   "Content-Type: text/html\r\n"),
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
+		free(head);
 		if (error) {
 			return error;
 		}

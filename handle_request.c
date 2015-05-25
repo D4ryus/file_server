@@ -225,6 +225,7 @@ handle_post(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
+	free(referer);
 	/* TODO: USE REFERER */
 
 	data->size = err_string_to_val(content_length);
@@ -287,6 +288,7 @@ handle_post(struct client_info *data, char *request)
 	} while (strlen(cur_line) == 0
 		    && strcmp(cur_line, "--") != 0);
 
+	free(cur_line);
 	free(boundary);
 
 	error = send_201(data->socket, HTTP, &(tmp));
