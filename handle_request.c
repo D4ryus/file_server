@@ -379,20 +379,15 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	}
 	(*written) += (uint64_t)read_from_socket;
 file_head:
-	printf("filehead\n");
 	/* buff contains file head */
 	if (read_from_socket == 4 && starts_with(buff, "--\r\n")) {
 		goto stop_transfer;
 	}
-	printf("parsingfileheader\n");
 	error = parse_file_header(buff, (size_t)read_from_socket,
 		    &file_head_size, &filename);
-	printf("done\n");
 	if (error) {
-		printf("ERROR!\n");
 		goto stop_transfer;
 	}
-	printf("no error, filename: %s\n", filename);
 
 	if (full_filename != NULL) {
 		free(full_filename);
@@ -468,7 +463,6 @@ file_head:
 			}
 			(*written) += (uint64_t)tmp;
 			read_from_socket = tmp + (ssize_t)offset;
-			printf("going for filehead again!\n");
 			goto file_head;
 		}
 		/* if we pass the for loop we did not find any boundry */
@@ -495,7 +489,6 @@ file_head:
 	}
 
 stop_transfer:
-	printf("stopped transfer\n");
 	if (full_filename != NULL) {
 		unlink(full_filename);
 		free(full_filename);
