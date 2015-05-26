@@ -180,13 +180,16 @@ is_directory(const char *path)
  * check if first string starts with second string
  */
 int
-starts_with(const char *line, const char *prefix)
+starts_with(const char *line, const char *prefix, size_t prefix_length)
 {
+	size_t i;
+
 	if (line == NULL || prefix == NULL) {
 		return 0;
 	}
-	while (*prefix) {
-		if (*prefix++ != *line++) {
+
+	for (i = 0; i < prefix_length; i++) {
+		if (prefix[i] != line[i]) {
 			return 0;
 		}
 	}

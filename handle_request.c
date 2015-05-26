@@ -38,7 +38,8 @@ const char *err_msg[] =
 /* BOUNDARY_MISSING   */ "boundary missing",
 /* FILESIZE_ZERO      */ "filesize is 0 or error ocurred",
 /* WRONG_BOUNDRY      */ "wrong boundry specified",
-/* LINE_LIMIT_EXT     */ "http header extended line limit",
+/* HTTP_HEAD_LINE_EXT */ "http header extended line limit",
+/* FILE_HEAD_LINE_EXT */ "file header extended line limit",
 /* POST_NO_FILENAME   */ "missing filename in post message",
 /* NO_FREE_SPOT       */ "the posted filename already exists (10 times)",
 /* FILE_ERROR         */ "could not write the post content to file",
@@ -87,13 +88,13 @@ handle_request(void *ptr)
 		msg_hook_add(data);
 	}
 
-	if (starts_with(cur_line, "POST")) {
+	if (starts_with(cur_line, "POST", 4)) {
 		if (UPLOAD_DIR != NULL) {
 			error = handle_post(data, cur_line);
 		} else {
 			error = INV_REQ_TYPE;
 		}
-	} else if (starts_with(cur_line, "GET")) {
+	} else if (starts_with(cur_line, "GET", 3)) {
 		error = handle_get(data, cur_line);
 	} else {
 		error = INV_REQ_TYPE;
@@ -243,8 +244,13 @@ handle_post(struct client_info *data, char *request)
 	/* END */
 
 	error = send_201(data->socket, HTTP, &(tmp));
+	if (error) {
+		return error;
+	}
 
-	return error;
+	msg_print_info(data, SENT, "POST successfull", -1);
+
+	return STAT_OK;
 }
 
 int
@@ -268,7 +274,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 	}
 
 	while (strlen(cur_line) != 0) {
-		if (starts_with(cur_line, STR_COL)) {
+		if (starts_with(cur_line, STR_COL, strlen(STR_COL))) {
 			str_len = strlen(cur_line + strlen(STR_COL));
 			if (str_len - strlen(STR_COL) < 1) {
 				error = CON_LENGTH_MISSING;
@@ -278,7 +284,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 			strncpy((*content_length), cur_line
 			    + strlen(STR_COL), str_len + 1);
 		}
-		if (starts_with(cur_line, STR_BOU)) {
+		if (starts_with(cur_line, STR_BOU, strlen(STR_BOU))) {
 			str_len = strlen(cur_line + strlen(STR_BOU));
 			if (str_len - strlen(STR_BOU) < 1) {
 				error = BOUNDARY_MISSING;
@@ -333,18 +339,19 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	size_t file_head_size;
 	char *free_me;
 	FILE *fd;
-	size_t bound_buff_pos;
-	ssize_t tmp; /* just a tmp variable, feel free to use it */
-	size_t i;
 	size_t bound_buff_length;
+	ssize_t boundary_pos;
+	/* just a tmp variable, feel free to use it */
+	ssize_t tmp;
 	size_t file_written;
-	size_t offset;
+	ssize_t offset;
 
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
 		err_quit(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
 	}
 
+	error = STAT_OK;
 	bound_buff = NULL;
 	filename = NULL;
 	full_filename = NULL;
@@ -362,9 +369,9 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	}
 	(*written) += (uint64_t)read_from_socket;
 
-	if (!starts_with(buff, "--")
-	    || !starts_with(buff + 2, boundary)
-	    || !starts_with(buff + 2 + strlen(boundary), "\r\n"))
+	if (!starts_with(buff, "--", 2)
+	    || !starts_with(buff + 2, boundary, strlen(boundary))
+	    || !starts_with(buff + 2 + strlen(boundary), "\r\n", 2))
 	{
 		error = WRONG_BOUNDRY;
 		goto stop_transfer;
@@ -380,7 +387,8 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	(*written) += (uint64_t)read_from_socket;
 file_head:
 	/* buff contains file head */
-	if (read_from_socket == 4 && starts_with(buff, "--\r\n")) {
+	if ((read_from_socket == 4) && starts_with(buff, "--\r\n", 4)) {
+		error = STAT_OK;
 		goto stop_transfer;
 	}
 	error = parse_file_header(buff, (size_t)read_from_socket,
@@ -409,44 +417,42 @@ file_head:
 	}
 
 	/* now move unread buff content to front and fill up with new data */
-	offset = ((size_t)read_from_socket - file_head_size);
-	memmove(buff, buff + file_head_size, offset);
-	tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
+	offset = (read_from_socket - (ssize_t)file_head_size);
+	memmove(buff, buff + file_head_size, (size_t)offset);
+	tmp = recv(socket, buff + offset, BUFFSIZE_READ - (size_t)offset, 0);
 	if (tmp < 0) {
 		error = CLOSED_CON;
 		goto stop_transfer;
 	}
 	(*written) += (uint64_t)tmp;
-	read_from_socket = (ssize_t)offset + tmp;
+	read_from_socket = offset + tmp;
 
 	/* buff contains file_content */
 	while ((*written) <= (*max_size)) {
-		bound_buff_pos = 0;
 		/* check buffer for boundry */
-		if ((size_t)read_from_socket < bound_buff_length) {
-			error = EMPTY_MESSAGE;
+		error = buff_contains(socket, buff, (size_t)read_from_socket,
+			    bound_buff, bound_buff_length, &(boundary_pos));
+		if (error) {
 			goto stop_transfer;
 		}
-		bound_buff_pos = 0;
-		for (i = 0; (ssize_t)i < read_from_socket; i++) {
-			if (buff[i] == bound_buff[bound_buff_pos]) {
-				bound_buff_pos++;
-			} else if (buff[i] == bound_buff[0]) {
-				bound_buff_pos = 1;
-			} else {
-				bound_buff_pos = 0;
+		if (boundary_pos == -1) {
+			/* no boundary found */
+			file_written = fwrite(buff, 1, (size_t)read_from_socket, fd);
+			if (file_written != (size_t)read_from_socket) {
+				error = FILE_ERROR;
+				goto stop_transfer;
 			}
-			/* check if we matched the whole boundry */
-			if (bound_buff_pos != bound_buff_length) {
-				continue;
+			read_from_socket = recv(socket, buff, BUFFSIZE_READ, 0);
+			if (read_from_socket < 0) {
+				error = CLOSED_CON;
+				goto stop_transfer;
 			}
-			/*
-			 * move i to first non boundry character
-			 * i = [filecontentlength] + [boundrylength]
-			 */
-			i++;
-			file_written = fwrite(buff, 1, (i - bound_buff_length), fd);
-			if (file_written != (i - bound_buff_length)) {
+			(*written) += (uint64_t)read_from_socket;
+			continue;
+		} else {
+			/* boundary is found at pos */
+			file_written = fwrite(buff, 1, (size_t)boundary_pos, fd);
+			if (file_written != (size_t)boundary_pos) {
 				error = FILE_ERROR;
 				goto stop_transfer;
 			}
@@ -454,34 +460,24 @@ file_head:
 			fd = NULL;
 			free(full_filename);
 			full_filename = NULL;
-			offset = (size_t)read_from_socket - i;
-			memmove(buff, buff + i, offset);
-			tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
+
+			/* buff + offset is first byte from new file */
+			offset = boundary_pos + (ssize_t)bound_buff_length;
+			if (read_from_socket <= offset) {
+				tmp = recv(socket, buff, BUFFSIZE_READ, 0);
+				read_from_socket = tmp;
+			} else {
+				memmove(buff, buff + offset, (size_t)(read_from_socket - offset));
+				tmp = 0;
+				read_from_socket = read_from_socket - offset;
+			}
 			if (tmp < 0) {
 				error = CLOSED_CON;
 				goto stop_transfer;
 			}
 			(*written) += (uint64_t)tmp;
-			read_from_socket = tmp + (ssize_t)offset;
 			goto file_head;
 		}
-		/* if we pass the for loop we did not find any boundry */
-		file_written = fwrite(buff, 1, (size_t)read_from_socket - bound_buff_length, fd);
-		if (file_written != (size_t)read_from_socket - bound_buff_length) {
-			error = FILE_ERROR;
-			goto stop_transfer;
-		}
-
-		offset = (size_t)read_from_socket - bound_buff_length;
-		memmove(buff, buff + offset, bound_buff_length);
-		tmp = recv(socket, buff + bound_buff_length,
-			  BUFFSIZE_READ - bound_buff_length, 0);
-		if (tmp < 0) {
-			error = CLOSED_CON;
-			goto stop_transfer;
-		}
-		(*written) += (uint64_t)tmp;
-		read_from_socket = tmp + (ssize_t)bound_buff_length;
 	}
 	if ((*written) > (*max_size)) {
 		error = CONTENT_LENGTH_EXT;
@@ -504,6 +500,84 @@ stop_transfer:
 	}
 
 	return error;
+}
+
+/*
+ * will check given haystack for needle, if needle is matched at the end of
+ * haystack the socket will be peeked, if needle is found, pos will be set on
+ * its position and the rest of matched characters will be removed from socket.
+ * if the needle is not found, pos will be -1
+ * if error occurs its err_status will be returned, if not STAT_OK
+ */
+int
+buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
+    size_t needle_size, ssize_t *pos)
+{
+	size_t i;
+	size_t needle_matched;
+	size_t rest_size;
+	char *rest;
+	ssize_t rec;
+
+	for (i = 0, needle_matched = 0; i < haystack_size; i++) {
+		/* if positions match, we found a match */
+		if (haystack[i] == needle[needle_matched]) {
+			needle_matched++;
+			/* if we found the full needle inside the haystack */
+			if (needle_matched == needle_size) {
+				(*pos) = (ssize_t)(i - (needle_size - 1));
+				return STAT_OK;
+			}
+		} else {
+			/* if the cur pos didnt match, check if first matches */
+			if (haystack[i] == needle[0]) {
+				needle_matched = 1;
+			} else {
+				needle_matched = 0;
+			}
+		}
+	}
+	/* if the loop went through and we did not match anything */
+	if ((i == haystack_size) && (needle_matched == 0)) {
+		(*pos) = -1;
+		return STAT_OK;
+	}
+
+	/* if we found parts of the needle at the end of haystack */
+	if ((i == haystack_size) && (needle_matched != 0)) {
+		rest_size = needle_size - needle_matched;
+		rest = err_malloc(rest_size);
+		rec = recv(socket, rest, rest_size, MSG_PEEK);
+		/* check for error */
+		if (rec < 0) {
+			free(rest);
+			return CLOSED_CON;
+		}
+		if ((size_t)rec != rest_size) {
+			err_quit(ERR_INFO,
+			    "peek did return less than rest_size");
+		}
+		if (starts_with(rest, needle + needle_matched,
+		        strlen(needle + needle_matched))) {
+			rec = recv(socket, rest, rest_size, 0);
+			free(rest);
+			if ((rec < 0) || ((size_t)rec != rest_size)) {
+				err_quit(ERR_INFO,
+				    "the data i just peeked is gone");
+			}
+			(*pos) = (ssize_t)(haystack_size - needle_matched);
+			return STAT_OK;
+		} else {
+			free(rest);
+			(*pos) = -1;
+			return STAT_OK;
+		}
+	}
+
+	err_quit(ERR_INFO, "i != haystack_size, should not be possible");
+	/* not reached */
+
+	return STAT_OK;
 }
 
 /*
@@ -537,7 +611,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	end_of_head = strstr(header, "\r\n\r\n");
 	if (end_of_head == NULL) {
 		free(header);
-		return LINE_LIMIT_EXT;
+		return FILE_HEAD_LINE_EXT;
 	}
 	end_of_head[4] = '\0';
 
@@ -645,7 +719,7 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 	tmp = strtok(request, "\n"); /* get first line */
 
 	/* check if GET is valid */
-	if (tmp == NULL || !starts_with(tmp, "GET /")) {
+	if (tmp == NULL || !starts_with(tmp, "GET /", 5)) {
 		return INV_GET;
 	}
 	tmp = strtok(tmp, " ");		/* split first line */
@@ -667,76 +741,76 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 			continue;
 		}
 		/* check for requested_path encoding */
-		if (starts_with(tmp + i, "%20")) {
+		if (starts_with(tmp + i, "%20", 3)) {
 			(*requested_path)[url_pos] = ' ';
 			i += 2;
-		} else if (starts_with(tmp + i, "%21")) {
+		} else if (starts_with(tmp + i, "%21", 3)) {
 			(*requested_path)[url_pos] = '!';
 			i += 2;
-		} else if (starts_with(tmp + i, "%23")) {
+		} else if (starts_with(tmp + i, "%23", 3)) {
 			(*requested_path)[url_pos] = '#';
 			i += 2;
-		} else if (starts_with(tmp + i, "%24")) {
+		} else if (starts_with(tmp + i, "%24", 3)) {
 			(*requested_path)[url_pos] = '$';
 			i += 2;
-		} else if (starts_with(tmp + i, "%25")) {
+		} else if (starts_with(tmp + i, "%25", 3)) {
 			(*requested_path)[url_pos] = '%';
 			i += 2;
-		} else if (starts_with(tmp + i, "%26")) {
+		} else if (starts_with(tmp + i, "%26", 3)) {
 			(*requested_path)[url_pos] = '&';
 			i += 2;
-		} else if (starts_with(tmp + i, "%27")) {
+		} else if (starts_with(tmp + i, "%27", 3)) {
 			(*requested_path)[url_pos] = '\'';
 			i += 2;
-		} else if (starts_with(tmp + i, "%28")) {
+		} else if (starts_with(tmp + i, "%28", 3)) {
 			(*requested_path)[url_pos] = '(';
 			i += 2;
-		} else if (starts_with(tmp + i, "%29")) {
+		} else if (starts_with(tmp + i, "%29", 3)) {
 			(*requested_path)[url_pos] = ')';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2B")) {
+		} else if (starts_with(tmp + i, "%2B", 3)) {
 			(*requested_path)[url_pos] = '+';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2C")) {
+		} else if (starts_with(tmp + i, "%2C", 3)) {
 			(*requested_path)[url_pos] = ',';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2D")) {
+		} else if (starts_with(tmp + i, "%2D", 3)) {
 			(*requested_path)[url_pos] = '-';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2E")) {
+		} else if (starts_with(tmp + i, "%2E", 3)) {
 			(*requested_path)[url_pos] = '.';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3B")) {
+		} else if (starts_with(tmp + i, "%3B", 3)) {
 			(*requested_path)[url_pos] = ';';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3D")) {
+		} else if (starts_with(tmp + i, "%3D", 3)) {
 			(*requested_path)[url_pos] = '=';
 			i += 2;
-		} else if (starts_with(tmp + i, "%40")) {
+		} else if (starts_with(tmp + i, "%40", 3)) {
 			(*requested_path)[url_pos] = '@';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5B")) {
+		} else if (starts_with(tmp + i, "%5B", 3)) {
 			(*requested_path)[url_pos] = '[';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5D")) {
+		} else if (starts_with(tmp + i, "%5D", 3)) {
 			(*requested_path)[url_pos] = ']';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5E")) {
+		} else if (starts_with(tmp + i, "%5E", 3)) {
 			(*requested_path)[url_pos] = '^';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5F")) {
+		} else if (starts_with(tmp + i, "%5F", 3)) {
 			(*requested_path)[url_pos] = '_';
 			i += 2;
-		} else if (starts_with(tmp + i, "%60")) {
+		} else if (starts_with(tmp + i, "%60", 3)) {
 			(*requested_path)[url_pos] = '`';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7B")) {
+		} else if (starts_with(tmp + i, "%7B", 3)) {
 			(*requested_path)[url_pos] = '{';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7D")) {
+		} else if (starts_with(tmp + i, "%7D", 3)) {
 			(*requested_path)[url_pos] = '}';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7E")) {
+		} else if (starts_with(tmp + i, "%7E", 3)) {
 			(*requested_path)[url_pos] = '~';
 			i += 2;
 		} else {
@@ -751,8 +825,8 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 		(*req_type) = PLAIN;
 		return STAT_OK;
 	}
-	if ((starts_with(tmp, "HTTP/1.1") == 0)
-	    || (starts_with(tmp, "HTTP/1.0") == 0)) {
+	if ((starts_with(tmp, "HTTP/1.1", 8))
+	    || (starts_with(tmp, "HTTP/1.0", 8))) {
 		(*req_type) = HTTP;
 	} else {
 		(*req_type) = PLAIN;
@@ -764,7 +838,7 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 /*
  * gets a line from socket, and writes it to buffer
  * buffer will be err_malloc'ed by get_line.
- * returns STAT_OK CLOSED_CON or LINE_LIMIT_EXT
+ * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be NULL and free'd error
  */
 int
@@ -792,7 +866,7 @@ get_line(int socket, char **buff)
 			if (buf_size > HTTP_HEADER_LINE_LIMIT) {
 				free((*buff));
 				(*buff) = NULL;
-				return LINE_LIMIT_EXT;
+				return HTTP_HEAD_LINE_EXT;
 			}
 			(*buff) = err_realloc((*buff), buf_size);
 			memset((*buff) + buf_size - 128, '\0', 128);
@@ -838,7 +912,7 @@ get_response_type(char **request)
 	requested_path = realpath(full_requested_path, NULL);
 	if (requested_path == NULL) {
 		ret = TXT_404;
-	} else if (!starts_with(requested_path, ROOT_DIR)
+	} else if (!starts_with(requested_path, ROOT_DIR, strlen(ROOT_DIR))
 	    || strlen(ROOT_DIR) > strlen(requested_path)) {
 		ret = TXT_403;
 	} else if (is_directory(requested_path)) {
