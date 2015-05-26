@@ -41,7 +41,7 @@ CFLAGS = -Wall \
          -ggdb \
          -Wdeclaration-after-statement \
          -pg \
-         -O3
+      #  -O3
        # -Wredundant-decls \
        # -Werror \
        # -Wpadded

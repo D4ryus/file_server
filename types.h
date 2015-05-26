@@ -32,7 +32,10 @@ enum err_status {
 	LINE_LIMIT_EXT     = 13,
 	POST_NO_FILENAME   = 14,
 	NO_FREE_SPOT       = 15,
-	FILE_ERROR         = 16
+	FILE_ERROR         = 16,
+	NO_CONTENT_DISP    = 17,
+	FILENAME_ERR       = 18,
+	CONTENT_LENGTH_EXT = 19
 };
 
 /*

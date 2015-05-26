@@ -42,7 +42,10 @@ const char *err_msg[] =
 /* LINE_LIMIT_EXT     */ "http header extended line limit",
 /* POST_NO_FILENAME   */ "missing filename in post message",
 /* NO_FREE_SPOT       */ "the posted filename already exists (10 times)",
-/* FILE_ERROR         */ "could not write the post content to file"
+/* FILE_ERROR         */ "could not write the post content to file",
+/* NO_CONTENT_DISP    */ "Content-Disposition missing",
+/* FILENAME_ERR       */ "could not parse filename",
+/* CONTENT_LENGTH_EXT */ "content length extended"
 };
 
 /*
@@ -204,16 +207,12 @@ handle_get(struct client_info *data, char *request)
 int
 handle_post(struct client_info *data, char *request)
 {
-	char *cur_line;
 	enum err_status error;
 	char *boundary;
 	char *referer;
 	char *content_length;
-	char *filename;
-	char *free_me;
 	uint64_t tmp;
 
-	cur_line = NULL;
 	error = STAT_OK;
 
 	if (strcmp(request, "POST / HTTP/1.1") != 0) {
@@ -235,283 +234,15 @@ handle_post(struct client_info *data, char *request)
 		return FILESIZE_ZERO;
 	}
 
-	/* END of HEADER */
-
-	error = get_line(data->socket, &cur_line);
+	error = parse_post_body(data->socket, boundary, &(data->requested_path),
+		    &(data->written), &(data->size));
+	free(boundary);
 	if (error) {
-		free(boundary);
 		return error;
 	}
-
-	if (!starts_with(cur_line, "--")
-	         || (strcmp(cur_line + 2, boundary) != 0)) {
-		free(boundary);
-		return WRONG_BOUNDRY;
-	}
-	data->written += strlen(cur_line) + 2;
-	free(cur_line);
-
-	/*
-	 * go through all sent files and parse their headers and then save
-	 * file_content to disc
-	 */
-	do {
-		error = parse_file_header(data->socket, &(filename),
-			    &(data->written));
-		if (error) {
-			free(boundary);
-			return error;
-		}
-		/*
-		 * updated requested_path to current filename, and delete the
-		 * old one
-		 */
-		if (data->requested_path != NULL) {
-			free_me = data->requested_path;
-			data->requested_path = filename;
-			free(free_me);
-		} else {
-			data->requested_path = filename;
-		}
-		error = save_file_from_post(data->socket, filename, boundary,
-			    &(data->written), data->size);
-		if (error) {
-			free(boundary);
-			return error;
-		}
-		error = get_line(data->socket, &cur_line);
-		if (error) {
-			free(boundary);
-			return error;
-		}
-		data->written += strlen(cur_line) + 2;
-	} while (strlen(cur_line) == 0
-		    && strcmp(cur_line, "--") != 0);
-
-	free(cur_line);
-	free(boundary);
+	/* END */
 
 	error = send_201(data->socket, HTTP, &(tmp));
-
-	return error;
-}
-
-/*
- * parses the http header of a file and sets filename accordingly.
- * content_read is counted up by size of read bytes..
- * if filename is missing or not found POST_NO_FILENAME is returned.
- */
-int
-parse_file_header(int socket, char **filename, uint64_t *content_read)
-{
-	char *cur_line;
-	char *STR_DIS;
-	size_t str_len;
-	enum err_status error;
-	char *file_start;
-	char *file_end;
-
-	STR_DIS = "Content-Disposition: form-data;";
-	error = STAT_OK;
-	(*filename) = NULL;
-
-	error = get_line(socket, &cur_line);
-	if (error) {
-		return error;
-	}
-	(*content_read) += strlen(cur_line) + 2;
-
-	while (strlen(cur_line) != 0) {
-		if (error) {
-			return error;
-		}
-		if (starts_with(cur_line, STR_DIS)) {
-			/* got that string */
-			file_start = strstr(cur_line, "filename=\"");
-			if (file_start == NULL) {
-				error = POST_NO_FILENAME;
-				break;
-			}
-			file_start += strlen("filename=\"");
-			file_end = strchr(file_start, '"');
-			if (file_end == NULL) {
-				error = POST_NO_FILENAME;
-				break;
-			}
-			str_len = (file_end - file_start) > 0 ?
-			    (size_t)(file_end - file_start) :
-			    0;
-			if (str_len == 0) {
-				error = POST_NO_FILENAME;
-				break;
-			}
-			(*filename) = err_malloc(str_len + 1);
-			memset((*filename), '\0', str_len + 1);
-			strncpy((*filename), file_start, str_len);
-		}
-		free(cur_line);
-		cur_line = NULL;
-		error = get_line(socket, &cur_line);
-		if (error) {
-			break;
-		}
-		(*content_read) += strlen(cur_line) + 2;
-	}
-	if (cur_line != NULL) {
-		free(cur_line);
-	}
-
-	if (error) {
-		if ((*filename) != NULL) {
-			free((*filename));
-			(*filename) = NULL;
-		}
-	}
-	if  ((*filename) == NULL) {
-		error = POST_NO_FILENAME;
-	}
-
-	return error;
-}
-
-/*
- * given file is created inside the UPLOAD_DIR folder, if exists file with name
- * filename_0 is created, if also exists filename_1 is created (up to filename_9)
- * if no free fileame is found NO_FREE_SPOT is returned
- */
-int
-save_file_from_post(int socket, char *filename, char *boundary,
-    uint64_t *content_read, uint64_t max_length)
-{
-	enum err_status error;
-	char *full_filename;
-	char number;
-	size_t i;
-	FILE *fd;
-	size_t filename_length;
-	char cur_char;
-	size_t file_written;
-	ssize_t err;
-	char buff[BUFFSIZE_READ];
-	size_t cur_buf_pos;
-	char *bound_buff;
-	size_t cur_bound_buf_pos;
-
-	error = STAT_OK;
-	full_filename = NULL;
-	full_filename = concat(concat(concat(full_filename, UPLOAD_DIR), "/"),
-			    filename);
-
-	/* in case file exists */
-	number = '0';
-	if (access(full_filename, F_OK) == 0) {
-		filename_length = strlen(full_filename);
-		full_filename = err_realloc(full_filename, filename_length + 2);
-		full_filename[filename_length] = '_';
-		full_filename[filename_length + 1] = number;
-		full_filename[filename_length + 2] = '\0';
-		/* count up until a free filename is found */
-		while (access(full_filename, F_OK) == 0 && number <= '9') {
-			full_filename[filename_length  + 1] = ++number;
-		}
-		if (number > '9') {
-			free(full_filename);
-			return NO_FREE_SPOT;
-		}
-	}
-
-	fd = fopen(full_filename, "w+");
-	if (fd == NULL) {
-		err_quit(ERR_INFO, "fopen() retuned NULL");
-	}
-
-	bound_buff = NULL;
-	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
-
-	cur_buf_pos = 0;
-	cur_bound_buf_pos = 0;
-
-	/* read as long as we are not extending max_length */
-	while ((*content_read) < max_length) {
-		err = recv(socket, &cur_char, (size_t)1, 0);
-		(*content_read)++;
-		if (err < 1) {
-			error = CLOSED_CON;
-			goto stop_transfer;
-		}
-continue_without_read:
-		/* check if current character is matching the bound string */
-		if (cur_char == bound_buff[cur_bound_buf_pos]) {
-			cur_bound_buf_pos++;
-			/*
-			 * if every character has matched the bound_buff string
-			 * stop
-			 */
-			if (cur_bound_buf_pos == strlen(bound_buff)) {
-				error = STAT_OK;
-				goto stop_transfer;
-			}
-			continue;
-		/*
-		 * if the cur_char is not matching write all matched (if any)
-		 * to buffer
-		 */
-		} else if (cur_bound_buf_pos != 0) {
-			for (i = 0; i < cur_bound_buf_pos; i++) {
-				/* write to buffer */
-				buff[cur_buf_pos] = bound_buff[i];
-				/*
-				 * lets see if we extend the buffer, if so write
-				 * content to file
-				 */
-				if (++cur_buf_pos == BUFFSIZE_READ) {
-					file_written = fwrite(buff, 1, cur_buf_pos, fd);
-					if (file_written != cur_buf_pos) {
-						error = FILE_ERROR;
-						goto stop_transfer;
-					}
-					cur_buf_pos = 0;
-				}
-			}
-			cur_bound_buf_pos = 0;
-			goto continue_without_read;
-		}
-		buff[cur_buf_pos] = cur_char;
-		/*
-		 * lets see if we extend the buffer, if so write
-		 * content to file
-		 */
-		if (++cur_buf_pos == BUFFSIZE_READ) {
-			file_written = fwrite(buff, 1, cur_buf_pos, fd);
-			if (file_written != cur_buf_pos) {
-				error = FILE_ERROR;
-				goto stop_transfer;
-			}
-			cur_buf_pos = 0;
-		}
-	}
-	/*
-	 * if content_read >= max_length a error occured, since there
-	 * should be a boundry before we read content_length from stream.
-	 * and there is a -- after the last boundary
-	 */
-	error = WRONG_BOUNDRY;
-
-stop_transfer:
-	free(bound_buff);
-	/* check if data is left in buffer */
-	if (cur_buf_pos != 0) {
-		file_written = fwrite(buff, 1, cur_buf_pos, fd);
-		if (file_written != cur_buf_pos) {
-			error = FILE_ERROR;
-			goto stop_transfer;
-		}
-	}
-	fclose(fd);
-	if (error) {
-		unlink(full_filename);
-	}
-	free(full_filename);
 
 	return error;
 }
@@ -608,6 +339,305 @@ parse_post_header(int socket, char **boundary, char **referer,
 	}
 
 	return error;
+}
+
+int
+parse_post_body(int socket, char *boundary, char **requested_path,
+    uint64_t *written, uint64_t *max_size)
+{
+	enum err_status error;
+	char buff[BUFFSIZE_READ];
+	char *bound_buff;
+	ssize_t read_from_socket;
+	char *filename;
+	char *full_filename;
+	size_t file_head_size;
+	char *free_me;
+	FILE *fd;
+	size_t bound_buff_pos;
+	ssize_t tmp; /* just a tmp variable, feel free to use it */
+	size_t i;
+	size_t bound_buff_length;
+	size_t file_written;
+	size_t offset;
+
+	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
+		err_quit(ERR_INFO,
+		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
+	}
+
+	bound_buff = NULL;
+	filename = NULL;
+	full_filename = NULL;
+	free_me = NULL;
+	fd = NULL;
+	memset(buff, '\0', BUFFSIZE_READ);
+
+	/* check for first boundary --[boundary]\r\n */
+	read_from_socket = recv(socket, buff, strlen(boundary) + 4, 0);
+	if (read_from_socket < 0
+	    || (size_t)read_from_socket != strlen(boundary) + 4) {
+		error = CLOSED_CON;
+		goto stop_transfer;
+	}
+	(*written) += (uint64_t)read_from_socket;
+
+	if (!starts_with(buff, "--")
+	    || !starts_with(buff + 2, boundary)
+	    || !starts_with(buff + 2 + strlen(boundary), "\r\n"))
+	{
+		error = WRONG_BOUNDRY;
+		goto stop_transfer;
+	}
+
+	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
+	bound_buff_length = strlen(bound_buff);
+	read_from_socket = recv(socket, buff, BUFFSIZE_READ, 0);
+	if (read_from_socket <= 0) {
+		error = CLOSED_CON;
+		goto stop_transfer;
+	}
+	(*written) += (uint64_t)read_from_socket;
+file_head:
+	/* buff contains file head */
+	if (read_from_socket == 4 && starts_with(buff, "--\r\n")) {
+		goto stop_transfer;
+	}
+	error = parse_file_header(buff, (size_t)read_from_socket,
+		    &file_head_size, &filename);
+	if (error) {
+		goto stop_transfer;
+	}
+	(*written) += (uint64_t)file_head_size;
+	if (full_filename != NULL) {
+		free(full_filename);
+		full_filename = NULL;
+	}
+	error = open_file(filename, &fd, &full_filename);
+	if (error) {
+		goto stop_transfer;
+	}
+	/* set the requested_path, if there was already one free it savely */
+	if ((*requested_path) != NULL) {
+		free_me = (*requested_path);
+		(*requested_path) = filename;
+		free(free_me);
+		filename = NULL;
+	} else {
+		(*requested_path) = filename;
+		filename = NULL;
+	}
+	/* now move unread buff content to front and fill up with new data */
+	offset = ((size_t)read_from_socket - file_head_size);
+	memmove(buff, buff + file_head_size, offset);
+	tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
+	if (tmp <= 0) {
+		error = CLOSED_CON;
+		goto stop_transfer;
+	}
+	(*written) += (uint64_t)tmp;
+	read_from_socket = (ssize_t)offset + tmp;
+
+	/* buff contains file_content */
+file_content:
+	if ((*written) > (*max_size)) {
+		error = CONTENT_LENGTH_EXT;
+		goto stop_transfer;
+	}
+	bound_buff_pos = 0;
+	/* check buffer for boundry */
+	for (i = 0;
+	    (ssize_t)i < (read_from_socket - (ssize_t)bound_buff_length);
+	    i++) {
+		if (buff[i] == bound_buff[bound_buff_pos]) {
+			bound_buff_pos++;
+		} else if (buff[i] == bound_buff[0]) {
+			bound_buff_pos = 1;
+		}
+		/* check if we matched the whole boundry */
+		if (bound_buff_pos != bound_buff_length) {
+			continue;
+		}
+		/*
+		 * move i to first non boundry character
+		 * i = [filecontentlength] + [boundrylength]
+		 */
+		i++;
+		file_written = fwrite(buff, 1, (i - bound_buff_length), fd);
+		if (file_written != (i - bound_buff_length)) {
+			error = FILE_ERROR;
+			goto stop_transfer;
+		}
+		fclose(fd);
+		fd = NULL;
+		free(full_filename);
+		full_filename = NULL;
+		offset = (size_t)read_from_socket - i;
+		memmove(buff, buff + i, offset);
+		tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
+		if (tmp <= 0) {
+			error = CLOSED_CON;
+			goto stop_transfer;
+		}
+		(*written) += (uint64_t)tmp;
+		read_from_socket = tmp + read_from_socket - (ssize_t)i;
+		goto file_head;
+	}
+	/* if we pass the for loop we did not find any boundry */
+	file_written = fwrite(buff, 1, (size_t)read_from_socket - bound_buff_length, fd);
+	if (file_written != (size_t)read_from_socket - bound_buff_length) {
+		error = FILE_ERROR;
+		goto stop_transfer;
+	}
+
+	memmove(buff, buff + read_from_socket - bound_buff_length, bound_buff_length);
+	tmp = recv(socket, buff + bound_buff_length + 1,
+		  BUFFSIZE_READ - bound_buff_length, 0);
+	if (tmp <= 0) {
+		error = CLOSED_CON;
+		goto stop_transfer;
+	}
+	(*written) += (uint64_t)tmp;
+	read_from_socket = tmp + (ssize_t)bound_buff_length;
+
+	goto file_content;
+
+stop_transfer:
+	if (full_filename != NULL) {
+		unlink(full_filename);
+		free(full_filename);
+	}
+	if (fd != NULL) {
+		fclose(fd);
+	}
+	if (bound_buff != NULL) {
+		free(bound_buff);
+	}
+	if (filename != NULL) {
+		free(filename);
+	}
+
+	return error;
+}
+
+/*
+ * parses the http header of a file and sets filename accordingly.
+ * content_read is counted up by size of read bytes..
+ * if filename is missing or not found POST_NO_FILENAME is returned.
+ */
+int
+parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
+    char **filename)
+{
+	char *header;
+	char *filename_start;
+	char *filename_end;
+	char *end_of_head;
+	size_t str_len;
+
+	(*filename) = NULL;
+	header = NULL;
+	filename_start = NULL;
+	filename_end = NULL;
+	end_of_head = NULL;
+	str_len = 0;
+
+	/* copy the buffer and terminate it with a \0 */
+	header = err_malloc(buff_size + 1);
+	memcpy(header, buff, buff_size);
+	header[buff_size] = '\0';
+
+	/* lets search for the end of given header and terminate after it*/
+	end_of_head = strstr(header, "\r\n\r\n");
+	if (end_of_head == NULL) {
+		free(header);
+		return LINE_LIMIT_EXT;
+	}
+	end_of_head[4] = '\0';
+
+	filename_start = strstr(header, "Content-Disposition: form-data;");
+	if (filename_start == NULL) {
+		free(header);
+		return NO_CONTENT_DISP;
+	}
+
+	/* found the line containing the filname, now extract it */
+
+	filename_start = strstr(filename_start, "filename=\"");
+	if (filename_start == NULL) {
+		free(header);
+		return POST_NO_FILENAME;
+	}
+	filename_start += strlen("filename=\"");
+
+	/* find the end of filename */
+	filename_end = strchr(filename_start, '"');
+	if (filename_end == NULL) {
+		free(header);
+		return FILENAME_ERR;
+	}
+
+	str_len = (filename_end - filename_start) > 0 ?
+	    (size_t)(filename_end - filename_start) : 0;
+	if (str_len == 0) {
+		free(header);
+		return FILENAME_ERR;
+	}
+
+	/*
+	 * ok we reach this point we found a correct filename and the end of
+	 * header, now set filename and file_head_size and return
+	 */
+
+	(*filename) = err_malloc(str_len + 1);
+	memset((*filename), '\0', str_len + 1);
+	memcpy((*filename), filename_start, str_len);
+
+	(*file_head_size) = strlen(header);
+
+	free(header);
+
+	return STAT_OK;
+}
+
+int
+open_file(char *filename, FILE **fd, char **found_filename)
+{
+	char number;
+	size_t filename_length;
+
+	(*found_filename) = NULL;
+	(*found_filename) = concat(concat(concat((*found_filename),
+					      UPLOAD_DIR), "/"),
+				       filename);
+
+	/* in case file exists */
+	if (access((*found_filename), F_OK) == 0) {
+		number = '0';
+		filename_length = strlen((*found_filename));
+		(*found_filename) = err_realloc((*found_filename),
+				        filename_length + 2);
+		(*found_filename)[filename_length] = '_';
+		(*found_filename)[filename_length + 1] = number;
+		(*found_filename)[filename_length + 2] = '\0';
+		/* count up until a free filename is found */
+		while (access((*found_filename), F_OK) == 0 && number <= '9') {
+			(*found_filename)[filename_length  + 1] = ++number;
+		}
+		if (number > '9') {
+			free((*found_filename));
+			(*found_filename) = NULL;
+			fd = NULL;
+			return NO_FREE_SPOT;
+		}
+	}
+
+	(*fd) = fopen((*found_filename), "w+");
+	if ((*fd) == NULL) {
+		err_quit(ERR_INFO, "fopen() retuned NULL");
+	}
+
+	return STAT_OK;
 }
 
 /*
