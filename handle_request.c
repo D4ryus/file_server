@@ -331,7 +331,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
     uint64_t *written, uint64_t *max_size)
 {
 	enum err_status error;
-	char buff[BUFFSIZE_READ];
+	char *buff;
 	char *bound_buff;
 	ssize_t read_from_socket;
 	char *filename;
@@ -346,6 +346,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	size_t file_written;
 	ssize_t offset;
 
+	buff = err_malloc(BUFFSIZE_READ);
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
 		err_quit(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
@@ -498,6 +499,7 @@ stop_transfer:
 	if (filename != NULL) {
 		free(filename);
 	}
+	free(buff);
 
 	return error;
 }

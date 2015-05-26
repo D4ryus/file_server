@@ -76,12 +76,13 @@ int
 send_file(int socket, char *filename, uint64_t *written)
 {
 	int sending;
-	char buffer[BUFFSIZE_READ];
+	char *buffer;
 	size_t read_bytes;
 	FILE *fd;
 	char *full_path;
 	enum err_status error;
 
+	buffer = err_malloc(BUFFSIZE_READ);
 	error = STAT_OK;
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
@@ -111,6 +112,7 @@ send_file(int socket, char *filename, uint64_t *written)
 		(*written) += read_bytes;
 	}
 	fclose(fd);
+	free(buffer);
 
 	return error;
 }
