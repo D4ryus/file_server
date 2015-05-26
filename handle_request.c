@@ -56,6 +56,7 @@ handle_request(void *ptr)
 	struct client_info *data;
 	char *cur_line;
 	enum err_status error;
+	int call_back_socket;
 
 	data = (struct client_info *)ptr;
 
@@ -106,7 +107,11 @@ handle_request(void *ptr)
 		    -1);
 	}
 
+	call_back_socket = data->socket;
 	msg_hook_cleanup(data);
+
+	sleep(5);
+	close(call_back_socket);
 
 	return NULL;
 }
@@ -374,15 +379,20 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	}
 	(*written) += (uint64_t)read_from_socket;
 file_head:
+	printf("filehead\n");
 	/* buff contains file head */
 	if (read_from_socket == 4 && starts_with(buff, "--\r\n")) {
 		goto stop_transfer;
 	}
+	printf("parsingfileheader\n");
 	error = parse_file_header(buff, (size_t)read_from_socket,
 		    &file_head_size, &filename);
+	printf("done\n");
 	if (error) {
+		printf("ERROR!\n");
 		goto stop_transfer;
 	}
+	printf("no error, filename: %s\n", filename);
 
 	if (full_filename != NULL) {
 		free(full_filename);
@@ -402,6 +412,7 @@ file_head:
 		(*requested_path) = filename;
 		filename = NULL;
 	}
+
 	/* now move unread buff content to front and fill up with new data */
 	offset = ((size_t)read_from_socket - file_head_size);
 	memmove(buff, buff + file_head_size, offset);
@@ -417,9 +428,12 @@ file_head:
 	while ((*written) <= (*max_size)) {
 		bound_buff_pos = 0;
 		/* check buffer for boundry */
-		for (i = 0;
-		    (ssize_t)i < read_from_socket;
-		    i++) {
+		if ((size_t)read_from_socket < bound_buff_length) {
+			error = EMPTY_MESSAGE;
+			goto stop_transfer;
+		}
+		bound_buff_pos = 0;
+		for (i = 0; (ssize_t)i < read_from_socket; i++) {
 			if (buff[i] == bound_buff[bound_buff_pos]) {
 				bound_buff_pos++;
 			} else if (buff[i] == bound_buff[0]) {
@@ -453,7 +467,8 @@ file_head:
 				goto stop_transfer;
 			}
 			(*written) += (uint64_t)tmp;
-			read_from_socket = tmp + read_from_socket - (ssize_t)i;
+			read_from_socket = tmp + (ssize_t)offset;
+			printf("going for filehead again!\n");
 			goto file_head;
 		}
 		/* if we pass the for loop we did not find any boundry */
@@ -463,8 +478,9 @@ file_head:
 			goto stop_transfer;
 		}
 
-		memmove(buff, buff + read_from_socket - bound_buff_length, bound_buff_length);
-		tmp = recv(socket, buff + bound_buff_length + 1,
+		offset = (size_t)read_from_socket - bound_buff_length;
+		memmove(buff, buff + offset, bound_buff_length);
+		tmp = recv(socket, buff + bound_buff_length,
 			  BUFFSIZE_READ - bound_buff_length, 0);
 		if (tmp < 0) {
 			error = CLOSED_CON;
@@ -479,6 +495,7 @@ file_head:
 	}
 
 stop_transfer:
+	printf("stopped transfer\n");
 	if (full_filename != NULL) {
 		unlink(full_filename);
 		free(full_filename);
@@ -544,6 +561,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 		free(header);
 		return POST_NO_FILENAME;
 	}
+	/* point to first character of filename */
 	filename_start += strlen("filename=\"");
 
 	/* find the end of filename */
