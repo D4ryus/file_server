@@ -36,7 +36,6 @@ const char *err_msg[] =
 /* INV_POST           */ "invalid POST",
 /* CON_LENGTH_MISSING */ "Content_Length missing",
 /* BOUNDARY_MISSING   */ "boundary missing",
-/* REFERER_MISSING    */ "referer missing",
 /* FILESIZE_ZERO      */ "filesize is 0 or error ocurred",
 /* WRONG_BOUNDRY      */ "wrong boundry specified",
 /* LINE_LIMIT_EXT     */ "http header extended line limit",
@@ -209,7 +208,6 @@ handle_post(struct client_info *data, char *request)
 {
 	enum err_status error;
 	char *boundary;
-	char *referer;
 	char *content_length;
 	uint64_t tmp;
 
@@ -219,13 +217,10 @@ handle_post(struct client_info *data, char *request)
 		return INV_POST;
 	}
 
-	error = parse_post_header(data->socket, &boundary, &referer,
-		    &content_length);
+	error = parse_post_header(data->socket, &boundary, &content_length);
 	if (error) {
 		return error;
 	}
-	free(referer);
-	/* TODO: USE REFERER */
 
 	data->size = err_string_to_val(content_length);
 	free(content_length);
@@ -248,22 +243,18 @@ handle_post(struct client_info *data, char *request)
 }
 
 int
-parse_post_header(int socket, char **boundary, char **referer,
-    char **content_length)
+parse_post_header(int socket, char **boundary, char **content_length)
 {
 	char *cur_line;
 	enum err_status error;
 	size_t str_len;
-	char *STR_REF;
 	char *STR_COL;
 	char *STR_BOU;
 
-	STR_REF = "Referer: ";
 	STR_COL = "Content-Length: ";
 	STR_BOU = "Content-Type: multipart/form-data; boundary=";
 	error = STAT_OK;
 	(*boundary) = NULL;
-	(*referer) = NULL;
 	(*content_length) = NULL;
 
 	error = get_line(socket, &cur_line);
@@ -292,16 +283,6 @@ parse_post_header(int socket, char **boundary, char **referer,
 			strncpy((*boundary), cur_line
 			    + strlen(STR_BOU), str_len + 1);
 		}
-		if (starts_with(cur_line, STR_REF)) {
-			str_len = strlen(cur_line + strlen(STR_REF));
-			if (str_len - strlen(STR_REF) < 1) {
-				error = REFERER_MISSING;
-				break;
-			}
-			(*referer) = err_malloc(str_len + 1);
-			strncpy((*referer), cur_line
-			    + strlen(STR_REF), str_len + 1);
-		}
 		free(cur_line);
 		cur_line = NULL;
 		error = get_line(socket, &cur_line);
@@ -319,9 +300,6 @@ parse_post_header(int socket, char **boundary, char **referer,
 	if ((*boundary) == NULL) {
 		error = BOUNDARY_MISSING;
 	}
-	if ((*referer) == NULL) {
-		error = REFERER_MISSING;
-	}
 
 	if (error) {
 		if ((*content_length) != NULL) {
@@ -331,10 +309,6 @@ parse_post_header(int socket, char **boundary, char **referer,
 		if ((*boundary) != NULL) {
 			free((*boundary));
 			(*boundary) = NULL;
-		}
-		if ((*referer) != NULL) {
-			free((*referer));
-			(*referer) = NULL;
 		}
 	}
 
@@ -371,6 +345,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	full_filename = NULL;
 	free_me = NULL;
 	fd = NULL;
+	(*written) = 0;
 	memset(buff, '\0', BUFFSIZE_READ);
 
 	/* check for first boundary --[boundary]\r\n */
@@ -393,7 +368,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
 	bound_buff_length = strlen(bound_buff);
 	read_from_socket = recv(socket, buff, BUFFSIZE_READ, 0);
-	if (read_from_socket <= 0) {
+	if (read_from_socket < 0) {
 		error = CLOSED_CON;
 		goto stop_transfer;
 	}
@@ -408,7 +383,7 @@ file_head:
 	if (error) {
 		goto stop_transfer;
 	}
-	(*written) += (uint64_t)file_head_size;
+
 	if (full_filename != NULL) {
 		free(full_filename);
 		full_filename = NULL;
@@ -431,7 +406,7 @@ file_head:
 	offset = ((size_t)read_from_socket - file_head_size);
 	memmove(buff, buff + file_head_size, offset);
 	tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
-	if (tmp <= 0) {
+	if (tmp < 0) {
 		error = CLOSED_CON;
 		goto stop_transfer;
 	}
@@ -439,68 +414,69 @@ file_head:
 	read_from_socket = (ssize_t)offset + tmp;
 
 	/* buff contains file_content */
-file_content:
-	if ((*written) > (*max_size)) {
-		error = CONTENT_LENGTH_EXT;
-		goto stop_transfer;
-	}
-	bound_buff_pos = 0;
-	/* check buffer for boundry */
-	for (i = 0;
-	    (ssize_t)i < (read_from_socket - (ssize_t)bound_buff_length);
-	    i++) {
-		if (buff[i] == bound_buff[bound_buff_pos]) {
-			bound_buff_pos++;
-		} else if (buff[i] == bound_buff[0]) {
-			bound_buff_pos = 1;
+	while ((*written) <= (*max_size)) {
+		bound_buff_pos = 0;
+		/* check buffer for boundry */
+		for (i = 0;
+		    (ssize_t)i < read_from_socket;
+		    i++) {
+			if (buff[i] == bound_buff[bound_buff_pos]) {
+				bound_buff_pos++;
+			} else if (buff[i] == bound_buff[0]) {
+				bound_buff_pos = 1;
+			} else {
+				bound_buff_pos = 0;
+			}
+			/* check if we matched the whole boundry */
+			if (bound_buff_pos != bound_buff_length) {
+				continue;
+			}
+			/*
+			 * move i to first non boundry character
+			 * i = [filecontentlength] + [boundrylength]
+			 */
+			i++;
+			file_written = fwrite(buff, 1, (i - bound_buff_length), fd);
+			if (file_written != (i - bound_buff_length)) {
+				error = FILE_ERROR;
+				goto stop_transfer;
+			}
+			fclose(fd);
+			fd = NULL;
+			free(full_filename);
+			full_filename = NULL;
+			offset = (size_t)read_from_socket - i;
+			memmove(buff, buff + i, offset);
+			tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
+			if (tmp < 0) {
+				error = CLOSED_CON;
+				goto stop_transfer;
+			}
+			(*written) += (uint64_t)tmp;
+			read_from_socket = tmp + read_from_socket - (ssize_t)i;
+			goto file_head;
 		}
-		/* check if we matched the whole boundry */
-		if (bound_buff_pos != bound_buff_length) {
-			continue;
-		}
-		/*
-		 * move i to first non boundry character
-		 * i = [filecontentlength] + [boundrylength]
-		 */
-		i++;
-		file_written = fwrite(buff, 1, (i - bound_buff_length), fd);
-		if (file_written != (i - bound_buff_length)) {
+		/* if we pass the for loop we did not find any boundry */
+		file_written = fwrite(buff, 1, (size_t)read_from_socket - bound_buff_length, fd);
+		if (file_written != (size_t)read_from_socket - bound_buff_length) {
 			error = FILE_ERROR;
 			goto stop_transfer;
 		}
-		fclose(fd);
-		fd = NULL;
-		free(full_filename);
-		full_filename = NULL;
-		offset = (size_t)read_from_socket - i;
-		memmove(buff, buff + i, offset);
-		tmp = recv(socket, buff + offset, BUFFSIZE_READ - offset, 0);
-		if (tmp <= 0) {
+
+		memmove(buff, buff + read_from_socket - bound_buff_length, bound_buff_length);
+		tmp = recv(socket, buff + bound_buff_length + 1,
+			  BUFFSIZE_READ - bound_buff_length, 0);
+		if (tmp < 0) {
 			error = CLOSED_CON;
 			goto stop_transfer;
 		}
 		(*written) += (uint64_t)tmp;
-		read_from_socket = tmp + read_from_socket - (ssize_t)i;
-		goto file_head;
+		read_from_socket = tmp + (ssize_t)bound_buff_length;
 	}
-	/* if we pass the for loop we did not find any boundry */
-	file_written = fwrite(buff, 1, (size_t)read_from_socket - bound_buff_length, fd);
-	if (file_written != (size_t)read_from_socket - bound_buff_length) {
-		error = FILE_ERROR;
+	if ((*written) > (*max_size)) {
+		error = CONTENT_LENGTH_EXT;
 		goto stop_transfer;
 	}
-
-	memmove(buff, buff + read_from_socket - bound_buff_length, bound_buff_length);
-	tmp = recv(socket, buff + bound_buff_length + 1,
-		  BUFFSIZE_READ - bound_buff_length, 0);
-	if (tmp <= 0) {
-		error = CLOSED_CON;
-		goto stop_transfer;
-	}
-	(*written) += (uint64_t)tmp;
-	read_from_socket = tmp + (ssize_t)bound_buff_length;
-
-	goto file_content;
 
 stop_transfer:
 	if (full_filename != NULL) {
@@ -794,7 +770,7 @@ get_line(int socket, char **buff)
 
 	for (bytes_read = 0 ;; bytes_read++) {
 		err = recv(socket, &cur_char, (size_t)1, 0);
-		if (err < 1) {
+		if (err < 0) {
 			free((*buff));
 			(*buff) = NULL;
 			return CLOSED_CON;
