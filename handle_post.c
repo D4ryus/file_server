@@ -357,7 +357,6 @@ buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
 		rest_size = needle_size - needle_matched;
 		rest = err_malloc(rest_size);
 		rec = recv(socket, rest, rest_size, MSG_PEEK);
-		/* check for error */
 		if (rec < 0) {
 			free(rest);
 			return CLOSED_CON;

@@ -134,8 +134,8 @@ const char *RESPONSE_201=
 	"<center>"
 		"<h1>its done!</h1>"
 		"<body>"
-		"<a href='http://gimli:8283/upload.html'>load up another file</a><br>"
-		"<a href='http://gimli:8283/'>go back to where u came from</a>"
+		"<a href='http://d4ryus.system-ns.net:8283/upload/upload.html'>load up another file</a><br>"
+		"<a href='http://d4ryus.system-ns.net:8283/'>go back to where u came from</a>"
 		"</body>"
 	"</center>"
 "</html>";
