@@ -79,6 +79,8 @@ main(const int argc, const char *argv[])
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(PORT);
 
+	signal(SIGPIPE, SIG_IGN);
+
 	/* bind socket */
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
 		    (socklen_t)sizeof(serv_addr));
