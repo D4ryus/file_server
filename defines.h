@@ -14,7 +14,7 @@
  * if a file is transferd (post) BUFFSIZE_READ describes the buffersize of
  * bytes read from socket and then written to the file.
  */
-#define BUFFSIZE_READ 8388608
+#define BUFFSIZE_READ 8192
 
 /*
  * size of several message buffer, for example the one used to print on stdout.
