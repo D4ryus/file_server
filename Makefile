@@ -2,7 +2,7 @@
 
 CC = gcc
 
-OBJS = file_list.o handle_request.o helper.o main.o msg.o http_response.o
+OBJS = file_list.o handle_request.o helper.o main.o msg.o http_response.o handle_post.o handle_get.o
 
 EXECUTABLE = file_server
 
@@ -41,7 +41,7 @@ CFLAGS = -Wall \
          -ggdb \
          -Wdeclaration-after-statement \
          -pg \
-      #  -O3
+       # -O3
        # -Wredundant-decls \
        # -Werror \
        # -Wpadded
