@@ -4,8 +4,8 @@
 #include "types.h"
 
 void ncurses_init(void);
-void ncurses_print_info(struct client_info *, char *, const char *, const char *,
-         int);
+void ncurses_print_log(char *);
+void ncurses_print_status(const char *message, int position);
 void ncurses_update_begin(int);
 void ncurses_update_end(uint64_t, int);
 void ncurses_terminate(void);

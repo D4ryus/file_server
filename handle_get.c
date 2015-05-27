@@ -103,7 +103,7 @@ handle_get(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
-	msg_print_info(data, SENT, message_buffer, -1);
+	msg_print_log(data, SENT, message_buffer);
 
 	return STAT_OK;
 }

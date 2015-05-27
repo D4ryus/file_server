@@ -96,53 +96,43 @@ ncurses_init(void)
  * if position is < 1 its a log message
  */
 void
-ncurses_print_info(struct client_info *data, char *m_type, const char *timestamp,
-    const char *message, int position)
+ncurses_print_log(char *msg)
 {
-	char msg_buffer[MSG_BUFFER_SIZE];
-
 	if (!USE_NCURSES) {
 		return;
 	}
 
-	memset(msg_buffer, '\0', MSG_BUFFER_SIZE);
-
 	pthread_mutex_lock(&ncurses_mutex);
-	if (position < 0) {
-		if (win_logging) {
-			scroll(win_logging);
-			wmove(win_logging, LOGGING_WINDOW_HEIGTH - 2, 0);
-			wclrtoeol(win_logging);
-			snprintf(msg_buffer, MSG_BUFFER_SIZE,
-			    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
-			    timestamp,
-			    data->ip,
-			    data->port,
-			    data->socket,
-			    m_type,
-			    message);
-			mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 2, 1,
-			    "%s", msg_buffer);
-			_ncurses_draw_logging_box();
-			wrefresh(win_logging);
-		}
-	} else {
-		/* TODO: Implement Scrolling for status window */
-		if (win_status && position + 1 < status_heigth - 1) {
-			mvwprintw(win_status, position + 1, 1,
-			    "[%15s:%-5d - %3d]: %s",
-			    data->ip,
-			    data->port,
-			    data->socket,
-			    message);
-		}
+	if (win_logging) {
+		scroll(win_logging);
+		wmove(win_logging, LOGGING_WINDOW_HEIGTH - 2, 0);
+		wclrtoeol(win_logging);
+		mvwprintw(win_logging, LOGGING_WINDOW_HEIGTH - 2, 1,
+		    "%s", msg);
+		_ncurses_draw_logging_box();
+		wrefresh(win_logging);
 	}
 	pthread_mutex_unlock(&ncurses_mutex);
 
+	_ncurses_push_log_buf(msg);
+}
 
-	if (strlen(msg_buffer) > 0) {
-		_ncurses_push_log_buf(msg_buffer);
+/*
+ * prints given info inside ncurses window
+ * if position is < 1 its a log message
+ */
+void
+ncurses_print_status(const char *message, int position)
+{
+	if (!USE_NCURSES) {
+		return;
 	}
+
+	pthread_mutex_lock(&ncurses_mutex);
+	if (win_status && position + 1 < status_heigth - 1) {
+		mvwprintw(win_status, position + 1, 1, "%s", message);
+	}
+	pthread_mutex_unlock(&ncurses_mutex);
 }
 
 /*

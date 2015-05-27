@@ -29,6 +29,15 @@ static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
 
+const char *message_type_str[] =
+{
+	"con",
+	"snt",
+	"err",
+	"trn",
+	"pos"
+};
+
 /*
  * initialize messages subsystem, which will create its own thread
  * and init mutex variables. if NCURSES is enabled ncurses will be
@@ -72,19 +81,23 @@ _msg_print_loop(void *ignored)
 	int position;
 	uint64_t last_written;
 	uint64_t written;
+	char msg_buffer[MSG_BUFFER_SIZE];
 
 	position = 0;
 
 	while (1) {
+		pthread_mutex_lock(&status_list_mutex);
 #ifdef NCURSES
 		ncurses_update_begin(position);
 #endif
 		position = 0;
 		written = 0;
-		pthread_mutex_lock(&status_list_mutex);
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
-			_msg_format_and_print(cur, position);
+
+			_format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
+			    cur, position);
+			msg_print_status(msg_buffer, position);
 
 			written += cur->data->last_written - last_written;
 		}
@@ -108,14 +121,38 @@ _msg_print_loop(void *ignored)
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-msg_print_info(struct client_info *data, const enum message_type type,
-    const char *message, int position)
+msg_print_log(struct client_info *data, const enum message_type type,
+    const char *message)
 {
 	char str_time[20];
 	FILE *stream;
-	char *m_type;
 	time_t t;
 	struct tm *tmp;
+	char msg_buffer[MSG_BUFFER_SIZE];
+
+#ifndef NCURSES
+	/* if ncruses is defined we will print anyway */
+	switch (type) {
+		case POST:
+		case ERROR:
+			if (VERBOSITY < 1) {
+				return;
+			}
+			break;
+		case SENT:
+			if (VERBOSITY < 2) {
+				return;
+			}
+			break;
+		case CONNECTED:
+			if (VERBOSITY < 3) {
+				return;
+			}
+			break;
+		default:
+			break;
+	}
+#endif
 
 	t = time(NULL);
 	if (t == -1) {
@@ -134,29 +171,17 @@ msg_print_info(struct client_info *data, const enum message_type type,
 	}
 	free(tmp);
 
-	switch (type) {
-		case ERROR:
-			m_type = "err";
-			break;
-		case SENT:
-			m_type = "snt";
-			break;
-		case CONNECTED:
-			m_type = "con";
-			break;
-		case TRANSFER:
-			m_type = "trn";
-			break;
-		case POST:
-			m_type = "pos";
-			break;
-		default:
-			m_type = "";
-			break;
-	}
+	snprintf(msg_buffer, MSG_BUFFER_SIZE,
+	    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
+	    str_time,
+	    data->ip,
+	    data->port,
+	    data->socket,
+	    message_type_str[type],
+	    message);
 
 #ifdef NCURSES
-	ncurses_print_info(data, m_type, str_time, message, position);
+	ncurses_print_log(msg_buffer);
 #endif
 
 	switch (type) {
@@ -172,7 +197,6 @@ msg_print_info(struct client_info *data, const enum message_type type,
 			}
 			break;
 		case CONNECTED:
-		case TRANSFER:
 			if (VERBOSITY < 3) {
 				return;
 			}
@@ -188,32 +212,7 @@ msg_print_info(struct client_info *data, const enum message_type type,
 	}
 
 	pthread_mutex_lock(&print_mutex);
-	if (COLOR) {
-		if (position == -1) {
-			position = 7;
-		} else {
-			/* first (0) color is black, last (7) color is white */
-			position = (position % 6) + 1;
-		}
-		fprintf(stream,
-		    "\x1b[3%dm%-19s[%15s:%-5d - %3d]: %3s - %s\x1b[39;49m\n",
-		    position,
-		    str_time,
-		    data->ip,
-		    data->port,
-		    data->socket,
-		    m_type,
-		    message);
-	} else {
-		position = 0;
-		fprintf(stream, "%-19s [%15s:%-5d - %3d]: %3s - %s\n",
-		    str_time,
-		    data->ip,
-		    data->port,
-		    data->socket,
-		    m_type,
-		    message);
-	}
+	fprintf(stream, "%s\n", msg_buffer);
 
 	if (_LOG_FILE != NULL) {
 		fflush(_LOG_FILE);
@@ -278,7 +277,8 @@ msg_hook_cleanup(struct client_info *rem_data)
  * formats a data_list_node and calls print_info
  */
 void
-_msg_format_and_print(struct status_list_node *cur, const int position)
+_format_status_msg(char *msg_buffer, size_t buff_size,
+    struct status_list_node *cur, const int position)
 {
 	/*
 	 * later last_written is set and the initial written value is needed,
@@ -294,8 +294,6 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	char fmt_size[7];
 	char fmt_bytes_per_tval[7];
 
-	char msg_buffer[MSG_BUFFER_SIZE];
-
 	/* read value only once from struct */
 	written		= cur->data->written;
 	left		= cur->data->size - written;
@@ -310,8 +308,11 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	snprintf(msg_buffer, MSG_BUFFER_SIZE,
-	    "%3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	snprintf(msg_buffer, buff_size,
+	    "[%15s:%-5d - %3d]: %3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	    cur->data->ip,
+	    cur->data->port,
+	    cur->data->socket,
 	    (unsigned int)(written * 100 /
 		(cur->data->size > 0 ? cur->data->size : 1)),
 	    fmt_written,
@@ -320,13 +321,48 @@ _msg_format_and_print(struct status_list_node *cur, const int position)
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
 	    (cur->data->requested_path == NULL) ?
-	    "-" :
-	    cur->data->requested_path
+	        "-" :
+	        cur->data->requested_path
 	    );
 
-	msg_print_info(cur->data, TRANSFER, msg_buffer, position);
-
 	return;
+}
+
+void
+msg_print_status(const char *msg, int position)
+{
+	FILE *stream;
+
+#ifdef NCURSES
+	ncurses_print_status(msg, position);
+#endif
+	if (VERBOSITY < 3) {
+		return;
+	}
+
+	if (_LOG_FILE != NULL) {
+		stream = _LOG_FILE;
+	} else {
+		stream = stdout;
+	}
+
+	pthread_mutex_lock(&print_mutex);
+	if (COLOR) {
+		if (position == -1) {
+			position = 7;
+		} else {
+			/* first (0) color is black, last (7) color is white */
+			position = (position % 6) + 1;
+		}
+		fprintf(stream, "\x1b[3%dm%s\x1b[39;49m\n", position, msg);
+	} else {
+		fprintf(stream, "%s\n", msg);
+	}
+
+	if (_LOG_FILE != NULL) {
+		fflush(_LOG_FILE);
+	}
+	pthread_mutex_unlock(&print_mutex);
 }
 
 /*

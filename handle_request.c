@@ -66,13 +66,11 @@ handle_request(void *ptr)
 	if (data->socket < 0) {
 		err_quit(ERR_INFO, "socket in handle_request is < 0");
 	}
-	msg_print_info(data, CONNECTED, "connection established", -1);
+	msg_print_log(data, CONNECTED, "connection established");
 
 	error = get_line(data->socket, &cur_line);
 	if (error) {
-		msg_print_info(data, ERROR,
-		    err_msg[error],
-		    -1);
+		msg_print_log(data, ERROR, err_msg[error]);
 		free(data);
 		return NULL;
 	}
@@ -105,9 +103,7 @@ handle_request(void *ptr)
 	cur_line = NULL;
 
 	if (error) {
-		msg_print_info(data, ERROR,
-		    err_msg[error],
-		    -1);
+		msg_print_log(data, ERROR, err_msg[error]);
 	}
 
 	call_back_socket = data->socket;

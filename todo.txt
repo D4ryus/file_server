@@ -15,6 +15,7 @@ fixes and code changes:
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
       [X] - HTTP Request escape sequenzes (space/...)!!
+      [ ] - http header extendet on nothing read
       [ ] - concat
       [ ] - support # in filename
       [ ] - quit/cleanup function
@@ -56,6 +57,7 @@ messages:
       [X] - enable optional logging which takes regular verbosity
       [X] - timestamp
       [X] - sync all messages
+      [ ] - up and download
       [ ] - interface for messages (ncurses/stdout/log_file/redis)
 
 ncurses:

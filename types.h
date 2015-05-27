@@ -6,7 +6,13 @@
 /*
  * enums
  */
-enum message_type {CONNECTED, SENT, ERROR, TRANSFER, POST};
+enum message_type {
+	CONNECTED = 0,
+	SENT,
+	ERROR,
+	TRANSFER,
+	POST
+};
 
 enum request_type {PLAIN, HTTP};
 

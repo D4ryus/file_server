@@ -55,7 +55,7 @@ handle_post(struct client_info *data, char *request)
 		return error;
 	}
 
-	msg_print_info(data, SENT, "POST successfull", -1);
+	msg_print_log(data, SENT, "POST successfull");
 
 	return STAT_OK;
 }
