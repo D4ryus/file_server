@@ -66,6 +66,12 @@ const char *HTTP_TOP =
  */
 const char *HTTP_BOT =
 			"</body>"
+		"<div align='right'>"
+			"Powered by "
+			"<a href='https://freedns.afraid.org/'>freedns.afraid.org</a>"
+			" and "
+			"<a href='http://www.vim.org/'>Vim</a>"
+		"</div>"
 		"</center>"
 	"</html>";
 
