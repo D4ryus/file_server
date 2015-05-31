@@ -50,7 +50,7 @@ LFLAGS = -lpthread
 
 OBJS   += ncurses_msg.o
 CFLAGS += -DNCURSES
-LFLAGS += -lcurses -pg
+LFLAGS += -lcurses
 
 # CFLAGS += -std=c99
 # CFLAGS += -pedantic
