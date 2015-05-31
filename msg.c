@@ -279,7 +279,7 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
 	snprintf(msg_buffer, buff_size,
-	    "[%15s:%-5d - %3d]: %3u%% [%6s/%6s (%6s)] %6s/%us - %s",
+	    "[%15s:%-5d - %3d]: %3u%% [%6s/%6s (%6s)] %6s/%us %s %s",
 	    cur->data->ip,
 	    cur->data->port,
 	    cur->data->socket,
@@ -290,6 +290,7 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
+	    (cur->data->type == DOWNLOAD) ? "down" : "up";
 	    (cur->data->requested_path == NULL) ?
 	        "-" :
 	        cur->data->requested_path
