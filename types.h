@@ -6,18 +6,20 @@
 /*
  * enums
  */
+/*
+ * message verbosity
+ */
 enum message_type {
-	CONNECTED = 0,
-	SENT,
-	ERROR,
-	TRANSFER,
-	POST
+	ERROR = 0,
+	CONNECTED = 1,
+	FINISHED = 2
 };
 
 enum request_type {PLAIN, HTTP};
 
 enum response_type {FILE_200, DIR_200, TXT_403, TXT_404};
 
+enum transfer_type {UPLOAD, DOWNLOAD};
 /*
  * intern error enum, used as return value from functions
  */
@@ -41,7 +43,8 @@ enum err_status {
 	FILE_ERROR,
 	NO_CONTENT_DISP,
 	FILENAME_ERR,
-	CONTENT_LENGTH_EXT
+	CONTENT_LENGTH_EXT,
+	POST_DISABLED
 };
 
 /*
@@ -51,6 +54,7 @@ struct client_info {
 	char     ip[16];		/* ip from client */
 	int      port;			/* port from client */
 	int      socket;		/* socket descriptor */
+	enum transfer_type type;
 	char     *requested_path;	/* requested path */
 	uint64_t size;			/* file size */
 	uint64_t written;		/* written data */

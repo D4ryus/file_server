@@ -18,7 +18,7 @@
  */
 extern char *ROOT_DIR;
 extern FILE *_LOG_FILE;
-extern int VERBOSITY;
+extern uint8_t VERBOSITY;
 extern int COLOR;
 extern size_t UPDATE_TIMEOUT;
 #ifdef NCURSES
@@ -28,15 +28,7 @@ extern int USE_NCURSES;
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
-
-const char *message_type_str[] =
-{
-	"con",
-	"snt",
-	"err",
-	"trn",
-	"pos"
-};
+int msg_enabled = 0;
 
 /*
  * initialize messages subsystem, which will create its own thread
@@ -60,6 +52,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 #else
 	if (VERBOSITY >= 3) {
 #endif
+		msg_enabled = 1;
 		pthread_mutex_init(&status_list_mutex, NULL);
 		pthread_mutex_init(&print_mutex, NULL);
 
@@ -80,7 +73,8 @@ _msg_print_loop(void *ignored)
 	struct status_list_node *cur;
 	int position;
 	uint64_t last_written;
-	uint64_t written;
+	uint64_t down;
+	uint64_t up;
 	char msg_buffer[MSG_BUFFER_SIZE];
 
 	position = 0;
@@ -91,7 +85,8 @@ _msg_print_loop(void *ignored)
 		ncurses_update_begin(position);
 #endif
 		position = 0;
-		written = 0;
+		down = 0;
+		up = 0;
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
 
@@ -99,11 +94,15 @@ _msg_print_loop(void *ignored)
 			    cur, position);
 			msg_print_status(msg_buffer, position);
 
-			written += cur->data->last_written - last_written;
+			if (cur->data->type == DOWNLOAD) {
+				down += cur->data->last_written - last_written;
+			} else {
+				up += cur->data->last_written - last_written;
+			}
 		}
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-		ncurses_update_end(written, position);
+		ncurses_update_end(up, down, position);
 #endif
 		_msg_hook_delete();
 		sleep((unsigned int)UPDATE_TIMEOUT);
@@ -130,29 +129,13 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	struct tm *tmp;
 	char msg_buffer[MSG_BUFFER_SIZE];
 
-#ifndef NCURSES
-	/* if ncruses is defined we will print anyway */
-	switch (type) {
-		case POST:
-		case ERROR:
-			if (VERBOSITY < 1) {
-				return;
-			}
-			break;
-		case SENT:
-			if (VERBOSITY < 2) {
-				return;
-			}
-			break;
-		case CONNECTED:
-			if (VERBOSITY < 3) {
-				return;
-			}
-			break;
-		default:
-			break;
-	}
+#ifdef NCURSES
+	if (!USE_NCURSES && type > VERBOSITY) {
+#else
+	if (type > VERBOSITY) {
 #endif
+		return;
+	}
 
 	t = time(NULL);
 	if (t == -1) {
@@ -172,37 +155,20 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	free(tmp);
 
 	snprintf(msg_buffer, MSG_BUFFER_SIZE,
-	    "%-19s [%15s:%-5d - %3d]: %-3s - %s",
+	    "%-19s [%15s:%-5d - %3d]: %s",
 	    str_time,
 	    data->ip,
 	    data->port,
 	    data->socket,
-	    message_type_str[type],
-	    message);
+	    message == NULL ? "" : message);
 
 #ifdef NCURSES
 	ncurses_print_log(msg_buffer);
 #endif
 
-	switch (type) {
-		case POST:
-		case ERROR:
-			if (VERBOSITY < 1) {
-				return;
-			}
-			break;
-		case SENT:
-			if (VERBOSITY < 2) {
-				return;
-			}
-			break;
-		case CONNECTED:
-			if (VERBOSITY < 3) {
-				return;
-			}
-			break;
-		default:
-			break;
+	/* ncurses printed, check again if we also print to logfile */
+	if (type > VERBOSITY) {
+		return;
 	}
 
 	if (_LOG_FILE != NULL) {
@@ -228,6 +194,10 @@ msg_hook_add(struct client_info *new_data)
 {
 	struct status_list_node *cur;
 	struct status_list_node *new_node;
+
+	if (!msg_enabled) {
+		return;
+	}
 
 	new_node = err_malloc(sizeof(struct status_list_node));
 	new_node->remove_me = 0;

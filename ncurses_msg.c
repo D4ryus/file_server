@@ -25,7 +25,8 @@ WINDOW *win_logging = NULL;
 
 static pthread_mutex_t ncurses_mutex;
 
-static uint64_t written_all_time = 0;
+static uint64_t downloaded = 0;
+static uint64_t uploaded = 0;
 
 static int terminal_heigth;
 static int terminal_width;
@@ -159,25 +160,33 @@ ncurses_update_begin(int last_position)
  * end of printing status messages
  */
 void
-ncurses_update_end(uint64_t written, int clients)
+ncurses_update_end(uint64_t up, uint64_t down, int clients)
 {
 	char msg_buffer[MSG_BUFFER_SIZE];
-	char fmt_written_all_time[7];
-	char fmt_bytes_per_tval[7];
+	char fmt_uploaded[7];
+	char fmt_downloaded[7];
+	char fmt_bytes_per_tval_up[7];
+	char fmt_bytes_per_tval_down[7];
 
 	if (!USE_NCURSES) {
 		return;
 	}
 
-	written_all_time += written;
+	uploaded += up;
+	downloaded += down;
 
-	format_size(written_all_time, fmt_written_all_time);
-	format_size(written / UPDATE_TIMEOUT, fmt_bytes_per_tval);
+	format_size(uploaded, fmt_uploaded);
+	format_size(downloaded, fmt_downloaded);
+	format_size(up / UPDATE_TIMEOUT, fmt_bytes_per_tval_up);
+	format_size(down / UPDATE_TIMEOUT, fmt_bytes_per_tval_down);
 
-	snprintf(msg_buffer, MSG_BUFFER_SIZE, "(%d)-(%6s)-(%6s/%us)",
+	snprintf(msg_buffer, MSG_BUFFER_SIZE, "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
 	    clients,
-	    fmt_written_all_time,
-	    fmt_bytes_per_tval,
+	    fmt_uploaded,
+	    fmt_downloaded,
+	    fmt_bytes_per_tval_up,
+	    (unsigned int)UPDATE_TIMEOUT,
+	    fmt_bytes_per_tval_down,
 	    (unsigned int)UPDATE_TIMEOUT);
 
 	pthread_mutex_lock(&ncurses_mutex);

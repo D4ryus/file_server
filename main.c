@@ -185,7 +185,7 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit("user specified -v/--verbosity "
 				    "without a number (values are [0] 1 2 3)");
 			}
-			VERBOSITY = atoi(argv[i]);
+			VERBOSITY = (uint8_t)atoi(argv[i]);
 		} else {
 			usage_quit("unknown argument specified");
 		}

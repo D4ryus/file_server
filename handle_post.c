@@ -23,6 +23,8 @@ handle_post(struct client_info *data, char *request)
 	char *boundary;
 	char *content_length;
 	uint64_t tmp;
+	char message_buffer[MSG_BUFFER_SIZE];
+	char fmt_size[7];
 
 	error = STAT_OK;
 
@@ -55,7 +57,12 @@ handle_post(struct client_info *data, char *request)
 		return error;
 	}
 
-	msg_print_log(data, SENT, "POST successfull");
+	snprintf(message_buffer,
+	    MSG_BUFFER_SIZE,
+	    "%s received file: %s",
+	    format_size(data->size, fmt_size),
+	    data->requested_path);
+	msg_print_log(data, FINISHED, message_buffer);
 
 	return STAT_OK;
 }

@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <stdint.h>
 
 #include "handle_post.h"
 #include "handle_get.h"
@@ -17,7 +18,7 @@
  */
 extern char *ROOT_DIR;
 extern char *UPLOAD_DIR;
-extern int VERBOSITY;
+extern uint8_t VERBOSITY;
 
 #ifdef NCURSES
 extern int USE_NCURSES;
@@ -29,25 +30,26 @@ extern int USE_NCURSES;
 const char *err_msg[] =
 {
 /* STAT_OK            */ "no error detected",
-/* WRITE_CLOSED       */ "could not write, client closed connection",
-/* ZERO_WRITTEN       */ "could not write, 0 bytes written",
-/* CLOSED_CON         */ "client closed connection",
-/* EMPTY_MESSAGE      */ "empty message",
-/* INV_REQ_TYPE       */ "invalid Request Type",
-/* INV_GET            */ "invalid GET",
-/* INV_POST           */ "invalid POST",
-/* CON_LENGTH_MISSING */ "Content_Length missing",
-/* BOUNDARY_MISSING   */ "boundary missing",
-/* FILESIZE_ZERO      */ "filesize is 0 or error ocurred",
-/* WRONG_BOUNDRY      */ "wrong boundry specified",
-/* HTTP_HEAD_LINE_EXT */ "http header extended line limit",
-/* FILE_HEAD_LINE_EXT */ "file header extended line limit",
-/* POST_NO_FILENAME   */ "missing filename in post message",
-/* NO_FREE_SPOT       */ "the posted filename already exists (10 times)",
-/* FILE_ERROR         */ "could not write the post content to file",
-/* NO_CONTENT_DISP    */ "Content-Disposition missing",
-/* FILENAME_ERR       */ "could not parse filename",
-/* CONTENT_LENGTH_EXT */ "content length extended"
+/* WRITE_CLOSED       */ "error - could not write, client closed connection",
+/* ZERO_WRITTEN       */ "error - could not write, 0 bytes written",
+/* CLOSED_CON         */ "error - client closed connection",
+/* EMPTY_MESSAGE      */ "error - empty message",
+/* INV_REQ_TYPE       */ "error - invalid Request Type",
+/* INV_GET            */ "error - invalid GET",
+/* INV_POST           */ "error - invalid POST",
+/* CON_LENGTH_MISSING */ "error - Content_Length missing",
+/* BOUNDARY_MISSING   */ "error - boundary missing",
+/* FILESIZE_ZERO      */ "error - filesize is 0 or error ocurred",
+/* WRONG_BOUNDRY      */ "error - wrong boundry specified",
+/* HTTP_HEAD_LINE_EXT */ "error - http header extended line limit",
+/* FILE_HEAD_LINE_EXT */ "error - file header extended line limit",
+/* POST_NO_FILENAME   */ "error - missing filename in post message",
+/* NO_FREE_SPOT       */ "error - the posted filename already exists (10 times)",
+/* FILE_ERROR         */ "error - could not write the post content to file",
+/* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
+/* FILENAME_ERR       */ "error - could not parse filename",
+/* CONTENT_LENGTH_EXT */ "error - content length extended",
+/* POST_DISABLED      */ "error - post is disabled"
 };
 
 /*
@@ -80,21 +82,17 @@ handle_request(void *ptr)
 	data->written = 0;
 	data->last_written = 0;
 
-#ifdef NCURSES
-	if (USE_NCURSES || VERBOSITY >= 3) {
-#else
-	if (VERBOSITY >= 3) {
-#endif
-		msg_hook_add(data);
-	}
-
 	if (starts_with(cur_line, "POST", 4)) {
-		if (UPLOAD_DIR != NULL) {
-			error = handle_post(data, cur_line);
+		if (UPLOAD_DIR == NULL) {
+			error = POST_DISABLED;
 		} else {
-			error = INV_REQ_TYPE;
+			data->type = UPLOAD;
+			msg_hook_add(data);
+			error = handle_post(data, cur_line);
 		}
 	} else if (starts_with(cur_line, "GET", 3)) {
+		data->type = DOWNLOAD;
+		msg_hook_add(data);
 		error = handle_get(data, cur_line);
 	} else {
 		error = INV_REQ_TYPE;

@@ -19,7 +19,7 @@ uint16_t PORT = 8283;
 /*
  * port if none specified
  */
-int VERBOSITY = 0;
+uint8_t VERBOSITY = 0;
 
 /*
  * enable coloring

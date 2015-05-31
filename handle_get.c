@@ -56,7 +56,7 @@ handle_get(struct client_info *data, char *request)
 			if (!error) {
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
-				    "%s %s",
+				    "%s sent file: %s",
 				    format_size(data->size, fmt_size),
 				    data->requested_path);
 			}
@@ -69,7 +69,7 @@ handle_get(struct client_info *data, char *request)
 			if (!error) {
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
-				    "%s %s",
+				    "%s sent dir: %s",
 				    format_size(data->size, fmt_size),
 				    data->requested_path);
 				data->written = data->size;
@@ -81,7 +81,7 @@ handle_get(struct client_info *data, char *request)
 			if (!error) {
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
-				    "err403");
+				    "sent error 403");
 				data->written = data->size;
 			}
 			break;
@@ -91,7 +91,7 @@ handle_get(struct client_info *data, char *request)
 			if (!error) {
 				snprintf(message_buffer,
 				    MSG_BUFFER_SIZE,
-				    "err404");
+				    "sent error 404");
 				data->written = data->size;
 			}
 			break;
@@ -103,7 +103,7 @@ handle_get(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
-	msg_print_log(data, SENT, message_buffer);
+	msg_print_log(data, FINISHED, message_buffer);
 
 	return STAT_OK;
 }
