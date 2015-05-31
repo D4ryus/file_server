@@ -73,8 +73,8 @@ _msg_print_loop(void *ignored)
 	struct status_list_node *cur;
 	int position;
 	uint64_t last_written;
-	uint64_t down;
-	uint64_t up;
+	uint64_t tx;
+	uint64_t rx;
 	char msg_buffer[MSG_BUFFER_SIZE];
 
 	position = 0;
@@ -85,8 +85,8 @@ _msg_print_loop(void *ignored)
 		ncurses_update_begin(position);
 #endif
 		position = 0;
-		down = 0;
-		up = 0;
+		tx = 0;
+		rx = 0;
 		for (cur = first; cur != NULL; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
 
@@ -95,14 +95,14 @@ _msg_print_loop(void *ignored)
 			msg_print_status(msg_buffer, position);
 
 			if (cur->data->type == DOWNLOAD) {
-				down += cur->data->last_written - last_written;
+				tx += cur->data->last_written - last_written;
 			} else {
-				up += cur->data->last_written - last_written;
+				rx += cur->data->last_written - last_written;
 			}
 		}
 		pthread_mutex_unlock(&status_list_mutex);
 #ifdef NCURSES
-		ncurses_update_end(up, down, position);
+		ncurses_update_end(rx, tx, position);
 #endif
 		_msg_hook_delete();
 		sleep((unsigned int)UPDATE_TIMEOUT);
@@ -155,11 +155,9 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	free(tmp);
 
 	snprintf(msg_buffer, MSG_BUFFER_SIZE,
-	    "%-19s [%15s:%-5d - %3d]: %s",
+	    "%-19s [%15s]: %s",
 	    str_time,
 	    data->ip,
-	    data->port,
-	    data->socket,
 	    message == NULL ? "" : message);
 
 #ifdef NCURSES
@@ -279,18 +277,16 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
 	snprintf(msg_buffer, buff_size,
-	    "[%15s:%-5d - %3d]: %3u%% [%6s/%6s (%6s)] %6s/%us %s %s",
+	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/%us %s",
 	    cur->data->ip,
-	    cur->data->port,
-	    cur->data->socket,
 	    (unsigned int)(written * 100 /
 		(cur->data->size > 0 ? cur->data->size : 1)),
+	    (cur->data->type == DOWNLOAD) ? "tx" : "rx",
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    (cur->data->type == DOWNLOAD) ? "down" : "up",
 	    (cur->data->requested_path == NULL) ?
 	        "-" :
 	        cur->data->requested_path

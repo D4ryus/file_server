@@ -46,7 +46,7 @@ const char *err_msg[] =
 /* HTTP_HEAD_LINE_EXT */ "error - http header extended line limit",
 /* FILE_HEAD_LINE_EXT */ "error - file header extended line limit",
 /* POST_NO_FILENAME   */ "error - missing filename in post message",
-/* NO_FREE_SPOT       */ "error - the posted filename already exists (10 times)",
+/* NO_FREE_SPOT       */ "error - the posted filename already exists",
 /* FILE_ERROR         */ "error - could not write the post content to file",
 /* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
 /* FILENAME_ERR       */ "error - could not parse filename",
@@ -64,13 +64,20 @@ handle_request(void *ptr)
 	char *cur_line;
 	enum err_status error;
 	int call_back_socket;
+	char *con_msg;
 
 	data = (struct client_info *)ptr;
 
 	if (data->socket < 0) {
 		err_quit(ERR_INFO, "socket in handle_request is < 0");
 	}
-	msg_print_log(data, CONNECTED, "connection established");
+	con_msg = NULL;
+	con_msg = err_malloc(128);
+	snprintf(con_msg, 128, "connected to port %d.",
+			data->port);
+	msg_print_log(data, CONNECTED, con_msg);
+	free(con_msg);
+	con_msg = NULL;
 
 	error = get_line(data->socket, &cur_line);
 	if (error) {

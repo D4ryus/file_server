@@ -40,7 +40,7 @@ int log_buf_pos;
 
 static char *head_body_status = "Current file transfers: ";
 static char *head_body_log = "Log messages: ";
-static char *head_info = "File Server version 0.1";
+static char *head_info = "File Server version 0.2";
 static char *head_data;
 static char *status_data;
 
