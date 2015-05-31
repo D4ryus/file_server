@@ -122,14 +122,20 @@ const char *TABLE_HTML[3] = {
 	"</table>"};
 
 /*
+ * plaintext message which will be sent on 403 - Forbidden
+ */
+const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
+
+/*
  * plaintext message which will be sent on 404 - File not found
  */
 const char *RESPONSE_404 = "404 - Watcha pulling here buddy?\r\n";
 
 /*
- * plaintext message which will be sent on 403 - Forbidden
+ * plaintext message which will be sent on 405 - Method Not Allowed
  */
-const char *RESPONSE_403 = "403 - U better not go down this road!\r\n";
+const char *RESPONSE_405 = "405 - ur Method is not allowed sir, if tried to "
+			   "POST, ask for permission.\r\n";
 
 /*
  * html response for http status 201 (file created),

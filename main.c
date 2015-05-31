@@ -21,6 +21,7 @@
 
 FILE *_LOG_FILE = NULL;
 char *UPLOAD_DIR = NULL;
+int UPLOAD_ENABLED = 0;
 
 #ifdef NCURSES
 extern int USE_NCURSES;
@@ -210,6 +211,7 @@ parse_arguments(const int argc, const char *argv[])
 			err_quit(ERR_INFO, "realpath on UPLOAD_DIR "
 					   "returned NULL");
 		}
+		UPLOAD_ENABLED = 1;
 	}
 
 	if (LOG_FILE != NULL) {

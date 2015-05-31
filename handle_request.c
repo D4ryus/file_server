@@ -18,7 +18,9 @@
  */
 extern char *ROOT_DIR;
 extern char *UPLOAD_DIR;
+extern int UPLOAD_ENABLED;
 extern uint8_t VERBOSITY;
+extern int UPLOAD_ENABLED;
 
 #ifdef NCURSES
 extern int USE_NCURSES;
@@ -83,12 +85,13 @@ handle_request(void *ptr)
 	data->last_written = 0;
 
 	if (starts_with(cur_line, "POST", 4)) {
-		if (UPLOAD_DIR == NULL) {
-			error = POST_DISABLED;
-		} else {
+		if (UPLOAD_ENABLED) {
 			data->type = UPLOAD;
 			msg_hook_add(data);
 			error = handle_post(data, cur_line);
+		} else {
+			send_405(data->socket, HTTP, &(data->size));
+			error = POST_DISABLED;
 		}
 	} else if (starts_with(cur_line, "GET", 3)) {
 		data->type = DOWNLOAD;

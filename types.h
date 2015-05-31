@@ -10,8 +10,8 @@
  * message verbosity
  */
 enum message_type {
-	ERROR = 0,
-	CONNECTED = 1,
+	ERROR = 1,
+	CONNECTED = 2,
 	FINISHED = 2
 };
 

@@ -50,7 +50,6 @@ handle_post(struct client_info *data, char *request)
 	if (error) {
 		return error;
 	}
-	/* END */
 
 	error = send_201(data->socket, HTTP, &(tmp));
 	if (error) {
@@ -234,13 +233,7 @@ file_head:
 	/* now move unread buff content to front and fill up with new data */
 	offset = (read_from_socket - (ssize_t)file_head_size);
 	memmove(buff, buff + file_head_size, (size_t)offset);
-	tmp = recv(socket, buff + offset, BUFFSIZE_READ - (size_t)offset, 0);
-	if (tmp < 0) {
-		error = CLOSED_CON;
-		goto stop_transfer;
-	}
-	(*written) += (uint64_t)tmp;
-	read_from_socket = offset + tmp;
+	read_from_socket = offset;
 
 	/* buff contains file_content */
 	while ((*written) <= (*max_size)) {

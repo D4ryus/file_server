@@ -14,8 +14,9 @@
  * see globals.h
  */
 extern char *ROOT_DIR;
-extern const char *RESPONSE_404;
 extern const char *RESPONSE_403;
+extern const char *RESPONSE_404;
+extern const char *RESPONSE_405;
 extern const char *RESPONSE_201;
 extern const char *HTTP_TOP;
 extern const char *HTTP_BOT;
@@ -123,6 +124,43 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
 }
 
 /*
+ * sends a 403 FORBIDDEN HTTP response with attached RESPONSE_403 msg
+ * if type == PLAIN no http header will be sent
+ * size is set to content_length
+ */
+int
+send_403(int socket, enum request_type type, uint64_t *size)
+{
+	enum err_status error;
+	char *head;
+	char content_length[64];
+
+	head = NULL;
+
+	(*size) = (uint64_t)strlen(RESPONSE_403);
+	if (type == HTTP) {
+		snprintf(content_length, 64,
+		    "Content-Length: %llu\r\n\r\n",
+		    (long long unsigned int)(*size));
+
+		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
+					   "Cache-Control: no-cache\r\n"
+					   "Connection: close\r\n"
+					   "Content-Type: text/plain\r\n"),
+					   content_length);
+
+		error = send_data(socket, head, (uint64_t)strlen(head));
+		if (error) {
+			return error;
+		}
+	}
+
+	error = send_data(socket, RESPONSE_403, (*size));
+
+	return error;
+}
+
+/*
  * sends a 404 NOT FOUND HTTP response with attached RESPONSE_404 msg
  * if type == PLAIN no http header will be sent
  * size is set to content_length
@@ -160,12 +198,12 @@ send_404(int socket, enum request_type type, uint64_t *size)
 }
 
 /*
- * sends a 403 FORBIDDEN HTTP response with attached RESPONSE_403 msg
+ * sends a 405 METHOD NOT ALLOWED HTTP response with attached RESPONSE_405 msg
  * if type == PLAIN no http header will be sent
  * size is set to content_length
  */
 int
-send_403(int socket, enum request_type type, uint64_t *size)
+send_405(int socket, enum request_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
@@ -173,13 +211,13 @@ send_403(int socket, enum request_type type, uint64_t *size)
 
 	head = NULL;
 
-	(*size) = (uint64_t)strlen(RESPONSE_403);
+	(*size) = (uint64_t)strlen(RESPONSE_405);
 	if (type == HTTP) {
 		snprintf(content_length, 64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 
-		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
+		head = concat(concat(head, "HTTP/1.1 405 Method Not Allowed\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
 					   "Content-Type: text/plain\r\n"),
@@ -191,7 +229,7 @@ send_403(int socket, enum request_type type, uint64_t *size)
 		}
 	}
 
-	error = send_data(socket, RESPONSE_403, (*size));
+	error = send_data(socket, RESPONSE_405, (*size));
 
 	return error;
 }

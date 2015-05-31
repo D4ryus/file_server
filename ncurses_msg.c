@@ -13,6 +13,8 @@
  * see globals.h
  */
 extern char *ROOT_DIR;
+extern char *UPLOAD_DIR;
+extern int UPLOAD_ENABLED;
 extern int PORT;
 extern int LOGGING_WINDOW_HEIGTH;
 extern size_t UPDATE_TIMEOUT;
@@ -40,15 +42,17 @@ static char *head_body_status = "Current file transfers: ";
 static char *head_body_log = "Log messages: ";
 static char *head_info = "File Server version 0.1";
 static char *head_data;
+static char *status_data;
 
 /*
  * initialises ncurses main window
  */
 void
-ncurses_init(void)
+ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 {
 	int i;
 	struct sigaction sa;
+	enum err_status error;
 
 	if (!USE_NCURSES) {
 		return;
@@ -80,9 +84,13 @@ ncurses_init(void)
 		log_buf[i][0] = '\0';
 	}
 
-	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 23);
-	snprintf(head_data, strlen(ROOT_DIR) + 23,
-	    "Shared: %s on Port: %d", ROOT_DIR, PORT);
+	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 11);
+	snprintf(head_data, strlen(ROOT_DIR) + 11,
+	    "(%s)-(%d)", ROOT_DIR, PORT);
+
+	status_data = (char *)err_malloc(MSG_BUFFER_SIZE);
+	strncpy(status_data, "(0)-(   0b |   0b )-(   0b/1s|   0b/1s)", 39);
+	status_data[39] = '\0';
 
 	ncurses_organize_windows();
 	if (win_logging) {
@@ -90,6 +98,54 @@ ncurses_init(void)
 	} else {
 		err_quit(ERR_INFO, "window to small");
 	}
+
+	/* if upload is enabled, handle keys from keyboard */
+	if (UPLOAD_ENABLED) {
+		error = pthread_create(thread, attr, &handle_keyboard, NULL);
+		if (error != 0) {
+			err_quit(ERR_INFO, "pthread_create() != 0");
+		}
+	}
+}
+
+void *
+handle_keyboard(void *ptr)
+{
+	char ch;
+	
+	noecho();
+	nodelay(stdscr, FALSE);
+	UPLOAD_ENABLED = 0;
+
+	pthread_mutex_lock(&ncurses_mutex);
+	if (((size_t)terminal_width > strlen(head_data) + 6)) {
+		mvwprintw(stdscr, 0,
+		    (int)terminal_width - ((int)strlen(head_data) + 6),
+		    "%s)-",
+		    UPLOAD_ENABLED ? " (on" : "(off");
+		refresh();
+	}
+	pthread_mutex_unlock(&ncurses_mutex);
+
+	while (1) {
+		ch = 0;
+		ch = (char)getch();
+		if (ch != 'u') {
+			continue;
+		}
+		UPLOAD_ENABLED = UPLOAD_ENABLED ? 0 : 1;
+		pthread_mutex_lock(&ncurses_mutex);
+		if (((size_t)terminal_width > strlen(head_data) + 2)) {
+		mvwprintw(stdscr, 0,
+		    (int)terminal_width - ((int)strlen(head_data) + 6),
+		    "%s)-",
+		    UPLOAD_ENABLED ? " (on" : "(off");
+			refresh();
+		}
+		pthread_mutex_unlock(&ncurses_mutex);
+	}
+
+	return NULL;
 }
 
 /*
@@ -162,7 +218,6 @@ ncurses_update_begin(int last_position)
 void
 ncurses_update_end(uint64_t up, uint64_t down, int clients)
 {
-	char msg_buffer[MSG_BUFFER_SIZE];
 	char fmt_uploaded[7];
 	char fmt_downloaded[7];
 	char fmt_bytes_per_tval_up[7];
@@ -180,7 +235,7 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 	format_size(up / UPDATE_TIMEOUT, fmt_bytes_per_tval_up);
 	format_size(down / UPDATE_TIMEOUT, fmt_bytes_per_tval_down);
 
-	snprintf(msg_buffer, MSG_BUFFER_SIZE, "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
+	snprintf(status_data, MSG_BUFFER_SIZE, "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
 	    clients,
 	    fmt_uploaded,
 	    fmt_downloaded,
@@ -190,11 +245,8 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 	    (unsigned int)UPDATE_TIMEOUT);
 
 	pthread_mutex_lock(&ncurses_mutex);
-	if ((size_t)terminal_width > strlen(msg_buffer) && win_status) {
+	if ((size_t)terminal_width > strlen(status_data) + 2 && win_status) {
 		_ncurses_draw_status_box();
-		mvwprintw(win_status,
-		    0, terminal_width - (int)strlen(msg_buffer) - 2,
-		    "%s", msg_buffer);
 		refresh();
 		wrefresh(win_status);
 	}
@@ -287,18 +339,19 @@ ncurses_organize_windows()
 		    % log_buf_size]);
 	}
 
-	/* name and version */
+	/* rootpath, port and upload_enabled */
 	move(0, 0);
 	clrtoeol();
-	if ((size_t)terminal_width > strlen(head_info) + 2) {
-		mvwprintw(stdscr, 0, 0, "%s", head_info);
-	}
-	/* rootpath and port */
-	if ((size_t)terminal_width > strlen(head_info)
-	    + strlen(head_data) + 3) {
+	if ((size_t)terminal_width > strlen(head_data) + 1) {
 		mvwprintw(stdscr, 0,
 		    (int)terminal_width - (int)strlen(head_data),
 		    "%s", head_data);
+	}
+
+	/* name and version */
+	if ((size_t)terminal_width > strlen(head_info)
+	    + strlen(head_data) + 1) {
+		mvwprintw(stdscr, 0, 0, "%s", head_info);
 	}
 
 	_ncurses_draw_logging_box();
@@ -346,7 +399,14 @@ void
 _ncurses_draw_status_box()
 {
 	box(win_status, 0, 0);
-	if ((size_t)terminal_width > strlen(head_body_status) + 2) {
+	if ((size_t)terminal_width > strlen(status_data) + 4) {
+		mvwprintw(win_status, 0,
+		    (int)terminal_width - ((int)strlen(status_data) + 2),
+		    "%s", status_data);
+	}
+
+	if ((size_t)terminal_width > strlen(status_data)
+	    + strlen(head_body_status) + 4) {
 		mvwprintw(win_status, 0, 2, "%s", head_body_status);
 	}
 }

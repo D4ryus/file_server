@@ -3,7 +3,8 @@
 
 #include "types.h"
 
-void ncurses_init(void);
+void ncurses_init(pthread_t *, const pthread_attr_t *);
+void *handle_keyboard(void *);
 void ncurses_print_log(char *);
 void ncurses_print_status(const char *message, int position);
 void ncurses_update_begin(int);

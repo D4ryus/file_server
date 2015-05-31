@@ -47,7 +47,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 	}
 
 #ifdef NCURSES
-	ncurses_init();
+	ncurses_init(thread, attr);
 	if (USE_NCURSES || VERBOSITY >= 3) {
 #else
 	if (VERBOSITY >= 3) {

@@ -6,8 +6,9 @@
 
 int send_200_file_head(int, enum request_type, uint64_t *, char *);
 int send_200_directory(int, enum request_type, uint64_t *, char *);
-int send_404(int, enum request_type, uint64_t *);
 int send_403(int, enum request_type, uint64_t *);
+int send_404(int, enum request_type, uint64_t *);
+int send_405(int, enum request_type, uint64_t *);
 int send_201(int, enum request_type, uint64_t *);
 
 #endif
