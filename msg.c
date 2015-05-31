@@ -290,7 +290,7 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    (cur->data->type == DOWNLOAD) ? "down" : "up";
+	    (cur->data->type == DOWNLOAD) ? "down" : "up",
 	    (cur->data->requested_path == NULL) ?
 	        "-" :
 	        cur->data->requested_path
