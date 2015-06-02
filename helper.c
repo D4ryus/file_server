@@ -51,8 +51,8 @@ send_data(int socket, const char *data, uint64_t length)
 		}
 		sent_bytes = 0;
 		while (sent_bytes < buff_size) {
-			write_res = write(socket, data + sent_bytes + cur_pos,
-			    buff_size - sent_bytes);
+			write_res = send(socket, data + sent_bytes + cur_pos,
+			    buff_size - sent_bytes, MSG_NOSIGNAL);
 			if (write_res == -1) {
 				return WRITE_CLOSED;
 			} else if (write_res == 0) {

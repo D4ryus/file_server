@@ -1,7 +1,15 @@
 #ifndef DEFINES_H
 #define DEFINES_H
 
-#define HTTP_HEADER_LINE_LIMIT 2048
+/*
+ * maximum characters per header field
+ */
+#define HTTP_HEADER_LINE_LIMIT 4096
+
+/*
+ * maximum lines per header, maximum 256 (uint8_t)
+ */
+#define HTTP_HEADER_LINES_MAX 128
 
 /*
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents

@@ -80,8 +80,6 @@ main(const int argc, const char *argv[])
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	serv_addr.sin_port = htons(PORT);
 
-	signal(SIGPIPE, SIG_IGN);
-
 	/* bind socket */
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
 		    (socklen_t)sizeof(serv_addr));
@@ -90,7 +88,10 @@ main(const int argc, const char *argv[])
 	}
 
 	/* set socket in listen mode */
-	listen(server_socket, 5);
+	error = listen(server_socket, 5);
+	if (error == -1) {
+		err_quit(ERR_INFO, "listen()");
+	}
 	clilen = sizeof(cli_addr);
 
 	/* put each conn in a new detached thread with its own data_store */

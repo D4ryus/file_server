@@ -72,6 +72,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 	char *cur_line;
 	enum err_status error;
 	size_t str_len;
+	uint8_t header_lines;
 	char *STR_COL;
 	char *STR_BOU;
 
@@ -86,6 +87,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		return error;
 	}
 
+	header_lines = 2;
 	while (strlen(cur_line) != 0) {
 		if (starts_with(cur_line, STR_COL, strlen(STR_COL))) {
 			str_len = strlen(cur_line + strlen(STR_COL));
@@ -111,6 +113,11 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		cur_line = NULL;
 		error = get_line(socket, &cur_line);
 		if (error) {
+			break;
+		}
+		header_lines++;
+		if (header_lines < HTTP_HEADER_LINES_MAX) {
+			error = HEADER_LINES_EXT;
 			break;
 		}
 	}
@@ -382,8 +389,8 @@ buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
 		}
 	}
 
-	err_quit(ERR_INFO, "i != haystack_size, should not be possible");
 	/* not reached */
+	err_quit(ERR_INFO, "i != haystack_size, should not be possible");
 
 	return STAT_OK;
 }

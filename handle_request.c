@@ -51,7 +51,8 @@ const char *err_msg[] =
 /* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
 /* FILENAME_ERR       */ "error - could not parse filename",
 /* CONTENT_LENGTH_EXT */ "error - content length extended",
-/* POST_DISABLED      */ "error - post is disabled"
+/* POST_DISABLED      */ "error - post is disabled",
+/* HEADER_LINES_EXT   */ "error - too many headerlines"
 };
 
 /*
@@ -63,7 +64,6 @@ handle_request(void *ptr)
 	struct client_info *data;
 	char *cur_line;
 	enum err_status error;
-	int call_back_socket;
 	char *con_msg;
 
 	data = (struct client_info *)ptr;
@@ -114,11 +114,9 @@ handle_request(void *ptr)
 		msg_print_log(data, ERROR, err_msg[error]);
 	}
 
-	call_back_socket = data->socket;
+	shutdown(data->socket, SHUT_RDWR);
+	close(data->socket);
 	msg_hook_cleanup(data);
-
-	sleep(5);
-	close(call_back_socket);
 
 	return NULL;
 }
@@ -128,6 +126,7 @@ handle_request(void *ptr)
  * buffer will be err_malloc'ed by get_line.
  * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be free'd and set to NULL on error
+ * buffer will always be terminated with \0
  */
 int
 get_line(int socket, char **buff)
@@ -137,7 +136,7 @@ get_line(int socket, char **buff)
 	ssize_t err;
 	char cur_char;
 
-	buf_size = 128;
+	buf_size = 256;
 	(*buff) = (char *)err_malloc(buf_size);
 	memset((*buff), '\0', buf_size);
 

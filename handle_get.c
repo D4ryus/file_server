@@ -25,6 +25,8 @@ handle_get(struct client_info *data, char *request)
 	enum response_type res_type;
 	enum request_type req_type;
 	char *requ_path_tmp;
+	char *trash;
+	uint8_t header_lines;
 
 	error = STAT_OK;
 
@@ -32,6 +34,25 @@ handle_get(struct client_info *data, char *request)
 	error = parse_get(request, &(req_type), &(requ_path_tmp));
 	if (error) {
 		return error;
+	}
+
+	/* read rest of http header */
+	error = get_line(data->socket, &(trash));
+	if (error) {
+		return error;
+	}
+	header_lines = 2;
+	while (strlen(trash) != 0) {
+		free(trash);
+		error = get_line(data->socket, &trash);
+		if (error) {
+			return error;
+		}
+		header_lines++;
+		if (header_lines > HTTP_HEADER_LINES_MAX) {
+			free(trash);
+			return HEADER_LINES_EXT;
+		}
 	}
 
 	res_type = get_response_type(&(requ_path_tmp));
