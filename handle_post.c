@@ -116,7 +116,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 			break;
 		}
 		header_lines++;
-		if (header_lines < HTTP_HEADER_LINES_MAX) {
+		if (header_lines > HTTP_HEADER_LINES_MAX) {
 			error = HEADER_LINES_EXT;
 			break;
 		}
@@ -125,14 +125,8 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		free(cur_line);
 	}
 
-	if  ((*content_length) == NULL) {
-		error = CON_LENGTH_MISSING;
-	}
-	if ((*boundary) == NULL) {
-		error = BOUNDARY_MISSING;
-	}
-
 	if (error) {
+		/* on error free malloced data */
 		if ((*content_length) != NULL) {
 			free((*content_length));
 			(*content_length) = NULL;
@@ -140,6 +134,14 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		if ((*boundary) != NULL) {
 			free((*boundary));
 			(*boundary) = NULL;
+		}
+	} else {
+		/* if there was no error, check if all data is set */
+		if ((*content_length) == NULL) {
+			error = CON_LENGTH_MISSING;
+		}
+		if ((*boundary) == NULL) {
+			error = BOUNDARY_MISSING;
 		}
 	}
 
