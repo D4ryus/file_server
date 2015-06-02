@@ -142,7 +142,7 @@ get_line(int socket, char **buff)
 
 	for (bytes_read = 0 ;; bytes_read++) {
 		err = recv(socket, &cur_char, (size_t)1, 0);
-		if (err < 0) {
+		if (err < 0 || err == 0) {
 			free((*buff));
 			(*buff) = NULL;
 			return CLOSED_CON;
