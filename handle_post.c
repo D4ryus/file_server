@@ -91,7 +91,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 	while (strlen(cur_line) != 0) {
 		if (starts_with(cur_line, STR_COL, strlen(STR_COL))) {
 			str_len = strlen(cur_line + strlen(STR_COL));
-			if (str_len - strlen(STR_COL) < 1) {
+			if (str_len < 1) {
 				error = CON_LENGTH_MISSING;
 				break;
 			}
@@ -101,7 +101,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		}
 		if (starts_with(cur_line, STR_BOU, strlen(STR_BOU))) {
 			str_len = strlen(cur_line + strlen(STR_BOU));
-			if (str_len - strlen(STR_BOU) < 1) {
+			if (str_len < 1) {
 				error = BOUNDARY_MISSING;
 				break;
 			}
