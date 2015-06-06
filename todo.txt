@@ -15,8 +15,10 @@ fixes and code changes:
       [X] - fix ugly color implementation
       [X] - display size function (kb/mb/gb sent/http_plain display)
       [X] - HTTP Request escape sequenzes (space/...)!!
-      [ ] - http header extendet on nothing read
-      [ ] - concat
+      [X] - http header extendet on nothing read
+      [X] - concat
+      [ ] - pipelining
+      [ ] - 201 Created read sent Header to avoid connection abbort
       [ ] - support # in filename
       [ ] - quit/cleanup function
       [ ] - add startup information
@@ -57,7 +59,7 @@ messages:
       [X] - enable optional logging which takes regular verbosity
       [X] - timestamp
       [X] - sync all messages
-      [ ] - up and download
+      [X] - up and download
       [ ] - interface for messages (ncurses/stdout/log_file/redis)
 
 ncurses:
@@ -66,7 +68,7 @@ ncurses:
       [X] - window for status messages
       [X] - total stats, ip, port, root dir
       [X] - fancy top/bottom line (---(path)---(port)----)
-      [ ] - total connections, total errors, total 404, ...
+      [X] - total connections, total errors, total 404, ...
       [ ] - scrollable windows
 
 tests:
