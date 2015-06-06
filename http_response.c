@@ -108,7 +108,8 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
 		head = concat(concat(head, "HTTP/1.1 200 OK\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
-					   "Content-Type: text/html\r\n"),
+					   "Content-Type: text/html; "
+					   "charset=utf-8\r\n"),
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
@@ -146,9 +147,9 @@ send_403(int socket, enum request_type type, uint64_t *size)
 		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
-					   "Content-Type: text/plain\r\n"),
+					   "Content-Type: text/plain; "
+					   "charset=utf-8\r\n"),
 					   content_length);
-
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		if (error) {
 			return error;
@@ -183,7 +184,8 @@ send_404(int socket, enum request_type type, uint64_t *size)
 		head = concat(concat(head, "HTTP/1.1 404 Not Found\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
-					   "Content-Type: text/plain\r\n"),
+					   "Content-Type: text/plain; "
+					   "charset=utf-8\r\n"),
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
@@ -220,9 +222,9 @@ send_405(int socket, enum request_type type, uint64_t *size)
 		head = concat(concat(head, "HTTP/1.1 405 Method Not Allowed\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
-					   "Content-Type: text/plain\r\n"),
+					   "Content-Type: text/plain; "
+					   "charset=utf-8\r\n"),
 					   content_length);
-
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		if (error) {
 			return error;
@@ -257,7 +259,8 @@ send_201(int socket, enum request_type type, uint64_t *size)
 		head = concat(concat(head, "HTTP/1.1 201 Created\r\n"
 					   "Cache-Control: no-cache\r\n"
 					   "Connection: close\r\n"
-					   "Content-Type: text/html\r\n"),
+					   "Content-Type: text/html; "
+					   "charset=utf-8\r\n"),
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
