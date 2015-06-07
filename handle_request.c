@@ -68,18 +68,18 @@ handle_request(void *ptr)
 
 	data = (struct client_info *)ptr;
 
-	if (data->socket < 0) {
+	if (data->sock < 0) {
 		err_quit(ERR_INFO, "socket in handle_request is < 0");
 	}
 	con_msg = NULL;
-	con_msg = err_malloc(128);
-	snprintf(con_msg, 128, "connected to port %d.",
+	con_msg = err_malloc((size_t)128);
+	snprintf(con_msg, (size_t)128, "connected to port %d.",
 			data->port);
 	msg_print_log(data, CONNECTED, con_msg);
 	free(con_msg);
 	con_msg = NULL;
 
-	error = get_line(data->socket, &cur_line);
+	error = get_line(data->sock, &cur_line);
 	if (error) {
 		msg_print_log(data, ERROR, err_msg[error]);
 		free(data);
@@ -91,16 +91,16 @@ handle_request(void *ptr)
 	data->written = 0;
 	data->last_written = 0;
 
-	if (starts_with(cur_line, "POST", 4)) {
+	if (starts_with(cur_line, "POST", (size_t)4)) {
 		if (UPLOAD_ENABLED) {
 			data->type = UPLOAD;
 			msg_hook_add(data);
 			error = handle_post(data, cur_line);
 		} else {
-			send_405(data->socket, HTTP, &(data->size));
+			send_405(data->sock, HTTP, &(data->size));
 			error = POST_DISABLED;
 		}
-	} else if (starts_with(cur_line, "GET", 3)) {
+	} else if (starts_with(cur_line, "GET", (size_t)3)) {
 		data->type = DOWNLOAD;
 		msg_hook_add(data);
 		error = handle_get(data, cur_line);
@@ -114,8 +114,8 @@ handle_request(void *ptr)
 		msg_print_log(data, ERROR, err_msg[error]);
 	}
 
-	shutdown(data->socket, SHUT_RDWR);
-	close(data->socket);
+	shutdown(data->sock, SHUT_RDWR);
+	close(data->sock);
 	msg_hook_cleanup(data);
 
 	return NULL;
@@ -129,7 +129,7 @@ handle_request(void *ptr)
  * buffer will always be terminated with \0
  */
 int
-get_line(int socket, char **buff)
+get_line(int sock, char **buff)
 {
 	size_t buf_size;
 	size_t bytes_read;
@@ -141,7 +141,7 @@ get_line(int socket, char **buff)
 	memset((*buff), '\0', buf_size);
 
 	for (bytes_read = 0 ;; bytes_read++) {
-		err = recv(socket, &cur_char, (size_t)1, 0);
+		err = recv(sock, &cur_char, (size_t)1, 0);
 		if (err < 0 || err == 0) {
 			free((*buff));
 			(*buff) = NULL;
@@ -156,7 +156,7 @@ get_line(int socket, char **buff)
 				return HTTP_HEAD_LINE_EXT;
 			}
 			(*buff) = err_realloc((*buff), buf_size);
-			memset((*buff) + buf_size - 128, '\0', 128);
+			memset((*buff) + buf_size - 128, '\0', (size_t)128);
 		}
 
 		if (cur_char == '\n') {

@@ -72,7 +72,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	if (has_colors()) {
 		start_color();
-		init_pair(1, COLOR_WHITE, COLOR_BLUE);
+		init_pair((short)1, (short)COLOR_WHITE, (short)COLOR_BLUE);
 		wbkgd(stdscr, COLOR_PAIR(1));
 	}
 
@@ -88,13 +88,14 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	snprintf(head_data, strlen(ROOT_DIR) + 11,
 	    "(%s)-(%d)", ROOT_DIR, PORT);
 
-	status_data = (char *)err_malloc(MSG_BUFFER_SIZE);
-	strncpy(status_data, "(0)-(   0b |   0b )-(   0b/1s|   0b/1s)", 39);
+	status_data = (char *)err_malloc((size_t)MSG_BUFFER_SIZE);
+	strncpy(status_data, "(0)-(   0b |   0b )-(   0b/1s|   0b/1s)",
+	    (size_t)39);
 	status_data[39] = '\0';
 
 	ncurses_organize_windows();
 	if (win_logging) {
-		scrollok(win_logging, true);
+		scrollok(win_logging, (bool)TRUE);
 	} else {
 		err_quit(ERR_INFO, "window to small");
 	}
@@ -114,7 +115,7 @@ handle_keyboard(void *ptr)
 	char ch;
 	
 	noecho();
-	nodelay(stdscr, FALSE);
+	nodelay(stdscr, (bool)FALSE);
 	UPLOAD_ENABLED = 0;
 
 	pthread_mutex_lock(&ncurses_mutex);
@@ -235,7 +236,8 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 	format_size(up / UPDATE_TIMEOUT, fmt_bytes_per_tval_up);
 	format_size(down / UPDATE_TIMEOUT, fmt_bytes_per_tval_down);
 
-	snprintf(status_data, MSG_BUFFER_SIZE, "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
+	snprintf(status_data, (size_t)MSG_BUFFER_SIZE,
+	    "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
 	    clients,
 	    fmt_uploaded,
 	    fmt_downloaded,

@@ -107,7 +107,7 @@ main(const int argc, const char *argv[])
 		}
 #endif
 		data = err_malloc(sizeof(struct client_info));
-		data->socket = client_socket;
+		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
 
@@ -117,11 +117,12 @@ main(const int argc, const char *argv[])
 		}
 	}
 
-	free(ROOT_DIR);
-	if (UPLOAD_DIR != NULL) {
-		free(UPLOAD_DIR);
-	}
-	close(server_socket);
+	/* not reached */
+	// free(ROOT_DIR);
+	// if (UPLOAD_DIR != NULL) {
+	// 	free(UPLOAD_DIR);
+	// }
+	// close(server_socket);
 }
 
 void

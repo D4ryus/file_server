@@ -97,9 +97,9 @@ dir_to_table(enum request_type type, char *dir)
 		table_ptr = TABLE_PLAIN;
 	}
 
-	memset(buffer, '\0', TABLE_BUFFER_SIZE);
+	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 	/* table head, see globals.h */
-	snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[0],
+	snprintf(buffer, (size_t)TABLE_BUFFER_SIZE, table_ptr[0],
 	    "Last_modified",
 	    "Type",
 	    "Size",
@@ -107,21 +107,21 @@ dir_to_table(enum request_type type, char *dir)
 
 	table_buffer = NULL;
 	table_buffer = concat(table_buffer, buffer);
-	memset(buffer, '\0', TABLE_BUFFER_SIZE);
+	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 
 	for (i = 0; i < d->length; i++) {
 		if (d->files[i]->name == NULL) {
 			continue;
 		}
 		/* table body */
-		snprintf(buffer, TABLE_BUFFER_SIZE, table_ptr[1],
+		snprintf(buffer, (size_t)TABLE_BUFFER_SIZE, table_ptr[1],
 		    d->files[i]->time,
 		    d->files[i]->type,
 		    format_size((uint64_t)d->files[i]->size, fmt_size),
 		    requ,
 		    d->files[i]->name);
 		table_buffer = concat(table_buffer, buffer);
-		memset(buffer, '\0', TABLE_BUFFER_SIZE);
+		memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 	}
 
 	table_buffer = concat(table_buffer, table_ptr[2]); /* table end */

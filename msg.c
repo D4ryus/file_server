@@ -107,11 +107,12 @@ _msg_print_loop(void *ignored)
 		_msg_hook_delete();
 		sleep((unsigned int)UPDATE_TIMEOUT);
 	}
+	/* not reached */
 #ifdef NCURSES
-	ncurses_terminate();
+	// ncurses_terminate();
 #endif
-	pthread_mutex_destroy(&status_list_mutex);
-	pthread_mutex_destroy(&print_mutex);
+	// pthread_mutex_destroy(&status_list_mutex);
+	// pthread_mutex_destroy(&print_mutex);
 
 	return NULL;
 }
@@ -154,7 +155,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	}
 	free(tmp);
 
-	snprintf(msg_buffer, MSG_BUFFER_SIZE,
+	snprintf(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 	    "%-19s [%15s]: %s",
 	    str_time,
 	    data->ip,

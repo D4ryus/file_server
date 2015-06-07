@@ -49,7 +49,7 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
 		return STAT_OK;
 	}
 
-	snprintf(content_length, 64,
+	snprintf(content_length, (size_t)64,
 	    "\r\nContent-Length: %llu\r\n\r\n",
 	    (long long unsigned int)sb.st_size);
 
@@ -101,7 +101,7 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
 
 	(*size) = (uint64_t)strlen(body);
 	if (type == HTTP) {
-		snprintf(content_length, 64,
+		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 
@@ -140,7 +140,7 @@ send_403(int socket, enum request_type type, uint64_t *size)
 
 	(*size) = (uint64_t)strlen(RESPONSE_403);
 	if (type == HTTP) {
-		snprintf(content_length, 64,
+		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 
@@ -177,7 +177,7 @@ send_404(int socket, enum request_type type, uint64_t *size)
 
 	(*size) = (uint64_t)strlen(RESPONSE_404);
 	if (type == HTTP) {
-		snprintf(content_length, 64,
+		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 
@@ -215,7 +215,7 @@ send_405(int socket, enum request_type type, uint64_t *size)
 
 	(*size) = (uint64_t)strlen(RESPONSE_405);
 	if (type == HTTP) {
-		snprintf(content_length, 64,
+		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 
@@ -252,7 +252,7 @@ send_201(int socket, enum request_type type, uint64_t *size)
 
 	(*size) = (uint64_t)strlen(RESPONSE_201);
 	if (type == HTTP) {
-		snprintf(content_length, 64,
+		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
 		    (long long unsigned int)(*size));
 

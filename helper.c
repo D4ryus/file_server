@@ -25,7 +25,7 @@ extern FILE *_LOG_FILE;
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_data(int socket, const char *data, uint64_t length)
+send_data(int sock, const char *data, uint64_t length)
 {
 	int sending;
 	size_t max;
@@ -51,7 +51,7 @@ send_data(int socket, const char *data, uint64_t length)
 		}
 		sent_bytes = 0;
 		while (sent_bytes < buff_size) {
-			write_res = send(socket, data + sent_bytes + cur_pos,
+			write_res = send(sock, data + sent_bytes + cur_pos,
 			    buff_size - sent_bytes, MSG_NOSIGNAL);
 			if (write_res == -1) {
 				return WRITE_CLOSED;
@@ -73,7 +73,7 @@ send_data(int socket, const char *data, uint64_t length)
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_file(int socket, char *filename, uint64_t *written)
+send_file(int sock, char *filename, uint64_t *written)
 {
 	int sending;
 	char *buffer;
@@ -82,7 +82,7 @@ send_file(int socket, char *filename, uint64_t *written)
 	char *full_path;
 	enum err_status error;
 
-	buffer = err_malloc(BUFFSIZE_READ);
+	buffer = err_malloc((size_t)BUFFSIZE_READ);
 	error = STAT_OK;
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
@@ -97,7 +97,8 @@ send_file(int socket, char *filename, uint64_t *written)
 	read_bytes = 0;
 
 	while (sending) {
-		read_bytes = fread(buffer, (size_t)1, BUFFSIZE_READ, fd);
+		read_bytes = fread(buffer, (size_t)1, (size_t)BUFFSIZE_READ,
+				 fd);
 		if (read_bytes < BUFFSIZE_READ) {
 			if (ferror(fd) != 0) {
 				error = FILE_ERROR;
@@ -105,7 +106,7 @@ send_file(int socket, char *filename, uint64_t *written)
 			}
 			sending = 0;
 		}
-		error = send_data(socket, buffer, (uint64_t)read_bytes);
+		error = send_data(sock, buffer, (uint64_t)read_bytes);
 		if (error) {
 			break;
 		}

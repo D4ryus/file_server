@@ -37,14 +37,14 @@ handle_get(struct client_info *data, char *request)
 	}
 
 	/* read rest of http header */
-	error = get_line(data->socket, &(trash));
+	error = get_line(data->sock, &(trash));
 	if (error) {
 		return error;
 	}
 	header_lines = 2;
 	while (strlen(trash) != 0) {
 		free(trash);
-		error = get_line(data->socket, &trash);
+		error = get_line(data->sock, &trash);
 		if (error) {
 			return error;
 		}
@@ -64,7 +64,7 @@ handle_get(struct client_info *data, char *request)
 
 	switch (res_type) {
 		case FILE_200:
-			error = send_200_file_head(data->socket,
+			error = send_200_file_head(data->sock,
 				    req_type,
 				    &(data->size),
 				    data->requested_path);
@@ -72,24 +72,24 @@ handle_get(struct client_info *data, char *request)
 				return error;
 			}
 
-			error = send_file(data->socket, data->requested_path,
+			error = send_file(data->sock, data->requested_path,
 				    &(data->written));
 			if (!error) {
 				snprintf(message_buffer,
-				    MSG_BUFFER_SIZE,
+				    (size_t)MSG_BUFFER_SIZE,
 				    "%s sent file: %s",
 				    format_size(data->size, fmt_size),
 				    data->requested_path);
 			}
 			break;
 		case DIR_200:
-			error = send_200_directory(data->socket,
+			error = send_200_directory(data->sock,
 				    req_type,
 				    &(data->size),
 				    data->requested_path);
 			if (!error) {
 				snprintf(message_buffer,
-				    MSG_BUFFER_SIZE,
+				    (size_t)MSG_BUFFER_SIZE,
 				    "%s sent dir: %s",
 				    format_size(data->size, fmt_size),
 				    data->requested_path);
@@ -97,21 +97,21 @@ handle_get(struct client_info *data, char *request)
 			}
 			break;
 		case TXT_403:
-			error = send_403(data->socket, req_type,
+			error = send_403(data->sock, req_type,
 				    &(data->size));
 			if (!error) {
 				snprintf(message_buffer,
-				    MSG_BUFFER_SIZE,
+				    (size_t)MSG_BUFFER_SIZE,
 				    "sent error 403");
 				data->written = data->size;
 			}
 			break;
 		case TXT_404:
-			error = send_404(data->socket, req_type,
+			error = send_404(data->sock, req_type,
 				    &(data->size));
 			if (!error) {
 				snprintf(message_buffer,
-				    MSG_BUFFER_SIZE,
+				    (size_t)MSG_BUFFER_SIZE,
 				    "sent error 404");
 				data->written = data->size;
 			}
@@ -147,7 +147,7 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 	tmp = strtok(request, "\n"); /* get first line */
 
 	/* check if GET is valid */
-	if (tmp == NULL || !starts_with(tmp, "GET /", 5)) {
+	if (tmp == NULL || !starts_with(tmp, "GET /", (size_t)5)) {
 		return INV_GET;
 	}
 	tmp = strtok(tmp, " ");		/* split first line */
@@ -169,76 +169,76 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 			continue;
 		}
 		/* check for requested_path encoding */
-		if (starts_with(tmp + i, "%20", 3)) {
+		if (starts_with(tmp + i, "%20", (size_t)3)) {
 			(*requested_path)[url_pos] = ' ';
 			i += 2;
-		} else if (starts_with(tmp + i, "%21", 3)) {
+		} else if (starts_with(tmp + i, "%21", (size_t)3)) {
 			(*requested_path)[url_pos] = '!';
 			i += 2;
-		} else if (starts_with(tmp + i, "%23", 3)) {
+		} else if (starts_with(tmp + i, "%23", (size_t)3)) {
 			(*requested_path)[url_pos] = '#';
 			i += 2;
-		} else if (starts_with(tmp + i, "%24", 3)) {
+		} else if (starts_with(tmp + i, "%24", (size_t)3)) {
 			(*requested_path)[url_pos] = '$';
 			i += 2;
-		} else if (starts_with(tmp + i, "%25", 3)) {
+		} else if (starts_with(tmp + i, "%25", (size_t)3)) {
 			(*requested_path)[url_pos] = '%';
 			i += 2;
-		} else if (starts_with(tmp + i, "%26", 3)) {
+		} else if (starts_with(tmp + i, "%26", (size_t)3)) {
 			(*requested_path)[url_pos] = '&';
 			i += 2;
-		} else if (starts_with(tmp + i, "%27", 3)) {
+		} else if (starts_with(tmp + i, "%27", (size_t)3)) {
 			(*requested_path)[url_pos] = '\'';
 			i += 2;
-		} else if (starts_with(tmp + i, "%28", 3)) {
+		} else if (starts_with(tmp + i, "%28", (size_t)3)) {
 			(*requested_path)[url_pos] = '(';
 			i += 2;
-		} else if (starts_with(tmp + i, "%29", 3)) {
+		} else if (starts_with(tmp + i, "%29", (size_t)3)) {
 			(*requested_path)[url_pos] = ')';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2B", 3)) {
+		} else if (starts_with(tmp + i, "%2B", (size_t)3)) {
 			(*requested_path)[url_pos] = '+';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2C", 3)) {
+		} else if (starts_with(tmp + i, "%2C", (size_t)3)) {
 			(*requested_path)[url_pos] = ',';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2D", 3)) {
+		} else if (starts_with(tmp + i, "%2D", (size_t)3)) {
 			(*requested_path)[url_pos] = '-';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2E", 3)) {
+		} else if (starts_with(tmp + i, "%2E", (size_t)3)) {
 			(*requested_path)[url_pos] = '.';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3B", 3)) {
+		} else if (starts_with(tmp + i, "%3B", (size_t)3)) {
 			(*requested_path)[url_pos] = ';';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3D", 3)) {
+		} else if (starts_with(tmp + i, "%3D", (size_t)3)) {
 			(*requested_path)[url_pos] = '=';
 			i += 2;
-		} else if (starts_with(tmp + i, "%40", 3)) {
+		} else if (starts_with(tmp + i, "%40", (size_t)3)) {
 			(*requested_path)[url_pos] = '@';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5B", 3)) {
+		} else if (starts_with(tmp + i, "%5B", (size_t)3)) {
 			(*requested_path)[url_pos] = '[';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5D", 3)) {
+		} else if (starts_with(tmp + i, "%5D", (size_t)3)) {
 			(*requested_path)[url_pos] = ']';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5E", 3)) {
+		} else if (starts_with(tmp + i, "%5E", (size_t)3)) {
 			(*requested_path)[url_pos] = '^';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5F", 3)) {
+		} else if (starts_with(tmp + i, "%5F", (size_t)3)) {
 			(*requested_path)[url_pos] = '_';
 			i += 2;
-		} else if (starts_with(tmp + i, "%60", 3)) {
+		} else if (starts_with(tmp + i, "%60", (size_t)3)) {
 			(*requested_path)[url_pos] = '`';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7B", 3)) {
+		} else if (starts_with(tmp + i, "%7B", (size_t)3)) {
 			(*requested_path)[url_pos] = '{';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7D", 3)) {
+		} else if (starts_with(tmp + i, "%7D", (size_t)3)) {
 			(*requested_path)[url_pos] = '}';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7E", 3)) {
+		} else if (starts_with(tmp + i, "%7E", (size_t)3)) {
 			(*requested_path)[url_pos] = '~';
 			i += 2;
 		} else {
@@ -253,8 +253,8 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 		(*req_type) = PLAIN;
 		return STAT_OK;
 	}
-	if ((starts_with(tmp, "HTTP/1.1", 8))
-	    || (starts_with(tmp, "HTTP/1.0", 8))) {
+	if ((starts_with(tmp, "HTTP/1.1", (size_t)8))
+	    || (starts_with(tmp, "HTTP/1.0", (size_t)8))) {
 		(*req_type) = HTTP;
 	} else {
 		(*req_type) = PLAIN;

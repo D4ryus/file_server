@@ -54,7 +54,7 @@ enum err_status {
 struct client_info {
 	char     ip[16];		/* ip from client */
 	int      port;			/* port from client */
-	int      socket;		/* socket descriptor */
+	int      sock;			/* socket descriptor */
 	enum transfer_type type;
 	char     *requested_path;	/* requested path */
 	uint64_t size;			/* file size */

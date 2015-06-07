@@ -32,7 +32,7 @@ handle_post(struct client_info *data, char *request)
 		return INV_POST;
 	}
 
-	error = parse_post_header(data->socket, &boundary, &content_length);
+	error = parse_post_header(data->sock, &boundary, &content_length);
 	if (error) {
 		return error;
 	}
@@ -44,20 +44,20 @@ handle_post(struct client_info *data, char *request)
 		return FILESIZE_ZERO;
 	}
 
-	error = parse_post_body(data->socket, boundary, &(data->requested_path),
+	error = parse_post_body(data->sock, boundary, &(data->requested_path),
 		    &(data->written), &(data->size));
 	free(boundary);
 	if (error) {
 		return error;
 	}
 
-	error = send_201(data->socket, HTTP, &(tmp));
+	error = send_201(data->sock, HTTP, &(tmp));
 	if (error) {
 		return error;
 	}
 
 	snprintf(message_buffer,
-	    MSG_BUFFER_SIZE,
+	    (size_t)MSG_BUFFER_SIZE,
 	    "%s received file: %s",
 	    format_size(data->size, fmt_size),
 	    data->requested_path);
@@ -67,7 +67,7 @@ handle_post(struct client_info *data, char *request)
 }
 
 int
-parse_post_header(int socket, char **boundary, char **content_length)
+parse_post_header(int sock, char **boundary, char **content_length)
 {
 	char *cur_line;
 	enum err_status error;
@@ -82,7 +82,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 	(*boundary) = NULL;
 	(*content_length) = NULL;
 
-	error = get_line(socket, &cur_line);
+	error = get_line(sock, &cur_line);
 	if (error) {
 		return error;
 	}
@@ -111,7 +111,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 		}
 		free(cur_line);
 		cur_line = NULL;
-		error = get_line(socket, &cur_line);
+		error = get_line(sock, &cur_line);
 		if (error) {
 			break;
 		}
@@ -149,7 +149,7 @@ parse_post_header(int socket, char **boundary, char **content_length)
 }
 
 int
-parse_post_body(int socket, char *boundary, char **requested_path,
+parse_post_body(int sock, char *boundary, char **requested_path,
     uint64_t *written, uint64_t *max_size)
 {
 	enum err_status error;
@@ -168,7 +168,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	size_t file_written;
 	ssize_t offset;
 
-	buff = err_malloc(BUFFSIZE_READ);
+	buff = err_malloc((size_t)BUFFSIZE_READ);
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
 		err_quit(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
@@ -181,10 +181,10 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	free_me = NULL;
 	fd = NULL;
 	(*written) = 0;
-	memset(buff, '\0', BUFFSIZE_READ);
+	memset(buff, '\0', (size_t)BUFFSIZE_READ);
 
 	/* check for first boundary --[boundary]\r\n */
-	read_from_socket = recv(socket, buff, strlen(boundary) + 4, 0);
+	read_from_socket = recv(sock, buff, strlen(boundary) + 4, 0);
 	if (read_from_socket < 0
 	    || (size_t)read_from_socket != strlen(boundary) + 4) {
 		error = CLOSED_CON;
@@ -192,9 +192,9 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	}
 	(*written) += (uint64_t)read_from_socket;
 
-	if (!starts_with(buff, "--", 2)
+	if (!starts_with(buff, "--", (size_t)2)
 	    || !starts_with(buff + 2, boundary, strlen(boundary))
-	    || !starts_with(buff + 2 + strlen(boundary), "\r\n", 2))
+	    || !starts_with(buff + 2 + strlen(boundary), "\r\n", (size_t)2))
 	{
 		error = WRONG_BOUNDRY;
 		goto stop_transfer;
@@ -202,7 +202,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 
 	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
 	bound_buff_length = strlen(bound_buff);
-	read_from_socket = recv(socket, buff, BUFFSIZE_READ, 0);
+	read_from_socket = recv(sock, buff, (size_t)BUFFSIZE_READ, 0);
 	if (read_from_socket < 0) {
 		error = CLOSED_CON;
 		goto stop_transfer;
@@ -210,7 +210,7 @@ parse_post_body(int socket, char *boundary, char **requested_path,
 	(*written) += (uint64_t)read_from_socket;
 file_head:
 	/* buff contains file head */
-	if ((read_from_socket == 4) && starts_with(buff, "--\r\n", 4)) {
+	if ((read_from_socket == 4) && starts_with(buff, "--\r\n", (size_t)4)) {
 		error = STAT_OK;
 		goto stop_transfer;
 	}
@@ -247,19 +247,21 @@ file_head:
 	/* buff contains file_content */
 	while ((*written) <= (*max_size)) {
 		/* check buffer for boundry */
-		error = buff_contains(socket, buff, (size_t)read_from_socket,
+		error = buff_contains(sock, buff, (size_t)read_from_socket,
 			    bound_buff, bound_buff_length, &(boundary_pos));
 		if (error) {
 			goto stop_transfer;
 		}
 		if (boundary_pos == -1) {
 			/* no boundary found */
-			file_written = fwrite(buff, 1, (size_t)read_from_socket, fd);
+			file_written = fwrite(buff, (size_t)1,
+					   (size_t)read_from_socket, fd);
 			if (file_written != (size_t)read_from_socket) {
 				error = FILE_ERROR;
 				goto stop_transfer;
 			}
-			read_from_socket = recv(socket, buff, BUFFSIZE_READ, 0);
+			read_from_socket = recv(sock, buff,
+					       (size_t)BUFFSIZE_READ, 0);
 			if (read_from_socket < 0) {
 				error = CLOSED_CON;
 				goto stop_transfer;
@@ -268,7 +270,8 @@ file_head:
 			continue;
 		} else {
 			/* boundary is found at pos */
-			file_written = fwrite(buff, 1, (size_t)boundary_pos, fd);
+			file_written = fwrite(buff, (size_t)1,
+					   (size_t)boundary_pos, fd);
 			if (file_written != (size_t)boundary_pos) {
 				error = FILE_ERROR;
 				goto stop_transfer;
@@ -281,10 +284,12 @@ file_head:
 			/* buff + offset is first byte from new file */
 			offset = boundary_pos + (ssize_t)bound_buff_length;
 			if (read_from_socket <= offset) {
-				tmp = recv(socket, buff, BUFFSIZE_READ, 0);
+				tmp = recv(sock, buff, (size_t)BUFFSIZE_READ,
+					  0);
 				read_from_socket = tmp;
 			} else {
-				memmove(buff, buff + offset, (size_t)(read_from_socket - offset));
+				memmove(buff, buff + offset,
+				    (size_t)(read_from_socket - offset));
 				tmp = 0;
 				read_from_socket = read_from_socket - offset;
 			}
@@ -328,7 +333,7 @@ stop_transfer:
  * if error occurs its err_status will be returned, if not STAT_OK
  */
 int
-buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
+buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
     size_t needle_size, ssize_t *pos)
 {
 	size_t i;
@@ -365,7 +370,7 @@ buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
 	if ((i == haystack_size) && (needle_matched != 0)) {
 		rest_size = needle_size - needle_matched;
 		rest = err_malloc(rest_size);
-		rec = recv(socket, rest, rest_size, MSG_PEEK);
+		rec = recv(sock, rest, rest_size, MSG_PEEK);
 		if (rec < 0) {
 			free(rest);
 			return CLOSED_CON;
@@ -376,7 +381,7 @@ buff_contains(int socket, char *haystack, size_t haystack_size, char *needle,
 		}
 		if (starts_with(rest, needle + needle_matched,
 		        strlen(needle + needle_matched))) {
-			rec = recv(socket, rest, rest_size, 0);
+			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
 			if ((rec < 0) || ((size_t)rec != rest_size)) {
 				err_quit(ERR_INFO,

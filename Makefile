@@ -9,6 +9,7 @@ EXECUTABLE = file_server
 GPROF_FILE = performance.txt
 
 CFLAGS = -Wall \
+	 -fPIC \
          -Wstrict-prototypes \
          -Wmissing-prototypes \
          -Wno-main \
