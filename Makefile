@@ -42,7 +42,8 @@ CFLAGS = -Wall \
          -ggdb \
          -Wdeclaration-after-statement \
          -pg \
-         -O3
+         -O3 \
+         -D_FILE_OFFSET_BITS=64
        # -Wredundant-decls \
        # -Werror \
        # -Wpadded
