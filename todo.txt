@@ -17,6 +17,7 @@ fixes and code changes:
       [X] - HTTP Request escape sequenzes (space/...)!!
       [X] - http header extendet on nothing read
       [X] - concat
+      [ ] - vsnprintf on warning and error to include %d, %s, ...
       [ ] - pipelining
       [ ] - 201 Created read sent Header to avoid connection abbort
       [ ] - support # in filename
