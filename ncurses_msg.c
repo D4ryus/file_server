@@ -118,32 +118,21 @@ handle_keyboard(void *ptr)
 	nodelay(stdscr, (bool)FALSE);
 	UPLOAD_ENABLED = 0;
 
-	pthread_mutex_lock(&ncurses_mutex);
-	if (((size_t)terminal_width > strlen(head_data) + 6)) {
-		mvwprintw(stdscr, 0,
-		    (int)terminal_width - ((int)strlen(head_data) + 6),
-		    "%s)-",
-		    UPLOAD_ENABLED ? " (on" : "(off");
-		refresh();
-	}
-	pthread_mutex_unlock(&ncurses_mutex);
-
 	while (1) {
+		pthread_mutex_lock(&ncurses_mutex);
+		if ((size_t)terminal_width > strlen(head_data) + 5) {
+			mvwprintw(stdscr, 0,
+			    (int)terminal_width - ((int)strlen(head_data) + 5),
+			    UPLOAD_ENABLED ? "(on)-" : "     ");
+			refresh();
+		}
+		pthread_mutex_unlock(&ncurses_mutex);
 		ch = 0;
 		ch = (char)getch();
 		if (ch != 'u') {
 			continue;
 		}
 		UPLOAD_ENABLED = UPLOAD_ENABLED ? 0 : 1;
-		pthread_mutex_lock(&ncurses_mutex);
-		if (((size_t)terminal_width > strlen(head_data) + 2)) {
-		mvwprintw(stdscr, 0,
-		    (int)terminal_width - ((int)strlen(head_data) + 6),
-		    "%s)-",
-		    UPLOAD_ENABLED ? " (on" : "(off");
-			refresh();
-		}
-		pthread_mutex_unlock(&ncurses_mutex);
 	}
 
 	return NULL;
@@ -349,10 +338,16 @@ ncurses_organize_windows()
 		    (int)terminal_width - (int)strlen(head_data),
 		    "%s", head_data);
 	}
+	if (UPLOAD_ENABLED && (size_t)terminal_width > strlen(head_data) + 5) {
+		mvwprintw(stdscr, 0,
+		    (int)terminal_width - ((int)strlen(head_data) + 5),
+		    "(on)-");
+		refresh();
+	}
 
 	/* name and version */
 	if ((size_t)terminal_width > strlen(head_info)
-	    + strlen(head_data) + 1) {
+	    + strlen(head_data) + 6) {
 		mvwprintw(stdscr, 0, 0, "%s", head_info);
 	}
 
