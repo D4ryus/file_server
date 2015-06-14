@@ -2,14 +2,21 @@
 
 CC = gcc
 
-OBJS = file_list.o handle_request.o helper.o main.o msg.o http_response.o handle_post.o handle_get.o
+OBJS = file_list.o \
+       handle_request.o \
+       helper.o \
+       main.o \
+       msg.o \
+       http_response.o \
+       handle_post.o \
+       handle_get.o
 
 EXECUTABLE = file_server
 
 GPROF_FILE = performance.txt
 
 CFLAGS = -Wall \
-	 -fPIC \
+         -fPIC \
          -Wstrict-prototypes \
          -Wmissing-prototypes \
          -Wno-main \
