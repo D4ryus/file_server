@@ -35,7 +35,7 @@ get_dir(char *directory)
 		if (errno == EACCES) {
 			return NULL;
 		}
-		err_quit(ERR_INFO, "opendir() returned NULL");
+		die(ERR_INFO, "opendir()");
 	}
 
 	result = (struct dir *)err_malloc(sizeof(struct dir));
@@ -84,11 +84,11 @@ dir_to_table(enum request_type type, char *dir)
 	free(directory);
 
 	if (d == NULL) {
-		err_quit(ERR_INFO, "cannot open directory");
+		die(ERR_INFO, "cannot open directory");
 	}
 
 	if (d->files == NULL) {
-		err_quit(ERR_INFO, "get_dir()->files are NULL");
+		die(ERR_INFO, "get_dir()->files are NULL");
 	}
 
 	if (type == HTTP) {
@@ -172,7 +172,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	size_t n;
 
 	if (file == NULL) {
-		err_quit(ERR_INFO, "tried to add file which was NULL");
+		die(ERR_INFO, "tried to add file which was NULL");
 		return d;
 	}
 
@@ -206,10 +206,10 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 
 	tmp = localtime(&sb.st_mtime);
 	if (tmp == NULL) {
-		err_quit(ERR_INFO, "localtime() returned NULL");
+		die(ERR_INFO, "localtime()");
 	}
 	if (!strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp)) {
-		err_quit(ERR_INFO, "strftime() returned 0");
+		die(ERR_INFO, "strftime()");
 	}
 
 	new_file->size = sb.st_size;

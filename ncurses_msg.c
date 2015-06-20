@@ -67,7 +67,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	initscr();
 
 	if (stdscr == NULL) {
-		err_quit(ERR_INFO, "initscr() == NULL");
+		die(ERR_INFO, "initscr()");
 	}
 
 	if (has_colors()) {
@@ -97,14 +97,14 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	if (win_logging) {
 		scrollok(win_logging, (bool)TRUE);
 	} else {
-		err_quit(ERR_INFO, "window to small");
+		die(ERR_INFO, "window to small");
 	}
 
 	/* if upload is enabled, handle keys from keyboard */
 	if (UPLOAD_ENABLED) {
 		error = pthread_create(thread, attr, &handle_keyboard, NULL);
 		if (error != 0) {
-			err_quit(ERR_INFO, "pthread_create() != 0");
+			die(ERR_INFO, "pthread_create()");
 		}
 	}
 }
@@ -306,7 +306,7 @@ ncurses_organize_windows()
 	if (win_status == NULL) {
 		win_status = newwin(status_heigth, terminal_width, 1, 0);
 		if (win_status == NULL) {
-			err_quit(ERR_INFO, "win_status is NULL");
+			die(ERR_INFO, "newwin()");
 		}
 	} else {
 		wresize(win_status, status_heigth, terminal_width);
@@ -315,7 +315,7 @@ ncurses_organize_windows()
 		win_logging = newwin(LOGGING_WINDOW_HEIGTH, terminal_width,
 				  terminal_heigth - LOGGING_WINDOW_HEIGTH, 0);
 		if (win_logging == NULL) {
-			err_quit(ERR_INFO, "win_logging is NULL");
+			die(ERR_INFO, "newwin()");
 		}
 	} else {
 		wresize(win_logging, LOGGING_WINDOW_HEIGTH, terminal_width);

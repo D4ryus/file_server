@@ -69,7 +69,7 @@ handle_request(void *ptr)
 	data = (struct client_info *)ptr;
 
 	if (data->sock < 0) {
-		err_quit(ERR_INFO, "socket in handle_request is < 0");
+		die(ERR_INFO, "socket in handle_request is < 0");
 	}
 	con_msg = NULL;
 	con_msg = err_malloc((size_t)128);

@@ -43,7 +43,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 	error = 0;
 
 	if (UPDATE_TIMEOUT <= 0) {
-		err_quit(ERR_INFO, "UPDATE_TIMEOUT < 0");
+		die(ERR_INFO, "UPDATE_TIMEOUT < 0");
 	}
 
 #ifdef NCURSES
@@ -58,7 +58,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 		error = pthread_create(thread, attr, &_msg_print_loop, NULL);
 		if (error != 0) {
-			err_quit(ERR_INFO, "pthread_create() != 0");
+			die(ERR_INFO, "pthread_create()");
 		}
 	}
 }
@@ -140,18 +140,18 @@ msg_print_log(struct client_info *data, const enum message_type type,
 
 	t = time(NULL);
 	if (t == -1) {
-		err_quit(ERR_INFO, "time() returned - 1");
+		die(ERR_INFO, "time()");
 	}
 
 	tmp = err_malloc(sizeof(struct tm));
 	tmp = localtime_r(&t, tmp);
 
 	if (tmp == NULL) {
-		err_quit(ERR_INFO, "localtime() returned NULL");
+		die(ERR_INFO, "localtime()");
 	}
 
 	if (strftime(str_time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
-		err_quit(ERR_INFO, "strftime() returned 0");
+		die(ERR_INFO, "strftime()");
 	}
 	free(tmp);
 

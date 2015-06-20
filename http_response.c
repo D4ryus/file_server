@@ -40,7 +40,7 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
 	if (stat(full_path, &sb) == -1) {
-		err_quit(ERR_INFO, "stat() retuned -1");
+		die(ERR_INFO, "stat()");
 	}
 	free(full_path);
 	(*size) = (uint64_t)sb.st_size;

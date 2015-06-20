@@ -170,7 +170,7 @@ parse_post_body(int sock, char *boundary, char **requested_path,
 
 	buff = err_malloc((size_t)BUFFSIZE_READ);
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
-		err_quit(ERR_INFO,
+		die(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
 	}
 
@@ -376,7 +376,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 			return CLOSED_CON;
 		}
 		if ((size_t)rec != rest_size) {
-			err_quit(ERR_INFO,
+			die(ERR_INFO,
 			    "peek did return less than rest_size");
 		}
 		if (starts_with(rest, needle + needle_matched,
@@ -384,7 +384,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
 			if ((rec < 0) || ((size_t)rec != rest_size)) {
-				err_quit(ERR_INFO,
+				die(ERR_INFO,
 				    "the data i just peeked is gone");
 			}
 			(*pos) = (ssize_t)(haystack_size - needle_matched);
@@ -397,7 +397,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 	}
 
 	/* not reached */
-	err_quit(ERR_INFO, "i != haystack_size, should not be possible");
+	die(ERR_INFO, "i != haystack_size, should not be possible");
 
 	return STAT_OK;
 }
@@ -517,7 +517,7 @@ open_file(char *filename, FILE **fd, char **found_filename)
 
 	(*fd) = fopen((*found_filename), "w+");
 	if ((*fd) == NULL) {
-		err_quit(ERR_INFO, "fopen() retuned NULL");
+		die(ERR_INFO, "fopen()");
 	}
 
 	return STAT_OK;

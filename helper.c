@@ -90,7 +90,7 @@ send_file(int sock, char *filename, uint64_t *written)
 	fd = fopen(full_path, "rb");
 	free(full_path);
 	if (fd == NULL) {
-		err_quit(ERR_INFO, "fopen() retuned NULL");
+		die(ERR_INFO, "fopen()");
 	}
 
 	sending = 1;
@@ -169,11 +169,10 @@ is_directory(const char *path)
 		} else if (s.st_mode & S_IFREG) {
 			return 0;
 		} else {
-			err_quit(ERR_INFO,
-			    "stat() has no file nor a directory");
+			die(ERR_INFO, "stat() has no file nor a directory");
 		}
 	} else {
-		err_quit(ERR_INFO, "stat() retuned -1");
+		die(ERR_INFO, "stat()");
 	}
 
 	return 0;
@@ -258,7 +257,7 @@ err_malloc(size_t size)
 
 	tmp = malloc(size);
 	if (tmp == NULL) {
-		err_quit(ERR_INFO, "could not malloc");
+		die(ERR_INFO, "malloc()");
 	}
 
 	return tmp;
@@ -272,7 +271,7 @@ err_realloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (ptr == NULL) {
-		err_quit(ERR_INFO, "could not realloc");
+		die(ERR_INFO, "realloc()");
 	}
 
 	return ptr;
@@ -282,8 +281,7 @@ err_realloc(void *ptr, size_t size)
  * prints out given information to stderr and exits
  */
 void
-err_quit(const char *file, const int line, const char *function,
-    const char *msg)
+die(const char *file, const int line, const char *function, const char *msg)
 {
 	if (_LOG_FILE != NULL) {
 		fprintf(_LOG_FILE, "%s:%d:%s: error: %s: %s\n",

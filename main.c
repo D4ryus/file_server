@@ -50,13 +50,14 @@ main(const int argc, const char *argv[])
 	/* init a pthread attribute struct */
 	error = pthread_attr_init(&attr);
 	if (error != 0) {
-		err_quit(ERR_INFO, "pthread_attr_init() != 0");
+		die(ERR_INFO, "pthread_attr_init()");
 	}
 
 	/* set threads to be detached, so they dont need to be joined */
 	error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	if (error != 0) {
-		err_quit(ERR_INFO, "pthread_attr_setdetachstate() != 0");
+		die(ERR_INFO,
+		    "pthread_attr_setdetachstate():PTHREAD_CREATE_DETACHED");
 	}
 
 	msg_init(&thread, &attr);
@@ -64,7 +65,7 @@ main(const int argc, const char *argv[])
 	/* get a socket */
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket < 0) {
-		err_quit(ERR_INFO, "socket() retuned < 0");
+		die(ERR_INFO, "socket()");
 	}
 
 	on = 1;
@@ -72,7 +73,7 @@ main(const int argc, const char *argv[])
 	error = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
 		    (const char *)&on, (socklen_t)sizeof(on));
 	if (error == -1) {
-		err_quit(ERR_INFO, "setsockopt() retuned -1");
+		die(ERR_INFO, "setsockopt():SO_REUSEADDR");
 	}
 
 	memset((char *) &serv_addr, '\0', sizeof(serv_addr));
@@ -84,13 +85,13 @@ main(const int argc, const char *argv[])
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
 		    (socklen_t)sizeof(serv_addr));
 	if (error < 0) {
-		err_quit(ERR_INFO, "bind() < 0");
+		die(ERR_INFO, "bind()");
 	}
 
 	/* set socket in listen mode */
 	error = listen(server_socket, 5);
 	if (error == -1) {
-		err_quit(ERR_INFO, "listen()");
+		die(ERR_INFO, "listen()");
 	}
 	clilen = sizeof(cli_addr);
 
@@ -113,7 +114,7 @@ main(const int argc, const char *argv[])
 
 		error = pthread_create(&thread, &attr, &handle_request, data);
 		if (error != 0) {
-			err_quit(ERR_INFO, "pthread_create() != 0");
+			die(ERR_INFO, "pthread_create()");
 		}
 	}
 
@@ -200,18 +201,16 @@ parse_arguments(const int argc, const char *argv[])
 		ROOT_DIR = realpath(argv[root_arg], NULL);
 	}
 	if (ROOT_DIR == NULL) {
-		err_quit(ERR_INFO, "realpath on ROOT_DIR returned NULL");
+		die(ERR_INFO, "realpath() on ROOT_DIR returned NULL");
 	}
 	if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
-		err_quit(ERR_INFO,
-		    "you tried to share /, no sir, thats not happening");
+		die(ERR_INFO, "sharing / is not possible.");
 	}
 
 	if (upload_arg != 0) {
 		UPLOAD_DIR = realpath(argv[upload_arg], NULL);
 		if (UPLOAD_DIR == NULL) {
-			err_quit(ERR_INFO, "realpath on UPLOAD_DIR "
-					   "returned NULL");
+			die(ERR_INFO, "realpath on UPLOAD_DIR returned NULL");
 		}
 		UPLOAD_ENABLED = 1;
 	}
@@ -219,7 +218,7 @@ parse_arguments(const int argc, const char *argv[])
 	if (LOG_FILE != NULL) {
 		_LOG_FILE = fopen(LOG_FILE, "a+");
 		if (_LOG_FILE == NULL) {
-			err_quit(ERR_INFO, "could not open logfile");
+			die(ERR_INFO, "could not open logfile");
 		}
 	}
 }

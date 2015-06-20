@@ -16,7 +16,7 @@ int starts_with(const char *, const char *, size_t);
 char *format_size(uint64_t, char[7]);
 void *err_malloc(size_t);
 void *err_realloc(void *, size_t);
-void err_quit(const char *, const int, const char *, const char *);
+void die(const char *, const int, const char *, const char *);
 void warning(const char *, const int, const char *, const char *);
 void usage_quit(const char *);
 char *get_content_encoding(const char *);
