@@ -17,6 +17,7 @@ fixes and code changes:
       [X] - HTTP Request escape sequenzes (space/...)!!
       [X] - http header extendet on nothing read
       [X] - concat
+      [ ] - convert all int to typedefs of fixed size
       [ ] - vsnprintf on warning and error to include %d, %s, ...
       [ ] - pipelining
       [ ] - 201 Created read sent Header to avoid connection abbort
@@ -61,7 +62,7 @@ messages:
       [X] - timestamp
       [X] - sync all messages
       [X] - up and download
-      [ ] - interface for messages (ncurses/stdout/log_file/redis)
+      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl)
 
 ncurses:
       [X] - basic implementation
