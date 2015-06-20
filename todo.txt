@@ -62,7 +62,7 @@ messages:
       [X] - timestamp
       [X] - sync all messages
       [X] - up and download
-      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl)
+      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl/irc)
 
 ncurses:
       [X] - basic implementation
