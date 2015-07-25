@@ -15,9 +15,9 @@
 extern char *ROOT_DIR;
 extern char *UPLOAD_DIR;
 extern int UPLOAD_ENABLED;
-extern int PORT;
-extern int LOGGING_WINDOW_HEIGTH;
-extern size_t UPDATE_TIMEOUT;
+extern uint16_t PORT;
+extern const int LOGGING_WINDOW_HEIGTH;
+extern const size_t UPDATE_TIMEOUT;
 
 int USE_NCURSES;
 int WINDOW_RESIZED;
@@ -102,7 +102,8 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	/* if upload is enabled, handle keys from keyboard */
 	if (UPLOAD_ENABLED) {
-		error = pthread_create(thread, attr, &handle_keyboard, NULL);
+		error = pthread_create(thread, attr, &ncurses_handle_keyboard,
+			    NULL);
 		if (error != 0) {
 			die(ERR_INFO, "pthread_create()");
 		}
@@ -110,7 +111,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 }
 
 void *
-handle_keyboard(void *ptr)
+ncurses_handle_keyboard(void *ptr)
 {
 	char ch;
 	
@@ -139,8 +140,7 @@ handle_keyboard(void *ptr)
 }
 
 /*
- * prints given info inside ncurses window
- * if position is < 1 its a log message
+ * appends given msg to log window
  */
 void
 ncurses_print_log(char *msg)
@@ -165,19 +165,18 @@ ncurses_print_log(char *msg)
 }
 
 /*
- * prints given info inside ncurses window
- * if position is < 1 its a log message
+ * writes given msg to status window at given pos
  */
 void
-ncurses_print_status(const char *message, int position)
+ncurses_print_status(const char *msg, int pos)
 {
 	if (!USE_NCURSES) {
 		return;
 	}
 
 	pthread_mutex_lock(&ncurses_mutex);
-	if (win_status && position + 1 < status_heigth - 1) {
-		mvwprintw(win_status, position + 1, 1, "%s", message);
+	if (win_status && pos + 1 < status_heigth - 1) {
+		mvwprintw(win_status, pos + 1, 1, "%s", msg);
 	}
 	pthread_mutex_unlock(&ncurses_mutex);
 }
@@ -186,14 +185,14 @@ ncurses_print_status(const char *message, int position)
  * start of printing status messages
  */
 void
-ncurses_update_begin(int last_position)
+ncurses_update_begin(int last_pos)
 {
 	if (!USE_NCURSES) {
 		return;
 	}
 
 	/* if there where no messages last time, dont erase screen */
-	if (last_position > 0) {
+	if (last_pos > 0) {
 		pthread_mutex_lock(&ncurses_mutex);
 		if (win_status) {
 			werase(win_status);
