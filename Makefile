@@ -2,6 +2,8 @@
 
 CC = gcc
 
+EXECUTABLE = file_server
+
 OBJS = file_list.o \
        handle_request.o \
        helper.o \
@@ -11,12 +13,13 @@ OBJS = file_list.o \
        handle_post.o \
        handle_get.o
 
-EXECUTABLE = file_server
-
 GPROF_FILE = performance.txt
 
+# posix threads
+LFLAGS = -lpthread
+
+# default flags
 CFLAGS = -Wall \
-         -fPIC \
          -Wstrict-prototypes \
          -Wmissing-prototypes \
          -Wno-main \
@@ -46,23 +49,23 @@ CFLAGS = -Wall \
          -Wstack-protector \
          -Woverlength-strings \
          -Waddress \
-         -ggdb \
-         -Wdeclaration-after-statement \
-         -pg \
-         -O3 \
-         -D_FILE_OFFSET_BITS=64
-       # -Wredundant-decls \
-       # -Werror \
-       # -Wpadded
+         -Wdeclaration-after-statement
 
-LFLAGS = -lpthread
-
-OBJS   += ncurses_msg.o
+# NCURSES
 CFLAGS += -DNCURSES
+OBJS   += ncurses_msg.o
 LFLAGS += -lcurses
 
 # CFLAGS += -std=c99
 # CFLAGS += -pedantic
+# CFLAGS += -Wredundant-decls
+# CFLAGS += -Werror
+# CFLAGS += -Wpadded
+CFLAGS += -fPIC
+CFLAGS += -ggdb
+CFLAGS += -pg
+CFLAGS += -O3
+CFLAGS += -D_FILE_OFFSET_BITS=64
 
 .PHONY : all
 all : depend $(EXECUTABLE)
@@ -91,4 +94,8 @@ perf :
 graph : perf
 	gprof2dot $(GPROF_FILE) -n0 -e0 > graph.dot
 	dot -Tsvg graph.dot -o graph.svg
-	sfdp -Gsize=100! -Gsplines=true -Goverlap=prism -Tpng graph.dot > graph.png
+	sfdp -Gsize=100! \
+             -Gsplines=true \
+             -Goverlap=prism \
+             -Tpng graph.dot \
+             > graph.png
