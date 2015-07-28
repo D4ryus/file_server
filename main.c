@@ -144,7 +144,7 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--dir") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(
+				usage_quit(argv[0],
 				    "user specified -d/--dir without a path");
 			}
 			root_arg = i;
@@ -152,20 +152,21 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--upload") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(
+				usage_quit(argv[0],
 				    "user specified -u/--upload without"
 				    " a path");
 			}
 			upload_arg = i;
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
-			usage_quit(NULL);
+			usage_quit(argv[0], NULL);
 		} else if ((strcmp(argv[i], "-l") == 0)
 		    || (strcmp(argv[i], "--log_file") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit("user specified -l/--log_file "
-				    "without a file");
+				usage_quit(argv[0],
+				    "user specified -l/--log_file without a "
+				    "file");
 			}
 			LOG_FILE = err_malloc(strlen(argv[i]) + 1);
 			strncpy(LOG_FILE, argv[i], strlen(argv[i]) + 1);
@@ -178,20 +179,21 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--port") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit("user specified -p/--port "
-				    "without a port");
+				usage_quit(argv[0],
+				    "user specified -p/--port without a port");
 			}
 			PORT = (uint16_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-v") == 0)
 		    || (strcmp(argv[i], "--verbosity") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit("user specified -v/--verbosity "
-				    "without a number (values are [0] 1 2 3)");
+				usage_quit(argv[0], "user specified "
+				    "-v/--verbosity without a number (values "
+				    "are [0] 1 2 3)");
 			}
 			VERBOSITY = (uint8_t)atoi(argv[i]);
 		} else {
-			usage_quit("unknown argument specified");
+			usage_quit(argv[0], "unknown argument specified");
 		}
 	}
 

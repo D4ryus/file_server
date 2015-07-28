@@ -18,7 +18,7 @@ void *err_malloc(size_t);
 void *err_realloc(void *, size_t);
 void die(const char *, const int, const char *, const char *);
 void warning(const char *, const int, const char *, const char *);
-void usage_quit(const char *);
+void usage_quit(const char *, const char *);
 char *get_content_encoding(const char *);
 
 #endif

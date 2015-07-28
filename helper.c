@@ -314,7 +314,7 @@ warning(const char *file, const int line, const char *function, const char *msg)
  * prints usage and quits
  */
 void
-usage_quit(const char *msg)
+usage_quit(const char *name, const char *msg)
 {
 	if (msg != NULL) {
 		fprintf(stderr, "error: %s\n", msg);
@@ -323,9 +323,8 @@ usage_quit(const char *msg)
 	 * Multiple fputs because C90 only supports strings with length up
 	 * to 509 characters
 	 */
-	fputs("usage: ./blub [-c | --color] [-d | --dir path] [-h | --help] "
-	    "[-l | --log_file file] "
-	    , stdout);
+	printf("usage: %s [-c | --color] [-d | --dir path] [-h | --help] "
+	    "[-l | --log_file file] ", name);
 	fputs(
 #ifdef NCURSES
 	    "[-n | --ncurses] "
