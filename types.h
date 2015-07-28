@@ -4,9 +4,6 @@
 #include <stdint.h>
 
 /*
- * enums
- */
-/*
  * message verbosity
  */
 enum message_type {
