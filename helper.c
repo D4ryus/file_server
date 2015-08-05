@@ -324,7 +324,7 @@ usage_quit(const char *name, const char *msg)
 	 * to 509 characters
 	 */
 	printf("usage: %s [-c | --color] [-d | --dir path] [-h | --help] "
-	    "[-l | --log_file file] ", name);
+	    "[-l | --log_file file] [-u | --upload path]", name);
 	fputs(
 #ifdef NCURSES
 	    "[-n | --ncurses] "
@@ -350,6 +350,8 @@ usage_quit(const char *name, const char *msg)
 	    "	-v, --verbosity level\n"
 	    "		change verbosity level, level should be between 0 (no messages)\n"
 	    "		and 3 (prints connection and transfer status).\n"
+	    "	-u, --upload path\n"
+	    "		enable upload via http POST and save files at given directory.\n"
 	    , stdout);
 	exit(1);
 }
