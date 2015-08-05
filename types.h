@@ -21,7 +21,7 @@ enum transfer_type {UPLOAD, DOWNLOAD};
  * intern error enum, used as return value from functions
  */
 enum err_status {
-	STAT_OK =  0,
+	STAT_OK = 0,
 	WRITE_CLOSED,
 	ZERO_WRITTEN,
 	CLOSED_CON,
@@ -50,13 +50,13 @@ enum err_status {
  */
 struct client_info {
 	char     ip[16];		/* ip from client */
-	int      port;			/* port from client */
-	int      sock;			/* socket descriptor */
-	enum transfer_type type;
-	char     *requested_path;	/* requested path */
 	uint64_t size;			/* file size */
 	uint64_t written;		/* written data */
 	uint64_t last_written;		/* will be updated by print thread */
+	char     *requested_path;	/* requested path */
+	int      port;			/* port from client */
+	int      sock;			/* socket descriptor */
+	enum     transfer_type type;
 };
 
 /*
@@ -64,17 +64,17 @@ struct client_info {
  */
 struct file {
 	char *name;
-	char type[11];
-	char time[20];
 	off_t size;
+	char time[20];
+	char type[11];
 };
 
 /*
  * contains multiple file structs
  */
 struct dir {
-	int length;
 	char *name;
+	int length;
 	struct file *files[];
 };
 
@@ -83,9 +83,9 @@ struct dir {
  * as status information, see messages.[ch]
  */
 struct status_list_node {
-	uint8_t remove_me;
 	struct client_info *data;
 	struct status_list_node *next;
+	uint8_t remove_me;
 };
 
 #endif
