@@ -125,6 +125,16 @@ parse_post_header(int sock, char **boundary, char **content_length)
 		free(cur_line);
 	}
 
+	/* if there was no error, check if all data is set */
+	if (!error) {
+		if ((*content_length) == NULL) {
+			error = CON_LENGTH_MISSING;
+		}
+		if ((*boundary) == NULL) {
+			error = BOUNDARY_MISSING;
+		}
+	}
+	/* now check for error again */
 	if (error) {
 		/* on error free malloced data */
 		if ((*content_length) != NULL) {
@@ -134,14 +144,6 @@ parse_post_header(int sock, char **boundary, char **content_length)
 		if ((*boundary) != NULL) {
 			free((*boundary));
 			(*boundary) = NULL;
-		}
-	} else {
-		/* if there was no error, check if all data is set */
-		if ((*content_length) == NULL) {
-			error = CON_LENGTH_MISSING;
-		}
-		if ((*boundary) == NULL) {
-			error = BOUNDARY_MISSING;
 		}
 	}
 
