@@ -142,8 +142,10 @@ const char *RESPONSE_201=
 	"<center>"
 		"<h1>its done!</h1>"
 		"<body>"
-		"<a href='http://d4ryus.h4ck.me:8283/upload/upload.html'>load up another file</a><br>"
-		"<a href='http://d4ryus.h4ck.me:8283/'>go back to where u came from</a>"
+		"<a href='/'>back to Main page</a><br>"
+		"<a href='#' onclick='history.back()'>"
+			"load up another file"
+		"</a>"
 		"</body>"
 	"</center>"
 "</html>";
