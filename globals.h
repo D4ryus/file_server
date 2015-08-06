@@ -53,6 +53,14 @@ const int LOGGING_WINDOW_HEIGTH = 10;
  */
 const char *HTTP_TOP =
 	"<!DOCTYPE html>"
+	"<style>"
+		"tbody tr:nth-child(odd) {"
+			"background: #eeeeee;"
+		"}"
+		"a:hover {"
+			"color: #229922;"
+		"}"
+	"</style>"
 	"<html>"
 		"<head>"
 			"<title>file_server version 0.2</title>"
@@ -95,11 +103,6 @@ const char *TABLE_PLAIN[3] = {
 
 const char *TABLE_HTML[3] = {
 	/* table head */
-	"<style>"
-		"tbody tr:nth-child(odd) {"
-			"background: #eee;"
-		"}"
-	"</style>"
 	"<table>"
 		"<thead>"
 			"<tr>"
