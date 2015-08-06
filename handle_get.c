@@ -32,7 +32,7 @@ handle_get(struct client_info *data, char *request)
 	error = STAT_OK;
 
 	requ_path_tmp = NULL;
-	error = parse_get(request, &(req_type), &(requ_path_tmp));
+	error = parse_get(request, &req_type, &requ_path_tmp);
 	if (error) {
 		return error;
 	}
@@ -59,7 +59,7 @@ handle_get(struct client_info *data, char *request)
 		}
 	}
 
-	res_type = get_response_type(&(requ_path_tmp));
+	res_type = get_response_type(&requ_path_tmp);
 
 	if (res_type == FILE_200  || res_type == DIR_200) {
 		data->requested_path = requ_path_tmp;

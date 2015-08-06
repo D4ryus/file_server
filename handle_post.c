@@ -51,7 +51,7 @@ handle_post(struct client_info *data, char *request)
 		return error;
 	}
 
-	error = send_201(data->sock, HTTP, &(tmp));
+	error = send_201(data->sock, HTTP, &tmp);
 	if (error) {
 		return error;
 	}
@@ -250,7 +250,7 @@ file_head:
 	while ((*written) <= (*max_size)) {
 		/* check buffer for boundry */
 		error = buff_contains(sock, buff, (size_t)read_from_socket,
-			    bound_buff, bound_buff_length, &(boundary_pos));
+			    bound_buff, bound_buff_length, &boundary_pos);
 		if (error) {
 			goto stop_transfer;
 		}
