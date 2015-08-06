@@ -71,7 +71,7 @@ ncurses:
       [X] - total stats, ip, port, root dir
       [X] - fancy top/bottom line (---(path)---(port)---)
       [X] - total connections, total errors, total 404, ...
-      [ ] - scrollable windows
+      [X] - scrollable windows
 
 tests:
       [ ] - configure git repo to automate tests
