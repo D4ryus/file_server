@@ -27,6 +27,7 @@ handle_get(struct client_info *data, char *request)
 	char *requ_path_tmp;
 	char *trash;
 	uint8_t header_lines;
+	int header_end;
 
 	error = STAT_OK;
 
@@ -37,20 +38,23 @@ handle_get(struct client_info *data, char *request)
 	}
 
 	/* read rest of http header */
-	error = get_line(data->sock, &(trash));
-	if (error) {
-		return error;
-	}
-	header_lines = 2;
-	while (strlen(trash) != 0) {
-		free(trash);
+	header_end = 0;
+	header_lines = 0;
+	while (!header_end) {
 		error = get_line(data->sock, &trash);
+		if (!error && trash[0] == '\0') {
+			header_end = 1;
+		}
+		free(trash);
+		trash = NULL;
 		if (error) {
+			if (requ_path_tmp != NULL) {
+				free(requ_path_tmp);
+			}
 			return error;
 		}
 		header_lines++;
 		if (header_lines > HTTP_HEADER_LINES_MAX) {
-			free(trash);
 			return HEADER_LINES_EXT;
 		}
 	}
@@ -59,66 +63,60 @@ handle_get(struct client_info *data, char *request)
 
 	if (res_type == FILE_200  || res_type == DIR_200) {
 		data->requested_path = requ_path_tmp;
-		requ_path_tmp = NULL;
+	} else {
+		if (requ_path_tmp != NULL) {
+			free(requ_path_tmp);
+		}
 	}
+	requ_path_tmp = NULL;
 
 	switch (res_type) {
-		case FILE_200:
-			error = send_200_file_head(data->sock,
-				    req_type,
-				    &(data->size),
-				    data->requested_path);
-			if (error) {
-				return error;
-			}
+	case FILE_200:
+		error = send_200_file_head(data->sock, req_type, &(data->size),
+			    data->requested_path);
+		if (error) {
+			return error;
+		}
 
-			error = send_file(data->sock, data->requested_path,
-				    &(data->written));
-			if (!error) {
-				snprintf(message_buffer,
-				    (size_t)MSG_BUFFER_SIZE,
-				    "%s sent file: %s",
-				    format_size(data->size, fmt_size),
-				    data->requested_path);
-			}
-			break;
-		case DIR_200:
-			error = send_200_directory(data->sock,
-				    req_type,
-				    &(data->size),
-				    data->requested_path);
-			if (!error) {
-				snprintf(message_buffer,
-				    (size_t)MSG_BUFFER_SIZE,
-				    "%s sent dir: %s",
-				    format_size(data->size, fmt_size),
-				    data->requested_path);
-				data->written = data->size;
-			}
-			break;
-		case TXT_403:
-			error = send_403(data->sock, req_type,
-				    &(data->size));
-			if (!error) {
-				snprintf(message_buffer,
-				    (size_t)MSG_BUFFER_SIZE,
-				    "sent error 403");
-				data->written = data->size;
-			}
-			break;
-		case TXT_404:
-			error = send_404(data->sock, req_type,
-				    &(data->size));
-			if (!error) {
-				snprintf(message_buffer,
-				    (size_t)MSG_BUFFER_SIZE,
-				    "sent error 404");
-				data->written = data->size;
-			}
-			break;
-		default:
-			/* not readched */
-			break;
+		error = send_file(data->sock, data->requested_path,
+			    &(data->written));
+		if (!error) {
+			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
+			    "%s sent file: %s",
+			    format_size(data->size, fmt_size),
+			    data->requested_path);
+		}
+		break;
+	case DIR_200:
+		error = send_200_directory(data->sock, req_type, &(data->size),
+			    data->requested_path);
+		if (!error) {
+			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
+			    "%s sent dir: %s",
+			    format_size(data->size, fmt_size),
+			    data->requested_path);
+			data->written = data->size;
+		}
+		break;
+	case TXT_403:
+		error = send_403(data->sock, req_type, &(data->size));
+		if (!error) {
+			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
+			    "sent error 403");
+			data->written = data->size;
+		}
+		break;
+	case TXT_404:
+		error = send_404(data->sock, req_type, &(data->size));
+		if (!error) {
+			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
+			    "sent error 404");
+			data->written = data->size;
+		}
+		break;
+	default:
+		/* not readched */
+		break;
 	}
 
 	if (error) {

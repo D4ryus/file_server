@@ -194,14 +194,14 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 
 	n = 11;
 	switch (sb.st_mode & S_IFMT) {
-		case S_IFREG:  strncpy(new_file->type, "file"      , n); break;
-		case S_IFDIR:  strncpy(new_file->type, "directory" , n); break;
-		case S_IFLNK:  strncpy(new_file->type, "symlink"   , n); break;
-		case S_IFBLK:  strncpy(new_file->type, "blk_device", n); break;
-		case S_IFCHR:  strncpy(new_file->type, "chr_device", n); break;
-		case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , n); break;
-		case S_IFSOCK: strncpy(new_file->type, "socket"    , n); break;
-		default:       strncpy(new_file->type, "unknown"   , n); break;
+	case S_IFREG:  strncpy(new_file->type, "file"      , n); break;
+	case S_IFDIR:  strncpy(new_file->type, "directory" , n); break;
+	case S_IFLNK:  strncpy(new_file->type, "symlink"   , n); break;
+	case S_IFBLK:  strncpy(new_file->type, "blk_device", n); break;
+	case S_IFCHR:  strncpy(new_file->type, "chr_device", n); break;
+	case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , n); break;
+	case S_IFSOCK: strncpy(new_file->type, "socket"    , n); break;
+	default:       strncpy(new_file->type, "unknown"   , n); break;
 	}
 
 	tmp = localtime(&sb.st_mtime);

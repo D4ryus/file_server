@@ -36,13 +36,6 @@ const size_t UPDATE_TIMEOUT = 1;
  */
 char *LOG_FILE = NULL;
 
-#ifdef NCURSES
-/*
- * ncurses logging window height (rows)
- */
-const int LOGGING_WINDOW_HEIGTH = 10;
-#endif
-
 /*
  * Http table config
  * -----------------
