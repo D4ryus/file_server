@@ -102,7 +102,6 @@ main(const int argc, const char *argv[])
 #ifdef NCURSES
 		/* ncurses uses signals on resize, so accept will continue */
 		if (USE_NCURSES && WINDOW_RESIZED) {
-			WINDOW_RESIZED = 0;
 			ncurses_organize_windows();
 			continue;
 		}

@@ -92,10 +92,16 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	    (size_t)39);
 	status_data[39] = '\0';
 
+	terminal_heigth = 0;
+	terminal_width = 0;
+	/* ncurses_organize_windows will rearrange windows */
+	WINDOW_RESIZED = 1;
 	ncurses_organize_windows();
 	if (win_logging) {
 		scrollok(win_logging, (bool)TRUE);
 	} else {
+		endwin();
+		delwin(stdscr);
 		die(ERR_INFO, "window to small");
 	}
 
@@ -210,7 +216,6 @@ ncurses_print_log(char *msg)
 		wclrtoeol(win_logging);
 		mvwprintw(win_logging, log_heigth - 2, 1, "%s", msg);
 		_ncurses_draw_logging_box();
-		refresh();
 		wrefresh(win_logging);
 	}
 	pthread_mutex_unlock(&ncurses_mutex);
@@ -291,7 +296,6 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 	pthread_mutex_lock(&ncurses_mutex);
 	if ((size_t)terminal_width > strlen(status_data) + 2 && win_status) {
 		_ncurses_draw_status_box();
-		refresh();
 		wrefresh(win_status);
 	}
 	pthread_mutex_unlock(&ncurses_mutex);
@@ -324,22 +328,33 @@ void
 ncurses_organize_windows()
 {
 	int i;
+	int width_changed;
 
 	if (!USE_NCURSES) {
 		return;
 	}
 
+	width_changed = 0;
 	pthread_mutex_lock(&ncurses_mutex);
 	/* reinitialize ncurses after resize */
-	endwin();
-	refresh();
-	getmaxyx(stdscr, terminal_heigth, terminal_width);
+	if (WINDOW_RESIZED) {
+		int old_terminal_width;
+
+		WINDOW_RESIZED = 0;
+		old_terminal_width = terminal_width;
+		endwin();
+		refresh();
+		getmaxyx(stdscr, terminal_heigth, terminal_width);
+		if (old_terminal_width != terminal_width) {
+			width_changed = 1;
+		}
+	}
 
 	/* header */
 	status_heigth = terminal_heigth - log_heigth - 1;
 
 	/*
-	 * if terminal is to small to display information delete both windows
+	 * if terminal is to small to display information delete both windows,
 	 * set them to NULL and return.
 	 */
 	if (status_heigth < 1) {
@@ -383,31 +398,36 @@ ncurses_organize_windows()
 		    % NCURSES_LOG_LINES]);
 	}
 
-	/* rootpath, port and upload_enabled */
-	move(0, 0);
-	clrtoeol();
-	if ((size_t)terminal_width > strlen(head_data) + 1) {
-		mvwprintw(stdscr, 0,
-		    (int)terminal_width - (int)strlen(head_data),
-		    "%s", head_data);
-	}
-	if (UPLOAD_ENABLED && (size_t)terminal_width > strlen(head_data) + 5) {
-		mvwprintw(stdscr, 0,
-		    (int)terminal_width - ((int)strlen(head_data) + 5),
-		    "(on)-");
-		refresh();
-	}
+	if (width_changed) {
+		/* rootpath, port and upload_enabled */
+		move(0, 0);
+		clrtoeol();
+		if ((size_t)terminal_width > strlen(head_data) + 1) {
+			mvwprintw(stdscr, 0,
+			    (int)terminal_width - (int)strlen(head_data),
+			    "%s", head_data);
+		}
+		if (UPLOAD_ENABLED
+		    && (size_t)terminal_width > strlen(head_data) + 5) {
+			mvwprintw(stdscr, 0,
+			    (int)terminal_width - ((int)strlen(head_data) + 5),
+			    "(on)-");
+			refresh();
+		}
 
-	/* name and version */
-	if ((size_t)terminal_width > strlen(head_info)
-	    + strlen(head_data) + 6) {
-		mvwprintw(stdscr, 0, 0, "%s", head_info);
+		/* name and version */
+		if ((size_t)terminal_width > strlen(head_info)
+		    + strlen(head_data) + 6) {
+			mvwprintw(stdscr, 0, 0, "%s", head_info);
+		}
 	}
 
 	_ncurses_draw_logging_box();
 	_ncurses_draw_status_box();
 
-	refresh();
+	if (width_changed) {
+		refresh();
+	}
 	wrefresh(win_status);
 	wrefresh(win_logging);
 	pthread_mutex_unlock(&ncurses_mutex);
@@ -439,7 +459,7 @@ _ncurses_push_log_buf(char *new_msg)
 void
 _ncurses_draw_logging_box()
 {
-	box(win_logging, 0, 0);
+	box(win_logging, ACS_VLINE, ACS_HLINE);
 	if ((size_t)terminal_width > strlen(head_body_log) + 2) {
 		mvwprintw(win_logging, 0, 2, "%s", head_body_log);
 	}
@@ -448,7 +468,7 @@ _ncurses_draw_logging_box()
 void
 _ncurses_draw_status_box()
 {
-	box(win_status, 0, 0);
+	box(win_status, ACS_VLINE, ACS_HLINE);
 	if ((size_t)terminal_width > strlen(status_data) + 4) {
 		mvwprintw(win_status, 0,
 		    (int)terminal_width - ((int)strlen(status_data) + 2),
