@@ -91,7 +91,7 @@ handle_request(void *ptr)
 	data->written = 0;
 	data->last_written = 0;
 
-	if (starts_with(cur_line, "POST", (size_t)4)) {
+	if (memcmp(cur_line, "POST", (size_t)4) == 0) {
 		if (UPLOAD_ENABLED) {
 			data->type = UPLOAD;
 			msg_hook_add(data);
@@ -100,7 +100,7 @@ handle_request(void *ptr)
 			send_405(data->sock, HTTP, &(data->size));
 			error = POST_DISABLED;
 		}
-	} else if (starts_with(cur_line, "GET", (size_t)3)) {
+	} else if (memcmp(cur_line, "GET", (size_t)3) == 0) {
 		data->type = DOWNLOAD;
 		msg_hook_add(data);
 		error = handle_get(data, cur_line);

@@ -12,7 +12,6 @@ int send_file(int, char *, uint64_t *);
 uint64_t err_string_to_val(char *);
 char *concat(char *, const char *);
 int is_directory(const char *);
-int starts_with(const char *, const char *, size_t);
 char *format_size(uint64_t, char[7]);
 void *err_malloc(size_t);
 void *err_realloc(void *, size_t);

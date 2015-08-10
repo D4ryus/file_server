@@ -145,7 +145,7 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 	tmp = strtok(request, "\n"); /* get first line */
 
 	/* check if GET is valid */
-	if (tmp == NULL || !starts_with(tmp, "GET /", (size_t)5)) {
+	if (tmp == NULL || memcmp(tmp, "GET /", (size_t)5) != 0) {
 		return INV_GET;
 	}
 	tmp = strtok(tmp, " ");		/* split first line */
@@ -167,76 +167,76 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 			continue;
 		}
 		/* check for requested_path encoding */
-		if (starts_with(tmp + i, "%20", (size_t)3)) {
+		if (memcmp(tmp + i, "%20", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = ' ';
 			i += 2;
-		} else if (starts_with(tmp + i, "%21", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%21", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '!';
 			i += 2;
-		} else if (starts_with(tmp + i, "%23", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%23", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '#';
 			i += 2;
-		} else if (starts_with(tmp + i, "%24", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%24", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '$';
 			i += 2;
-		} else if (starts_with(tmp + i, "%25", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%25", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '%';
 			i += 2;
-		} else if (starts_with(tmp + i, "%26", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%26", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '&';
 			i += 2;
-		} else if (starts_with(tmp + i, "%27", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%27", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '\'';
 			i += 2;
-		} else if (starts_with(tmp + i, "%28", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%28", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '(';
 			i += 2;
-		} else if (starts_with(tmp + i, "%29", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%29", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = ')';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2B", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%2B", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '+';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2C", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%2C", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = ',';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2D", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%2D", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '-';
 			i += 2;
-		} else if (starts_with(tmp + i, "%2E", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%2E", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '.';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3B", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%3B", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = ';';
 			i += 2;
-		} else if (starts_with(tmp + i, "%3D", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%3D", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '=';
 			i += 2;
-		} else if (starts_with(tmp + i, "%40", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%40", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '@';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5B", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%5B", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '[';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5D", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%5D", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = ']';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5E", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%5E", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '^';
 			i += 2;
-		} else if (starts_with(tmp + i, "%5F", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%5F", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '_';
 			i += 2;
-		} else if (starts_with(tmp + i, "%60", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%60", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '`';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7B", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%7B", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '{';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7D", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%7D", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '}';
 			i += 2;
-		} else if (starts_with(tmp + i, "%7E", (size_t)3)) {
+		} else if (memcmp(tmp + i, "%7E", (size_t)3) == 0) {
 			(*requested_path)[url_pos] = '~';
 			i += 2;
 		} else {
@@ -251,8 +251,8 @@ parse_get(char *request, enum request_type *req_type, char **requested_path)
 		(*req_type) = PLAIN;
 		return STAT_OK;
 	}
-	if ((starts_with(tmp, "HTTP/1.1", (size_t)8))
-	    || (starts_with(tmp, "HTTP/1.0", (size_t)8))) {
+	if ((memcmp(tmp, "HTTP/1.1", (size_t)8) == 0)
+	    || (memcmp(tmp, "HTTP/1.0", (size_t)8) == 0)) {
 		(*req_type) = HTTP;
 	} else {
 		(*req_type) = PLAIN;
@@ -287,7 +287,7 @@ get_response_type(char **request)
 	requested_path = realpath(full_requested_path, NULL);
 	if (requested_path == NULL) {
 		ret = TXT_404;
-	} else if (!starts_with(requested_path, ROOT_DIR, strlen(ROOT_DIR))
+	} else if ((memcmp(requested_path, ROOT_DIR, strlen(ROOT_DIR)) != 0)
 	    || strlen(ROOT_DIR) > strlen(requested_path)) {
 		ret = TXT_403;
 	} else if (is_directory(requested_path)) {

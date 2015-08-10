@@ -179,27 +179,6 @@ is_directory(const char *path)
 }
 
 /*
- * check if first string starts with second string
- */
-int
-starts_with(const char *line, const char *prefix, size_t prefix_length)
-{
-	size_t i;
-
-	if (line == NULL || prefix == NULL) {
-		return 0;
-	}
-
-	for (i = 0; i < prefix_length; i++) {
-		if (prefix[i] != line[i]) {
-			return 0;
-		}
-	}
-
-	return 1;
-}
-
-/*
  * formats size into readable format
  */
 char *

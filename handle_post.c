@@ -89,7 +89,7 @@ parse_post_header(int sock, char **boundary, char **content_length)
 
 	header_lines = 2;
 	while (strlen(cur_line) != 0) {
-		if (starts_with(cur_line, STR_COL, strlen(STR_COL))) {
+		if (memcmp(cur_line, STR_COL, strlen(STR_COL)) == 0) {
 			str_len = strlen(cur_line + strlen(STR_COL));
 			if (str_len < 1) {
 				error = CON_LENGTH_MISSING;
@@ -99,7 +99,7 @@ parse_post_header(int sock, char **boundary, char **content_length)
 			strncpy((*content_length), cur_line
 			    + strlen(STR_COL), str_len + 1);
 		}
-		if (starts_with(cur_line, STR_BOU, strlen(STR_BOU))) {
+		if (memcmp(cur_line, STR_BOU, strlen(STR_BOU)) == 0) {
 			str_len = strlen(cur_line + strlen(STR_BOU));
 			if (str_len < 1) {
 				error = BOUNDARY_MISSING;
@@ -194,9 +194,9 @@ parse_post_body(int sock, char *boundary, char **requested_path,
 	}
 	(*written) += (uint64_t)read_from_socket;
 
-	if (!starts_with(buff, "--", (size_t)2)
-	    || !starts_with(buff + 2, boundary, strlen(boundary))
-	    || !starts_with(buff + 2 + strlen(boundary), "\r\n", (size_t)2))
+	if ((memcmp(buff, "--", (size_t)2) != 0)
+	    || (memcmp(buff + 2, boundary, strlen(boundary)) != 0)
+	    || (memcmp(buff + 2 + strlen(boundary), "\r\n", (size_t)2) != 0))
 	{
 		error = WRONG_BOUNDRY;
 		goto stop_transfer;
@@ -212,7 +212,7 @@ parse_post_body(int sock, char *boundary, char **requested_path,
 	(*written) += (uint64_t)read_from_socket;
 file_head:
 	/* buff contains file head */
-	if ((read_from_socket == 4) && starts_with(buff, "--\r\n", (size_t)4)) {
+	if ((read_from_socket == 4) && memcmp(buff, "--\r\n", (size_t)4) == 0) {
 		error = STAT_OK;
 		goto stop_transfer;
 	}
@@ -381,8 +381,8 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 			die(ERR_INFO,
 			    "peek did return less than rest_size");
 		}
-		if (starts_with(rest, needle + needle_matched,
-		        strlen(needle + needle_matched))) {
+		if (memcmp(rest, needle + needle_matched,
+		        strlen(needle + needle_matched)) == 0) {
 			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
 			if ((rec < 0) || ((size_t)rec != rest_size)) {
