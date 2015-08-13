@@ -392,10 +392,10 @@ ncurses_organize_windows()
 	wclear(win_status);
 	wclear(win_logging);
 	mvwin(win_logging, terminal_heigth - log_heigth, 0);
-	for (i = 0; i < log_heigth - 2; i++) {
-		mvwprintw(win_logging, log_heigth - (2 + i), 1,
-		    "%s", log_buf[(log_buf_pos - i + NCURSES_LOG_LINES)
-		    % NCURSES_LOG_LINES]);
+	for (i = 1; i < log_heigth - 1; i++) {
+		mvwprintw(win_logging, i, 1,
+		    "%s", log_buf[(log_buf_pos - (log_heigth - 2) + i
+		              + NCURSES_LOG_LINES) % NCURSES_LOG_LINES]);
 	}
 
 	if (width_changed) {
