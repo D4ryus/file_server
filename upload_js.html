@@ -77,7 +77,10 @@ function upload_file() {
                 if (old_p != p || p == 100) {
                         document.getElementById("progress").value = p;
                         document.getElementById("prozent").innerHTML = p + "%";
-                        document.getElementById("data_transfered").innerHTML = "[" + format_size(e.loaded) + "/" +  format_size(e.total) + "(" + format_size(e.total - e.loaded) + ")]";
+                        document.getElementById("data_transfered").innerHTML =
+                                "[" + format_size(e.loaded)
+                                + "/" + format_size(e.total)
+                                + "(" + format_size(e.total - e.loaded) + ")]";
                 }
         };
 
@@ -91,12 +94,21 @@ function upload_file() {
 
 function format_size(bytes) {
         // cant get bigger, since javascript can only do signed 32-bit integers
-        if (bytes > (1 << 23)) {
-                return ((bytes >> 20) + 'mb');
-        } else if (bytes > (1 << 13)) {
-                return ((bytes >> 10) + 'kb');
-        } else {
+        var kb = 1024;
+        var mb = kb * 1024;
+        var gb = mb * 1024;
+        var tb = gb * 1024;
+
+        if (bytes < (kb * 8)) {
                 return (bytes + 'b ');
+        } else if (bytes < (mb * 8)) {
+                return (Math.round(bytes / kb) + 'kb');
+        } else if (bytes < (gb * 8)) {
+                return (Math.round(bytes / mb) + 'mb');
+        } else if (bytes < (tb * 8)) {
+                return (Math.round(bytes / gb) + 'gb');
+        } else {
+                return (Math.round(bytes / tb) + 'tb');
         }
 }
 
