@@ -9,6 +9,8 @@
 #include "helper.h"
 #include "defines.h"
 
+#define HEADER_COLOR_ID 1
+
 /*
  * see globals.h
  */
@@ -71,8 +73,8 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	if (has_colors()) {
 		start_color();
-		init_pair((short)1, (short)COLOR_WHITE, (short)COLOR_BLUE);
-		wbkgd(stdscr, COLOR_PAIR(1));
+		init_pair((short)HEADER_COLOR_ID,
+		    (short)COLOR_WHITE, (short)COLOR_BLUE);
 	}
 
 	log_heigth = 10;
@@ -159,6 +161,8 @@ ncurses_handle_keyboard(void *ptr)
 				mvwprintw(stdscr, 0, (int)terminal_width
 				    - ((int)strlen(head_data) + 5),
 				    UPLOAD_ENABLED ? "(on)-" : "     ");
+				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
+				    NULL);
 				refresh();
 			}
 			pthread_mutex_unlock(&ncurses_mutex);
@@ -412,7 +416,6 @@ ncurses_organize_windows()
 			mvwprintw(stdscr, 0,
 			    (int)terminal_width - ((int)strlen(head_data) + 5),
 			    "(on)-");
-			refresh();
 		}
 
 		/* name and version */
@@ -426,8 +429,10 @@ ncurses_organize_windows()
 	_ncurses_draw_status_box();
 
 	if (width_changed) {
+		mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
 		refresh();
 	}
+
 	wrefresh(win_status);
 	wrefresh(win_logging);
 	pthread_mutex_unlock(&ncurses_mutex);
