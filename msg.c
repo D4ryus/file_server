@@ -94,10 +94,17 @@ _msg_print_loop(void *ignored)
 			    cur, position);
 			msg_print_status(msg_buffer, position);
 
-			if (cur->data->type == DOWNLOAD) {
-				tx += cur->data->last_written - last_written;
-			} else {
-				rx += cur->data->last_written - last_written;
+			switch (cur->data->type) {
+				case DOWNLOAD:
+				case PARTIAL:
+					tx += cur->data->last_written - last_written;
+					break;
+				case UPLOAD:
+					rx += cur->data->last_written - last_written;
+					break;
+				default:
+					/* not reached */
+					break;
 			}
 		}
 		pthread_mutex_unlock(&status_list_mutex);
@@ -263,6 +270,8 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	char fmt_size[7];
 	char fmt_bytes_per_tval[7];
 
+	char *fmt_type;
+
 	/* read value only once from struct */
 	written		= cur->data->written;
 	left		= cur->data->size - written;
@@ -277,12 +286,28 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
+	switch (cur->data->type) {
+		case DOWNLOAD:
+			fmt_type = "tx";
+			break;
+		case PARTIAL:
+			fmt_type = "px";
+			break;
+		case UPLOAD:
+			fmt_type = "rx";
+			break;
+		default:
+			/* not reached */
+			fmt_type = "er";
+			break;
+	}
+
 	snprintf(msg_buffer, buff_size,
 	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/%us %s",
 	    cur->data->ip,
 	    (unsigned int)(written * 100 /
 		(cur->data->size > 0 ? cur->data->size : 1)),
-	    (cur->data->type == DOWNLOAD) ? "tx" : "rx",
+	    fmt_type,
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,

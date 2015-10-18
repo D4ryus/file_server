@@ -73,7 +73,7 @@ send_data(int sock, const char *data, uint64_t length)
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_file(int sock, char *filename, uint64_t *written)
+send_file(int sock, char *filename, uint64_t *written, uint64_t from, uint64_t to)
 {
 	int sending;
 	char *buffer;
@@ -81,6 +81,7 @@ send_file(int sock, char *filename, uint64_t *written)
 	FILE *fd;
 	char *full_path;
 	enum err_status error;
+	uint64_t max;
 
 	buffer = err_malloc((size_t)BUFFSIZE_READ);
 	error = STAT_OK;
@@ -96,6 +97,12 @@ send_file(int sock, char *filename, uint64_t *written)
 	sending = 1;
 	read_bytes = 0;
 
+	if (fseek(fd, (long)from, SEEK_SET) != 0) {
+		error = FILE_ERROR;
+		sending = 0;
+	}
+	max = to - from + 1;
+
 	while (sending) {
 		read_bytes = fread(buffer, (size_t)1, (size_t)BUFFSIZE_READ,
 				 fd);
@@ -104,6 +111,10 @@ send_file(int sock, char *filename, uint64_t *written)
 				error = FILE_ERROR;
 				break;
 			}
+			sending = 0;
+		}
+		if ((*written) + read_bytes > max) {
+			read_bytes = (size_t)(max - (*written));
 			sending = 0;
 		}
 		error = send_data(sock, buffer, (uint64_t)read_bytes);

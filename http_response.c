@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <inttypes.h>
 
 #include "http_response.h"
 #include "types.h"
@@ -56,10 +57,71 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
 	head = NULL;
 	head = concat(concat(concat(
 		   head, "HTTP/1.1 200 OK\r\n"
+			 "Accept-Ranges: bytes\r\n"
 			 "Cache-Control: no-cache\r\n"
 			 "Connection: close\r\n"
 			 "Content-Type: "), get_content_encoding(filename)),
 			 content_length);
+
+	error = send_data(socket, head, (uint64_t)strlen(head));
+	free(head);
+	if (error) {
+		return error;
+	}
+
+
+	return STAT_OK;
+}
+
+/*
+ * sends a 206 Partial Content HTTP header response
+ * if type == PLAIN no http header will be sent (only size will be set)
+ * size is set to content_length
+ */
+int
+send_206_file_head(int socket, enum request_type type, uint64_t *size,
+    char *filename, uint64_t from, uint64_t to)
+{
+	struct stat sb;
+	char *head;
+	enum err_status error;
+	char *full_path;
+	char content_length[64];
+	char content_range[64];
+
+	full_path = NULL;
+	full_path = concat(concat(full_path, ROOT_DIR), filename);
+
+	if (stat(full_path, &sb) == -1) {
+		die(ERR_INFO, "stat()");
+	}
+	free(full_path);
+	(*size) = (uint64_t)sb.st_size;
+
+	if (type != HTTP) {
+		return STAT_OK;
+	}
+
+	if (to == 0) {
+	    to = (long long unsigned int)sb.st_size - 1;
+	}
+	snprintf(content_length, (size_t)64,
+	    "\r\nContent-Length: %" PRIu64 "\r\n",
+	    (to - from) + 1);
+
+	snprintf(content_range, (size_t)64,
+	    "Content-Range: bytes %" PRIu64 "-%" PRIu64 "/%llu\r\n\r\n",
+	    from, to, (long long unsigned int)sb.st_size);
+
+	head = NULL;
+	head = concat(concat(concat(concat(
+		   head, "HTTP/1.1 206 Partial Content\r\n"
+			 "Accept-Ranges: bytes\r\n"
+			 "Connection: close\r\n"
+			 "Content-Type: "), get_content_encoding(filename)),
+			 content_length),
+			 content_range);
+	/* printf("\n\n%s\n\n", head); */
 
 	error = send_data(socket, head, (uint64_t)strlen(head));
 	free(head);

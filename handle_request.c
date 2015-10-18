@@ -64,20 +64,16 @@ handle_request(void *ptr)
 	struct client_info *data;
 	char *cur_line;
 	enum err_status error;
-	char *con_msg;
+	char con_msg[128];
 
 	data = (struct client_info *)ptr;
 
 	if (data->sock < 0) {
 		die(ERR_INFO, "socket in handle_request is < 0");
 	}
-	con_msg = NULL;
-	con_msg = err_malloc((size_t)128);
 	snprintf(con_msg, (size_t)128, "connected to port %d.",
 			data->port);
 	msg_print_log(data, CONNECTED, con_msg);
-	free(con_msg);
-	con_msg = NULL;
 
 	error = get_line(data->sock, &cur_line);
 	if (error) {

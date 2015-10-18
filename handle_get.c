@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <inttypes.h>
 
 #include "handle_request.h"
 #include "handle_get.h"
@@ -25,9 +26,10 @@ handle_get(struct client_info *data, char *request)
 	enum response_type res_type;
 	enum request_type req_type;
 	char *requ_path_tmp;
-	char *trash;
+	char *line;
 	uint8_t header_lines;
-	int header_end;
+	uint64_t partial_from;
+	uint64_t partial_to;
 
 	error = STAT_OK;
 
@@ -38,24 +40,33 @@ handle_get(struct client_info *data, char *request)
 	}
 
 	/* read rest of http header */
-	header_end = 0;
 	header_lines = 0;
-	while (!header_end) {
-		error = get_line(data->sock, &trash);
-		if (!error && trash[0] == '\0') {
-			header_end = 1;
+	while (1) {
+		if (++header_lines > HTTP_HEADER_LINES_MAX) {
+			return HEADER_LINES_EXT;
 		}
-		free(trash);
-		trash = NULL;
+		error = get_line(data->sock, &line);
 		if (error) {
+			free(line);
+			line = NULL;
 			if (requ_path_tmp != NULL) {
 				free(requ_path_tmp);
+				requ_path_tmp = NULL;
 			}
 			return error;
 		}
-		header_lines++;
-		if (header_lines > HTTP_HEADER_LINES_MAX) {
-			return HEADER_LINES_EXT;
+		if (line[0] == '\0') {
+			free(line);
+			line = NULL;
+			break;
+		}
+		if (strncmp(line, "Range: bytes=", 13) == 0) {
+			/* TODO: direct scanf dangerous? */
+			partial_from = 0;
+			partial_to = 0;
+			sscanf(line, "Range: bytes=%" PRId64 "-%" PRId64,
+			    &partial_from, &partial_to);
+			data->type = PARTIAL;
 		}
 	}
 
@@ -68,6 +79,10 @@ handle_get(struct client_info *data, char *request)
 			free(requ_path_tmp);
 		}
 	}
+	/* TODO: impl. full http head parse to get rid of this */
+	if (data->type == PARTIAL && res_type == FILE_200) {
+		res_type = FILE_206;
+	}
 	requ_path_tmp = NULL;
 
 	switch (res_type) {
@@ -79,10 +94,29 @@ handle_get(struct client_info *data, char *request)
 		}
 
 		error = send_file(data->sock, data->requested_path,
-			    &(data->written));
+			    &(data->written), 0, data->size - 1);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent file: %s",
+			    format_size(data->size, fmt_size),
+			    data->requested_path);
+		}
+		break;
+	case FILE_206:
+		error = send_206_file_head(data->sock, req_type, &(data->size),
+			    data->requested_path, partial_from, partial_to);
+		if (error) {
+			return error;
+		}
+
+		if (partial_to == 0) {
+			partial_to = data->size - 1;
+		}
+		error = send_file(data->sock, data->requested_path,
+			    &(data->written), partial_from, partial_to);
+		if (!error) {
+			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
+			    "%s sent partial file: %s",
 			    format_size(data->size, fmt_size),
 			    data->requested_path);
 		}
