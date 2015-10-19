@@ -11,6 +11,7 @@
 #include "helper.h"
 #include "msg.h"
 #include "http_response.h"
+#include "parse_http.h"
 
 /*
  * see globals.h

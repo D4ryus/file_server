@@ -13,6 +13,7 @@ OBJS = $(OBJ_PATH)file_list.o \
        $(OBJ_PATH)helper.o \
        $(OBJ_PATH)main.o \
        $(OBJ_PATH)msg.o \
+       $(OBJ_PATH)parse_http.o \
        $(OBJ_PATH)http_response.o \
        $(OBJ_PATH)handle_post.o \
        $(OBJ_PATH)handle_get.o

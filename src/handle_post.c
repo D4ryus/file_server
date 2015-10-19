@@ -10,6 +10,7 @@
 #include "http_response.h"
 #include "msg.h"
 #include "handle_post.h"
+#include "parse_http.h"
 
 /*
  * see globals.h

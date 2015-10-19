@@ -12,6 +12,7 @@
 #include "handle_request.h"
 #include "http_response.h"
 #include "msg.h"
+#include "parse_http.h"
 
 /*
  * see globals.h
@@ -36,7 +37,7 @@ const char *err_msg[] =
 /* ZERO_WRITTEN       */ "error - could not write, 0 bytes written",
 /* CLOSED_CON         */ "error - client closed connection",
 /* EMPTY_MESSAGE      */ "error - empty message",
-/* INV_REQ_TYPE       */ "error - invalid Request Type",
+/* INV_REQ_TYPE       */ "error - invalid or missing Request Type",
 /* INV_GET            */ "error - invalid GET",
 /* INV_POST           */ "error - invalid POST",
 /* CON_LENGTH_MISSING */ "error - Content_Length missing",
@@ -116,56 +117,3 @@ handle_request(void *ptr)
 
 	return NULL;
 }
-
-/*
- * gets a line from socket, and writes it to buffer
- * buffer will be err_malloc'ed by get_line.
- * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
- * buff will be free'd and set to NULL on error
- * buffer will always be terminated with \0
- */
-int
-get_line(int sock, char **buff)
-{
-	size_t buf_size;
-	size_t bytes_read;
-	ssize_t err;
-	char cur_char;
-
-	buf_size = 256;
-	(*buff) = (char *)err_malloc(buf_size);
-	memset((*buff), '\0', buf_size);
-
-	for (bytes_read = 0 ;; bytes_read++) {
-		err = recv(sock, &cur_char, (size_t)1, 0);
-		if (err < 0 || err == 0) {
-			free((*buff));
-			(*buff) = NULL;
-			return CLOSED_CON;
-		}
-
-		if (bytes_read >= buf_size) {
-			buf_size += 128;
-			if (buf_size > HTTP_HEADER_LINE_LIMIT) {
-				free((*buff));
-				(*buff) = NULL;
-				return HTTP_HEAD_LINE_EXT;
-			}
-			(*buff) = err_realloc((*buff), buf_size);
-			memset((*buff) + buf_size - 128, '\0', (size_t)128);
-		}
-
-		if (cur_char == '\n') {
-			break;
-		}
-
-		if (cur_char == '\r') {
-			continue;
-		}
-
-		(*buff)[bytes_read] = cur_char;
-	}
-
-	return STAT_OK;
-}
-
