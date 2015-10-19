@@ -4,14 +4,18 @@ CC = gcc
 
 EXECUTABLE = file_server
 
-OBJS = file_list.o \
-       handle_request.o \
-       helper.o \
-       main.o \
-       msg.o \
-       http_response.o \
-       handle_post.o \
-       handle_get.o
+OBJ_PATH=objs/
+INC_PATH=include/
+SRC_PATH=src/
+
+OBJS = $(OBJ_PATH)file_list.o \
+       $(OBJ_PATH)handle_request.o \
+       $(OBJ_PATH)helper.o \
+       $(OBJ_PATH)main.o \
+       $(OBJ_PATH)msg.o \
+       $(OBJ_PATH)http_response.o \
+       $(OBJ_PATH)handle_post.o \
+       $(OBJ_PATH)handle_get.o
 
 GPROF_FILE = performance.txt
 
@@ -19,7 +23,8 @@ GPROF_FILE = performance.txt
 LFLAGS = -lpthread
 
 # default flags
-CFLAGS = -Wall \
+CFLAGS = -I$(INC_PATH) \
+         -Wall \
          -Wstrict-prototypes \
          -Wmissing-prototypes \
          -Wno-main \
@@ -53,7 +58,7 @@ CFLAGS = -Wall \
 
 # NCURSES
 CFLAGS += -DNCURSES
-OBJS   += ncurses_msg.o
+OBJS   += $(OBJ_PATH)ncurses_msg.o
 LFLAGS += -lcurses
 
 # CFLAGS += -std=c99
@@ -78,15 +83,16 @@ $(EXECUTABLE) : $(OBJS)
 
 .PHONY : depend
 depend:
-	$(CC) -E -MM *.c > .depend
+	mkdir -p $(OBJ_PATH)
+	$(CC) -E -MM $(SRC_PATH)*.c -I$(INC_PATH) > /tmp/$(EXECUTABLE)_depend
+	sed 's|\(.*\):|$(OBJ_PATH)\1:|' /tmp/$(EXECUTABLE)_depend > .depend
+
+$(OBJ_PATH)%.o: $(SRC_PATH)%.c
+	gcc -c $(CFLAGS) $(SRC_PATH)$*.c -o $(OBJ_PATH)$*.o
 
 .PHONY : clean
 clean :
 	rm $(OBJS) $(EXECUTABLE) .depend
-
-# targets to run
-run_$(EXECUTABLE) : $(EXECUTABLE)
-	./$<
 
 perf :
 	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)
