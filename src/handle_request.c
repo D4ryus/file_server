@@ -53,7 +53,9 @@ const char *err_msg[] =
 /* FILENAME_ERR       */ "error - could not parse filename",
 /* CONTENT_LENGTH_EXT */ "error - content length extended",
 /* POST_DISABLED      */ "error - post is disabled",
-/* HEADER_LINES_EXT   */ "error - too many headerlines"
+/* HEADER_LINES_EXT   */ "error - too many headerlines",
+/* INV_CONTENT_TYPE   */ "error - invalid Content-Type",
+/* INV_RANGE          */ "error - invalid Range"
 };
 
 /*
@@ -63,9 +65,10 @@ void *
 handle_request(void *ptr)
 {
 	struct client_info *data;
-	char *cur_line;
 	enum err_status error;
 	char con_msg[128];
+	struct http_header http_head;
+	size_t length;
 
 	data = (struct client_info *)ptr;
 
@@ -76,41 +79,53 @@ handle_request(void *ptr)
 			data->port);
 	msg_print_log(data, CONNECTED, con_msg);
 
-	error = get_line(data->sock, &cur_line);
+	error = parse_header(&http_head, data->sock);
 	if (error) {
+		shutdown(data->sock, SHUT_RDWR);
+		close(data->sock);
 		msg_print_log(data, ERROR, err_msg[error]);
-		free(data);
+		msg_hook_cleanup(data);
+
 		return NULL;
 	}
 
-	data->requested_path = NULL;
-	data->size = 0;
 	data->written = 0;
 	data->last_written = 0;
 
-	if (memcmp(cur_line, "POST", (size_t)4) == 0) {
-		if (UPLOAD_ENABLED) {
-			data->type = UPLOAD;
-			msg_hook_add(data);
-			error = handle_post(data, cur_line);
-		} else {
-			send_405(data->sock, HTTP, &(data->size));
-			error = POST_DISABLED;
-		}
-	} else if (memcmp(cur_line, "GET", (size_t)3) == 0) {
-		data->type = DOWNLOAD;
-		msg_hook_add(data);
-		error = handle_get(data, cur_line);
-	} else {
+	switch (http_head.method) {
+	case MISSING:
 		error = INV_REQ_TYPE;
+		break;
+	case GET:
+		if (http_head.range) {
+			data->type = PARTIAL;
+		} else {
+			data->type = DOWNLOAD;
+		}
+		length = strlen(http_head.url);
+		data->requested_path = err_malloc(length + 1);
+		memcpy(data->requested_path, http_head.url, length + 1);
+		msg_hook_add(data);
+		error = handle_get(data, &http_head);
+		break;
+	case POST:
+		if (!UPLOAD_ENABLED) {
+			error = POST_DISABLED;
+			break;
+		}
+		data->type = UPLOAD;
+		msg_hook_add(data);
+		error = handle_post(data, &http_head);
+		break;
+	default:
+		/* not reached */
+		break;
 	}
-	free(cur_line);
-	cur_line = NULL;
-
 	if (error) {
 		msg_print_log(data, ERROR, err_msg[error]);
 	}
 
+	delete_http_header(&http_head);
 	shutdown(data->sock, SHUT_RDWR);
 	close(data->sock);
 	msg_hook_cleanup(data);

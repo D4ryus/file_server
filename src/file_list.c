@@ -59,7 +59,7 @@ get_dir(char *directory)
  * returns given directory as formated string
  */
 char *
-dir_to_table(enum request_type type, char *dir)
+dir_to_table(enum http_type type, char *dir)
 {
 	int i;
 	char buffer[TABLE_BUFFER_SIZE];

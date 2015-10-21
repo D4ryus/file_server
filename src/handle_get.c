@@ -11,7 +11,6 @@
 #include "helper.h"
 #include "msg.h"
 #include "http_response.h"
-#include "parse_http.h"
 
 /*
  * see globals.h
@@ -19,76 +18,24 @@
 extern char *ROOT_DIR;
 
 int
-handle_get(struct client_info *data, char *request)
+handle_get(struct client_info *data, struct http_header *http_head)
 {
 	char message_buffer[MSG_BUFFER_SIZE];
 	enum err_status error;
 	char fmt_size[7];
 	enum response_type res_type;
-	enum request_type req_type;
-	char *requ_path_tmp;
-	char *line;
-	uint8_t header_lines;
-	uint64_t partial_from;
-	uint64_t partial_to;
 
 	error = STAT_OK;
 
-	requ_path_tmp = NULL;
-	error = parse_get(request, &req_type, &requ_path_tmp);
-	if (error) {
-		return error;
-	}
+	res_type = get_response_type(&http_head->url);
 
-	/* read rest of http header */
-	header_lines = 0;
-	while (1) {
-		if (++header_lines > HTTP_HEADER_LINES_MAX) {
-			return HEADER_LINES_EXT;
-		}
-		error = get_line(data->sock, &line);
-		if (error) {
-			free(line);
-			line = NULL;
-			if (requ_path_tmp != NULL) {
-				free(requ_path_tmp);
-				requ_path_tmp = NULL;
-			}
-			return error;
-		}
-		if (line[0] == '\0') {
-			free(line);
-			line = NULL;
-			break;
-		}
-		if (strncmp(line, "Range: bytes=", 13) == 0) {
-			/* TODO: direct scanf dangerous? */
-			partial_from = 0;
-			partial_to = 0;
-			sscanf(line, "Range: bytes=%" PRId64 "-%" PRId64,
-			    &partial_from, &partial_to);
-			data->type = PARTIAL;
-		}
-	}
-
-	res_type = get_response_type(&requ_path_tmp);
-
-	if (res_type == FILE_200  || res_type == DIR_200) {
-		data->requested_path = requ_path_tmp;
-	} else {
-		if (requ_path_tmp != NULL) {
-			free(requ_path_tmp);
-		}
-	}
-	/* TODO: impl. full http head parse to get rid of this */
-	if (data->type == PARTIAL && res_type == FILE_200) {
+	if (http_head->range && res_type == FILE_200) {
 		res_type = FILE_206;
 	}
-	requ_path_tmp = NULL;
 
 	switch (res_type) {
 	case FILE_200:
-		error = send_200_file_head(data->sock, req_type, &(data->size),
+		error = send_200_file_head(data->sock, http_head->type, &(data->size),
 			    data->requested_path);
 		if (error) {
 			return error;
@@ -104,17 +51,17 @@ handle_get(struct client_info *data, char *request)
 		}
 		break;
 	case FILE_206:
-		error = send_206_file_head(data->sock, req_type, &(data->size),
-			    data->requested_path, partial_from, partial_to);
+		error = send_206_file_head(data->sock, http_head->type, &(data->size),
+			    data->requested_path, http_head->range_from, http_head->range_to);
 		if (error) {
 			return error;
 		}
 
-		if (partial_to == 0) {
-			partial_to = data->size - 1;
+		if (http_head->range_to == 0) {
+			http_head->range_to = data->size - 1;
 		}
 		error = send_file(data->sock, data->requested_path,
-			    &(data->written), partial_from, partial_to);
+			    &(data->written), http_head->range_from, http_head->range_to);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent partial file: %s",
@@ -123,7 +70,7 @@ handle_get(struct client_info *data, char *request)
 		}
 		break;
 	case DIR_200:
-		error = send_200_directory(data->sock, req_type, &(data->size),
+		error = send_200_directory(data->sock, http_head->type, &(data->size),
 			    data->requested_path);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
@@ -134,7 +81,7 @@ handle_get(struct client_info *data, char *request)
 		}
 		break;
 	case TXT_403:
-		error = send_403(data->sock, req_type, &(data->size));
+		error = send_403(data->sock, http_head->type, &(data->size));
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "sent error 403");
@@ -142,7 +89,7 @@ handle_get(struct client_info *data, char *request)
 		}
 		break;
 	case TXT_404:
-		error = send_404(data->sock, req_type, &(data->size));
+		error = send_404(data->sock, http_head->type, &(data->size));
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "sent error 404");
@@ -158,140 +105,6 @@ handle_get(struct client_info *data, char *request)
 		return error;
 	}
 	msg_print_log(data, FINISHED, message_buffer);
-
-	return STAT_OK;
-}
-
-/*
- * parses given request line
- * allocs given *requested_path with size of requested filename
- * if negative number is returned, error occured
- * STAT_OK: everything went fine.
- * INV_GET: parse error
- */
-int
-parse_get(char *request, enum request_type *req_type, char **requested_path)
-{
-	char *tmp;
-	size_t length;
-	size_t i;
-	size_t url_pos;
-
-	tmp = strtok(request, "\n"); /* get first line */
-
-	/* check if GET is valid */
-	if (tmp == NULL || memcmp(tmp, "GET /", (size_t)5) != 0) {
-		return INV_GET;
-	}
-	tmp = strtok(tmp, " ");		/* split first line */
-	tmp = strtok(NULL, " ");	/* get requested url */
-
-	length = strlen(tmp);
-	/* remove trailing / from request */
-	while (length > 1 && tmp[length - 1] == '/') {
-		tmp[length - 1] = '\0';
-		length = strlen(tmp);
-	}
-
-	(*requested_path) = err_malloc(length + 1);
-	memset((*requested_path), '\0', length + 1);
-
-	for (i = 0, url_pos = 0; i < length; i++, url_pos++) {
-		if (*(tmp + i) != '%') {
-			(*requested_path)[url_pos] = tmp[i];
-			continue;
-		}
-		/* check for requested_path encoding */
-		if (memcmp(tmp + i, "%20", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = ' ';
-			i += 2;
-		} else if (memcmp(tmp + i, "%21", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '!';
-			i += 2;
-		} else if (memcmp(tmp + i, "%23", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '#';
-			i += 2;
-		} else if (memcmp(tmp + i, "%24", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '$';
-			i += 2;
-		} else if (memcmp(tmp + i, "%25", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '%';
-			i += 2;
-		} else if (memcmp(tmp + i, "%26", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '&';
-			i += 2;
-		} else if (memcmp(tmp + i, "%27", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '\'';
-			i += 2;
-		} else if (memcmp(tmp + i, "%28", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '(';
-			i += 2;
-		} else if (memcmp(tmp + i, "%29", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = ')';
-			i += 2;
-		} else if (memcmp(tmp + i, "%2B", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '+';
-			i += 2;
-		} else if (memcmp(tmp + i, "%2C", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = ',';
-			i += 2;
-		} else if (memcmp(tmp + i, "%2D", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '-';
-			i += 2;
-		} else if (memcmp(tmp + i, "%2E", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '.';
-			i += 2;
-		} else if (memcmp(tmp + i, "%3B", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = ';';
-			i += 2;
-		} else if (memcmp(tmp + i, "%3D", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '=';
-			i += 2;
-		} else if (memcmp(tmp + i, "%40", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '@';
-			i += 2;
-		} else if (memcmp(tmp + i, "%5B", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '[';
-			i += 2;
-		} else if (memcmp(tmp + i, "%5D", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = ']';
-			i += 2;
-		} else if (memcmp(tmp + i, "%5E", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '^';
-			i += 2;
-		} else if (memcmp(tmp + i, "%5F", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '_';
-			i += 2;
-		} else if (memcmp(tmp + i, "%60", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '`';
-			i += 2;
-		} else if (memcmp(tmp + i, "%7B", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '{';
-			i += 2;
-		} else if (memcmp(tmp + i, "%7D", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '}';
-			i += 2;
-		} else if (memcmp(tmp + i, "%7E", (size_t)3) == 0) {
-			(*requested_path)[url_pos] = '~';
-			i += 2;
-		} else {
-			(*requested_path)[url_pos] = tmp[i];
-		}
-	}
-
-	/* get requested type */
-	tmp = strtok(NULL, " ");
-	/* if none given go with PLAIN and return */
-	if (tmp == NULL) {
-		(*req_type) = PLAIN;
-		return STAT_OK;
-	}
-	if ((memcmp(tmp, "HTTP/1.1", (size_t)8) == 0)
-	    || (memcmp(tmp, "HTTP/1.0", (size_t)8) == 0)) {
-		(*req_type) = HTTP;
-	} else {
-		(*req_type) = PLAIN;
-	}
 
 	return STAT_OK;
 }

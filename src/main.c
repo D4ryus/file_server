@@ -28,7 +28,7 @@ extern int USE_NCURSES;
 extern int WINDOW_RESIZED;
 #endif
 
-int main(int, const char **);
+int _main(int, const char **);
 void parse_arguments(int, const char **);
 
 int

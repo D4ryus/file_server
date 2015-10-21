@@ -10,7 +10,6 @@
 #include "http_response.h"
 #include "msg.h"
 #include "handle_post.h"
-#include "parse_http.h"
 
 /*
  * see globals.h
@@ -18,36 +17,19 @@
 extern char *UPLOAD_DIR;
 
 int
-handle_post(struct client_info *data, char *request)
+handle_post(struct client_info *data, struct http_header *http_head)
 {
 	enum err_status error;
-	char *boundary;
-	char *content_length;
 	uint64_t tmp;
 	char message_buffer[MSG_BUFFER_SIZE];
 	char fmt_size[7];
 
 	error = STAT_OK;
 
-	if (strcmp(request, "POST / HTTP/1.1") != 0) {
-		return INV_POST;
-	}
+	data->size = http_head->content_length;
 
-	error = parse_post_header(data->sock, &boundary, &content_length);
-	if (error) {
-		return error;
-	}
-
-	data->size = err_string_to_val(content_length);
-	free(content_length);
-	if (data->size == 0) {
-		free(boundary);
-		return FILESIZE_ZERO;
-	}
-
-	error = parse_post_body(data->sock, boundary, &(data->requested_path),
+	error = parse_post_body(data->sock, http_head->boundary, &(data->requested_path),
 		    &(data->written), &(data->size));
-	free(boundary);
 	if (error) {
 		return error;
 	}
@@ -65,90 +47,6 @@ handle_post(struct client_info *data, char *request)
 	msg_print_log(data, FINISHED, message_buffer);
 
 	return STAT_OK;
-}
-
-int
-parse_post_header(int sock, char **boundary, char **content_length)
-{
-	char *cur_line;
-	enum err_status error;
-	size_t str_len;
-	uint8_t header_lines;
-	char *STR_COL;
-	char *STR_BOU;
-
-	STR_COL = "Content-Length: ";
-	STR_BOU = "Content-Type: multipart/form-data; boundary=";
-	error = STAT_OK;
-	(*boundary) = NULL;
-	(*content_length) = NULL;
-
-	error = get_line(sock, &cur_line);
-	if (error) {
-		return error;
-	}
-
-	header_lines = 2;
-	while (strlen(cur_line) != 0) {
-		if (memcmp(cur_line, STR_COL, strlen(STR_COL)) == 0) {
-			str_len = strlen(cur_line + strlen(STR_COL));
-			if (str_len < 1) {
-				error = CON_LENGTH_MISSING;
-				break;
-			}
-			(*content_length) = err_malloc(str_len + 1);
-			strncpy((*content_length), cur_line
-			    + strlen(STR_COL), str_len + 1);
-		}
-		if (memcmp(cur_line, STR_BOU, strlen(STR_BOU)) == 0) {
-			str_len = strlen(cur_line + strlen(STR_BOU));
-			if (str_len < 1) {
-				error = BOUNDARY_MISSING;
-				break;
-			}
-			(*boundary) = err_malloc(str_len + 1);
-			strncpy((*boundary), cur_line
-			    + strlen(STR_BOU), str_len + 1);
-		}
-		free(cur_line);
-		cur_line = NULL;
-		error = get_line(sock, &cur_line);
-		if (error) {
-			break;
-		}
-		header_lines++;
-		if (header_lines > HTTP_HEADER_LINES_MAX) {
-			error = HEADER_LINES_EXT;
-			break;
-		}
-	}
-	if (cur_line != NULL) {
-		free(cur_line);
-	}
-
-	/* if there was no error, check if all data is set */
-	if (!error) {
-		if ((*content_length) == NULL) {
-			error = CON_LENGTH_MISSING;
-		}
-		if ((*boundary) == NULL) {
-			error = BOUNDARY_MISSING;
-		}
-	}
-	/* now check for error again */
-	if (error) {
-		/* on error free malloced data */
-		if ((*content_length) != NULL) {
-			free((*content_length));
-			(*content_length) = NULL;
-		}
-		if ((*boundary) != NULL) {
-			free((*boundary));
-			(*boundary) = NULL;
-		}
-	}
-
-	return error;
 }
 
 int

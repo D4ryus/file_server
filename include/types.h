@@ -12,11 +12,20 @@ enum message_type {
 	FINISHED = 2
 };
 
-enum request_type {PLAIN, HTTP};
+enum response_type {
+	FILE_200,
+	DIR_200,
+	TXT_403,
+	TXT_404,
+	FILE_206
+};
 
-enum response_type {FILE_200, DIR_200, TXT_403, TXT_404, FILE_206};
+enum transfer_type {
+	UPLOAD,
+	DOWNLOAD,
+	PARTIAL
+};
 
-enum transfer_type {UPLOAD, DOWNLOAD, PARTIAL};
 /*
  * intern error enum, used as return value from functions
  */
@@ -42,7 +51,9 @@ enum err_status {
 	FILENAME_ERR,
 	CONTENT_LENGTH_EXT,
 	POST_DISABLED,
-	HEADER_LINES_EXT
+	HEADER_LINES_EXT,
+	INV_CONTENT_TYPE,
+	INV_RANGE
 };
 
 /*

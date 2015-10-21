@@ -28,7 +28,7 @@ extern const char *HTTP_BOT;
  * size is set to content_length
  */
 int
-send_200_file_head(int socket, enum request_type type, uint64_t *size,
+send_200_file_head(int socket, enum http_type type, uint64_t *size,
     char *filename)
 {
 	struct stat sb;
@@ -79,7 +79,7 @@ send_200_file_head(int socket, enum request_type type, uint64_t *size,
  * size is set to content_length
  */
 int
-send_206_file_head(int socket, enum request_type type, uint64_t *size,
+send_206_file_head(int socket, enum http_type type, uint64_t *size,
     char *filename, uint64_t from, uint64_t to)
 {
 	struct stat sb;
@@ -88,6 +88,11 @@ send_206_file_head(int socket, enum request_type type, uint64_t *size,
 	char *full_path;
 	char content_length[64];
 	char content_range[64];
+	uint64_t file_size;
+
+	if (type != HTTP) {
+		return STAT_OK;
+	}
 
 	full_path = NULL;
 	full_path = concat(concat(full_path, ROOT_DIR), filename);
@@ -96,22 +101,21 @@ send_206_file_head(int socket, enum request_type type, uint64_t *size,
 		die(ERR_INFO, "stat()");
 	}
 	free(full_path);
-	(*size) = (uint64_t)sb.st_size;
-
-	if (type != HTTP) {
-		return STAT_OK;
-	}
+	file_size = (uint64_t)sb.st_size;
 
 	if (to == 0) {
-	    to = (long long unsigned int)sb.st_size - 1;
+	    to = file_size - 1;
 	}
+
+	(*size) = to - from + 1;
+
 	snprintf(content_length, (size_t)64,
 	    "\r\nContent-Length: %" PRIu64 "\r\n",
 	    (to - from) + 1);
 
 	snprintf(content_range, (size_t)64,
-	    "Content-Range: bytes %" PRIu64 "-%" PRIu64 "/%llu\r\n\r\n",
-	    from, to, (long long unsigned int)sb.st_size);
+	    "Content-Range: bytes %" PRIu64 "-%" PRIu64 "/%" PRIu64 "\r\n\r\n",
+	    from, to, file_size);
 
 	head = NULL;
 	head = concat(concat(concat(concat(
@@ -121,14 +125,12 @@ send_206_file_head(int socket, enum request_type type, uint64_t *size,
 			 "Content-Type: "), get_content_encoding(filename)),
 			 content_length),
 			 content_range);
-	/* printf("\n\n%s\n\n", head); */
 
 	error = send_data(socket, head, (uint64_t)strlen(head));
 	free(head);
 	if (error) {
 		return error;
 	}
-
 
 	return STAT_OK;
 }
@@ -139,7 +141,7 @@ send_206_file_head(int socket, enum request_type type, uint64_t *size,
  * size is set to content_length
  */
 int
-send_200_directory(int socket, enum request_type type, uint64_t *size,
+send_200_directory(int socket, enum http_type type, uint64_t *size,
     char *directory)
 {
 	enum err_status error;
@@ -192,7 +194,7 @@ send_200_directory(int socket, enum request_type type, uint64_t *size,
  * size is set to content_length
  */
 int
-send_403(int socket, enum request_type type, uint64_t *size)
+send_403(int socket, enum http_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
@@ -229,7 +231,7 @@ send_403(int socket, enum request_type type, uint64_t *size)
  * size is set to content_length
  */
 int
-send_404(int socket, enum request_type type, uint64_t *size)
+send_404(int socket, enum http_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
@@ -267,7 +269,7 @@ send_404(int socket, enum request_type type, uint64_t *size)
  * size is set to content_length
  */
 int
-send_405(int socket, enum request_type type, uint64_t *size)
+send_405(int socket, enum http_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
@@ -304,7 +306,7 @@ send_405(int socket, enum request_type type, uint64_t *size)
  * size is set to content_length
  */
 int
-send_201(int socket, enum request_type type, uint64_t *size)
+send_201(int socket, enum http_type type, uint64_t *size)
 {
 	enum err_status error;
 	char *head;
