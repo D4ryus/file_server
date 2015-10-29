@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <inttypes.h>
 
@@ -42,7 +43,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		}
 
 		error = send_file(data->sock, data->requested_path,
-			    &(data->written), 0, data->size - 1);
+			    &(data->written), (uint64_t)0, data->size - 1);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent file: %s",
@@ -120,11 +121,12 @@ get_response_type(char **request)
 	char *full_requested_path;
 	char *requested_path;
 	enum response_type ret;
+	struct stat s;
 
 	if ((*request) == NULL) {
 		return TXT_404;
 	}
-	if (strcmp((*request), "/") == 0) {
+	if (memcmp((*request), "/\0", (size_t)2) == 0) {
 		return DIR_200;
 	}
 
@@ -133,29 +135,43 @@ get_response_type(char **request)
 				  (*request));
 
 	requested_path = realpath(full_requested_path, NULL);
+	free(full_requested_path);
+
+	/* on gnux/linux this will return NULL on file not found */
 	if (requested_path == NULL) {
-		ret = TXT_404;
-	} else if ((memcmp(requested_path, ROOT_DIR, strlen(ROOT_DIR)) != 0)
-	    || strlen(ROOT_DIR) > strlen(requested_path)) {
-		ret = TXT_403;
-	} else if (is_directory(requested_path)) {
-		ret = DIR_200;
-	} else {
-		ret = FILE_200;
+		return TXT_404;
 	}
 
-	if (ret == DIR_200 || ret == FILE_200) {
-		free((*request));
-		(*request) = NULL;
-		(*request) = concat((*request), requested_path
-			         + strlen(ROOT_DIR));
-	}
-	if (requested_path != NULL) {
+	/* but not on bsd, so check with stat */
+	if (stat(requested_path, &s) != 0) {
 		free(requested_path);
+		return TXT_404;
 	}
-	if (full_requested_path != NULL) {
-		free(full_requested_path);
+
+	/* now check if file starts with ROOT_DIR path */
+	if ((memcmp(requested_path, ROOT_DIR, strlen(ROOT_DIR)) != 0)
+	    || strlen(ROOT_DIR) > strlen(requested_path)) {
+		free(requested_path);
+		return TXT_403;
 	}
+
+	/* ok file exists, check if its a directory */
+	if (s.st_mode & S_IFDIR) {
+		ret = DIR_200;
+	} else if (s.st_mode & S_IFREG) {
+		ret = FILE_200;
+	} else {
+		ret = -1;
+		die(ERR_INFO, "stat() has no file nor a directory.");
+	}
+
+	/* and update request string to a full path */
+	free((*request));
+	(*request) = NULL;
+	(*request) = concat((*request), requested_path
+		         + strlen(ROOT_DIR));
+
+	free(requested_path);
 
 	return ret;
 }

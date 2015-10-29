@@ -8,6 +8,8 @@ OBJ_PATH=objs/
 INC_PATH=include/
 SRC_PATH=src/
 
+TMP_DEPEND=$(EXECUTABLE)_depend
+
 OBJS = $(OBJ_PATH)file_list.o \
        $(OBJ_PATH)handle_request.o \
        $(OBJ_PATH)helper.o \
@@ -85,8 +87,9 @@ $(EXECUTABLE) : $(OBJS)
 .PHONY : depend
 depend:
 	mkdir -p $(OBJ_PATH)
-	$(CC) -E -MM $(SRC_PATH)*.c -I$(INC_PATH) > /tmp/$(EXECUTABLE)_depend
-	sed 's|\(.*\):|$(OBJ_PATH)\1:|' /tmp/$(EXECUTABLE)_depend > .depend
+	$(CC) -E -MM $(SRC_PATH)*.c -I$(INC_PATH) > $(TMP_DEPEND)
+	sed 's|\(.*\):|$(OBJ_PATH)\1:|' $(TMP_DEPEND)> .depend
+	rm $(TMP_DEPEND)
 
 $(OBJ_PATH)%.o: $(SRC_PATH)%.c
 	gcc -c $(CFLAGS) $(SRC_PATH)$*.c -o $(OBJ_PATH)$*.o

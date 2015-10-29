@@ -64,7 +64,6 @@ parse_post_body(int sock, char *boundary, char **requested_path,
 	FILE *fd;
 	size_t bound_buff_length;
 	ssize_t boundary_pos;
-	/* just a tmp variable, feel free to use it */
 	ssize_t tmp;
 	size_t file_written;
 	ssize_t offset;
@@ -405,8 +404,12 @@ open_file(char *filename, FILE **fd, char **found_filename)
 		(*found_filename)[filename_length + 1] = number;
 		(*found_filename)[filename_length + 2] = '\0';
 		/* count up until a free filename is found */
-		while (access((*found_filename), F_OK) == 0 && number <= '9') {
-			(*found_filename)[filename_length  + 1] = ++number;
+		for (;number <= '9'; number++) {
+			(*found_filename)[filename_length  + 1] = number;
+			/* if not found -> should be a free filename */
+			if (access((*found_filename), F_OK) == -1) {
+				break;
+			}
 		}
 		if (number > '9') {
 			free((*found_filename));

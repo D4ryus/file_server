@@ -199,8 +199,6 @@ ncurses_handle_keyboard(void *ptr)
 			break;
 		}
 	}
-
-	return NULL;
 }
 
 /*

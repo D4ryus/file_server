@@ -252,8 +252,8 @@ _parse_POST(struct http_header *data, char *line)
 {
 	data->method = POST;
 
-	if (memcmp(line, "/ HTTP/1.1", 8) != 0 &&
-	    memcmp(line, "/ HTTP/1.0", 8) != 0) {
+	if (memcmp(line, "/ HTTP/1.1", (size_t)8) != 0 &&
+	    memcmp(line, "/ HTTP/1.0", (size_t)8) != 0) {
 		return INV_POST;
 	}
 
@@ -280,7 +280,7 @@ _parse_range(struct http_header *data, char *line)
 	char *str_tok_ident;
 
 	tmp = line;
-	if (memcmp(tmp, "bytes=", 6) != 0) {
+	if (memcmp(tmp, "bytes=", (size_t)6) != 0) {
 		return INV_RANGE;
 	}
 	tmp += 6;
@@ -330,11 +330,11 @@ _parse_content_type(struct http_header *data, char *line)
 	size_t length;
 
 	tmp = line;
-	if (memcmp(tmp, "multipart/form-data; ", 21) != 0) {
+	if (memcmp(tmp, "multipart/form-data; ", (size_t)21) != 0) {
 		return INV_CONTENT_TYPE;
 	}
 	tmp += 21;
-	if (memcmp(tmp, "boundary=", 9) != 0) {
+	if (memcmp(tmp, "boundary=", (size_t)9) != 0) {
 		return BOUNDARY_MISSING;
 	}
 	tmp += 9;

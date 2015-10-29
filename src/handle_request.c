@@ -58,6 +58,16 @@ const char *err_msg[] =
 /* INV_RANGE          */ "error - invalid Range"
 };
 
+void
+init_client_info(struct client_info *data)
+{
+	data->size = 0;
+	data->written = 0;
+	data->last_written = 0;
+	data->requested_path = NULL;
+	data->type = PLAIN;
+}
+
 /*
  * function where each thread starts execution with given client_info
  */
@@ -79,6 +89,8 @@ handle_request(void *ptr)
 			data->port);
 	msg_print_log(data, CONNECTED, con_msg);
 
+	init_client_info(data);
+
 	error = parse_header(&http_head, data->sock);
 	if (error) {
 		shutdown(data->sock, SHUT_RDWR);
@@ -88,9 +100,6 @@ handle_request(void *ptr)
 
 		return NULL;
 	}
-
-	data->written = 0;
-	data->last_written = 0;
 
 	switch (http_head.method) {
 	case MISSING:
