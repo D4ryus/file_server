@@ -373,6 +373,8 @@ get_content_encoding(const char *file_name)
 		return "image/jpeg";
 	} else if (!strcmp(type, "png")) {
 		return "image/png";
+	} else if (!strcmp(type, "webm")) {
+		return "video/webm";
 	} else if (!strcmp(type, "gif")) {
 		return "image/gif";
 	} else if (!strcmp(type, "tar")) {
