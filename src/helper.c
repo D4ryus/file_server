@@ -375,6 +375,14 @@ get_content_encoding(const char *file_name)
 		return "image/png";
 	} else if (!strcmp(type, "webm")) {
 		return "video/webm";
+	} else if (!strcmp(type, "mp4") || !strcmp(type, "m4v")) {
+		return "video/mp4";
+	} else if (!strcmp(type, "m4a")) {
+		return "audio/mp4";
+	} else if (!strcmp(type, "ogv")) {
+		return "video/ogg";
+	} else if (!strcmp(type, "ogg") || !strcmp(type, "oga")) {
+		return "audio/ogg";
 	} else if (!strcmp(type, "gif")) {
 		return "image/gif";
 	} else if (!strcmp(type, "tar")) {
