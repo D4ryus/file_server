@@ -249,7 +249,8 @@ send_data(int sock, const char *data, uint64_t length)
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_file(int sock, char *filename, uint64_t *written, uint64_t from, uint64_t to)
+send_file(int sock, char *filename, uint64_t *written, uint64_t from,
+    uint64_t to)
 {
 	int sending;
 	char *buffer;

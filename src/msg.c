@@ -97,10 +97,12 @@ _msg_print_loop(void *ignored)
 			switch (cur->data->type) {
 				case DOWNLOAD:
 				case PARTIAL:
-					tx += cur->data->last_written - last_written;
+					tx += cur->data->last_written
+						- last_written;
 					break;
 				case UPLOAD:
-					rx += cur->data->last_written - last_written;
+					rx += cur->data->last_written
+						- last_written;
 					break;
 				default:
 					/* not reached */

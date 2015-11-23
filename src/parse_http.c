@@ -44,7 +44,7 @@ parse_header(struct http_header *data, int sock)
 	table_size = (int) sizeof(parse_table) / sizeof(struct http_keyword);
 
 	line = NULL;
-	err = get_line(sock, &line);
+	err = _get_line(sock, &line);
 	if (err) {
 		return err;
 	}
@@ -61,7 +61,7 @@ parse_header(struct http_header *data, int sock)
 			}
 		}
 		free(line);
-		err = get_line(sock, &line);
+		err = _get_line(sock, &line);
 		if (err) {
 			delete_http_header(data);
 			return err;
@@ -72,15 +72,37 @@ parse_header(struct http_header *data, int sock)
 	return STAT_OK;
 }
 
+void
+delete_http_header(struct http_header *data)
+{
+	data->method = MISSING;
+	data->type = HTTP;
+	if (data->url) {
+		free(data->url);
+		data->url = NULL;
+	}
+	if (data->host) {
+		free(data->host);
+		data->host = NULL;
+	}
+	data->range_from = 0;
+	data->range_to = 0;
+	data->content_length = 0;
+	if (data->boundary) {
+		free(data->boundary);
+		data->boundary = NULL;
+	}
+}
+
 /*
  * gets a line from socket, and writes it to buffer
- * buffer will be err_malloc'ed by get_line.
+ * buffer will be err_malloc'ed by _get_line.
  * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be free'd and set to NULL on error
  * buffer will always be terminated with \0
  */
 int
-get_line(int sock, char **buff)
+_get_line(int sock, char **buff)
 {
 	size_t buf_size;
 	size_t bytes_read;
@@ -370,26 +392,4 @@ _debug_print_header(FILE *fd, struct http_header *data)
 	fprintf(fd, "range_to: %" PRId64 "\n", data->range_to);
 	fprintf(fd, "content_length: %" PRId64 "\n", data->content_length);
 	fprintf(fd, "boundary: %s\n", data->boundary ? data->boundary : "null");
-}
-
-void
-delete_http_header(struct http_header *data)
-{
-	data->method = MISSING;
-	data->type = HTTP;
-	if (data->url) {
-		free(data->url);
-		data->url = NULL;
-	}
-	if (data->host) {
-		free(data->host);
-		data->host = NULL;
-	}
-	data->range_from = 0;
-	data->range_to = 0;
-	data->content_length = 0;
-	if (data->boundary) {
-		free(data->boundary);
-		data->boundary = NULL;
-	}
 }

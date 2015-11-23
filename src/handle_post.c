@@ -28,8 +28,8 @@ handle_post(struct client_info *data, struct http_header *http_head)
 
 	data->size = http_head->content_length;
 
-	error = parse_post_body(data->sock, http_head->boundary, &(data->requested_path),
-		    &(data->written), &(data->size));
+	error = parse_post_body(data->sock, http_head->boundary,
+	    &(data->requested_path), &(data->written), &(data->size));
 	if (error) {
 		return error;
 	}
@@ -426,4 +426,3 @@ open_file(char *filename, FILE **fd, char **found_filename)
 
 	return STAT_OK;
 }
-

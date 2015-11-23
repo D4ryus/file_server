@@ -36,8 +36,8 @@ handle_get(struct client_info *data, struct http_header *http_head)
 
 	switch (res_type) {
 	case FILE_200:
-		error = send_200_file_head(data->sock, http_head->type, &(data->size),
-			    data->requested_path);
+		error = send_200_file_head(data->sock, http_head->type,
+			    &(data->size), data->requested_path);
 		if (error) {
 			return error;
 		}
@@ -52,8 +52,9 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		}
 		break;
 	case FILE_206:
-		error = send_206_file_head(data->sock, http_head->type, &(data->size),
-			    data->requested_path, http_head->range_from, http_head->range_to);
+		error = send_206_file_head(data->sock, http_head->type,
+			    &(data->size), data->requested_path,
+			    http_head->range_from, http_head->range_to);
 		if (error) {
 			return error;
 		}
@@ -62,7 +63,8 @@ handle_get(struct client_info *data, struct http_header *http_head)
 			http_head->range_to = data->size - 1;
 		}
 		error = send_file(data->sock, data->requested_path,
-			    &(data->written), http_head->range_from, http_head->range_to);
+			    &(data->written), http_head->range_from,
+			    http_head->range_to);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent partial file: %s",
@@ -71,8 +73,8 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		}
 		break;
 	case DIR_200:
-		error = send_200_directory(data->sock, http_head->type, &(data->size),
-			    data->requested_path);
+		error = send_200_directory(data->sock, http_head->type,
+			    &(data->size), data->requested_path);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent dir: %s",
