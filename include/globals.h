@@ -2,8 +2,8 @@
 #define GLOBALS_H
 
 /*
- * default values
- * --------------
+ * default values, these get overwritten if specified on startup
+ * ------------------------------------------------------------
  */
 
 /*
@@ -17,7 +17,7 @@ char *ROOT_DIR = ".";
 uint16_t PORT = 8283;
 
 /*
- * port if none specified
+ * default verbosity
  */
 uint8_t VERBOSITY = 0;
 
