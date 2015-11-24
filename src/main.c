@@ -106,16 +106,20 @@ main(const int argc, const char *argv[])
 			continue;
 		}
 #endif
-		/* check if ip is blocked */
-		if (strlen(IP) > 0 &&
-		    memcmp(IP, inet_ntoa(cli_addr.sin_addr), strlen(IP))) {
-			printf("blocked\n");
-			continue;
-		}
 		data = err_malloc(sizeof(struct client_info));
 		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
+
+		/* check if ip is blocked */
+		if (strlen(IP) > 0 &&
+		    memcmp(IP, data->ip, strlen(IP))) {
+			msg_print_log(data, ERROR, "ip blocked");
+			shutdown(data->sock, SHUT_RDWR);
+			close(data->sock);
+			msg_hook_cleanup(data);
+			continue;
+		}
 
 		error = pthread_create(&thread, &attr, &handle_request, data);
 		if (error != 0) {
@@ -203,6 +207,10 @@ parse_arguments(const int argc, const char *argv[])
 			if (argc <= i) {
 				usage_quit(argv[0], "user specified "
 				    "-i/--ip without a ip");
+			}
+			if (strlen(argv[i]) > 15) {
+				usage_quit(argv[0], "user specified "
+				    "-i/--ip with ip length > 15.");
 			}
 			memcpy(IP, argv[i], strlen(argv[i]) + 1);
 		} else {
