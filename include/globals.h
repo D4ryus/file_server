@@ -22,6 +22,11 @@ uint16_t PORT = 8283;
 uint8_t VERBOSITY = 0;
 
 /*
+ * default allowed ip
+ */
+char IP[16] = "";
+
+/*
  * enable coloring
  */
 int COLOR = 0;

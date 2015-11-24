@@ -106,6 +106,12 @@ main(const int argc, const char *argv[])
 			continue;
 		}
 #endif
+		/* check if ip is blocked */
+		if (strlen(IP) > 0 &&
+		    memcmp(IP, inet_ntoa(cli_addr.sin_addr), strlen(IP))) {
+			printf("blocked\n");
+			continue;
+		}
 		data = err_malloc(sizeof(struct client_info));
 		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
@@ -191,6 +197,14 @@ parse_arguments(const int argc, const char *argv[])
 				    "are [0] 1 2 3)");
 			}
 			VERBOSITY = (uint8_t)atoi(argv[i]);
+		} else if ((strcmp(argv[i], "-i") == 0)
+		    || (strcmp(argv[i], "--ip") == 0)) {
+			i++;
+			if (argc <= i) {
+				usage_quit(argv[0], "user specified "
+				    "-i/--ip without a ip");
+			}
+			memcpy(IP, argv[i], strlen(argv[i]) + 1);
 		} else {
 			usage_quit(argv[0], "unknown argument specified");
 		}
