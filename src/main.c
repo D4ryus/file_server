@@ -111,16 +111,6 @@ main(const int argc, const char *argv[])
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
 
-		/* check if ip is blocked */
-		if (strlen(IP) > 0 &&
-		    memcmp(IP, data->ip, strlen(IP))) {
-			msg_print_log(data, ERROR, "ip blocked");
-			shutdown(data->sock, SHUT_RDWR);
-			close(data->sock);
-			msg_hook_cleanup(data);
-			continue;
-		}
-
 		error = pthread_create(&thread, &attr, &handle_request, data);
 		if (error != 0) {
 			die(ERR_INFO, "pthread_create()");

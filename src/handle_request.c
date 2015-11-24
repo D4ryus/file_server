@@ -17,6 +17,7 @@
 /*
  * see globals.h
  */
+extern char *IP;
 extern char *ROOT_DIR;
 extern char *UPLOAD_DIR;
 extern int UPLOAD_ENABLED;
@@ -59,6 +60,17 @@ handle_request(void *ptr)
 	msg_print_log(data, CONNECTED, con_msg);
 
 	init_client_info(data);
+
+	/* check if ip is blocked */
+	if (strlen(IP) > 0 &&
+	    memcmp(IP, data->ip, strlen(IP))) {
+		shutdown(data->sock, SHUT_RDWR);
+		close(data->sock);
+		msg_print_log(data, ERROR, "ip blocked");
+		msg_hook_cleanup(data);
+
+		return NULL;
+	}
 
 	error = parse_header(&http_head, data->sock);
 	if (error) {
