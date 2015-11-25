@@ -1,4 +1,16 @@
 fixes and code changes:
+      [ ] - convert all int to typedefs of fixed size
+      [ ] - vsnprintf on warning and error to include %d, %s, ...
+      [ ] - keep-alive/pipelining
+      [ ] - 201 Created read sent Header to avoid connection abbort
+      [ ] - support # in filename
+      [ ] - quit/cleanup function
+      [ ] - add startup information
+      [ ] - add debugging option
+      [ ] - cross plattform Makefile
+      [ ] - implement max connections/threadpools
+      [ ] - strlcat
+      [ ] - libex impl.
       [X] - fix pipe singal
       [X] - fix pthread_create memory leak
       [X] - fix high virt mem
@@ -17,20 +29,14 @@ fixes and code changes:
       [X] - HTTP Request escape sequenzes (space/...)!!
       [X] - http header extendet on nothing read
       [X] - concat
-      [ ] - convert all int to typedefs of fixed size
-      [ ] - vsnprintf on warning and error to include %d, %s, ...
-      [ ] - pipelining
-      [ ] - 201 Created read sent Header to avoid connection abbort
-      [ ] - support # in filename
-      [ ] - quit/cleanup function
-      [ ] - add startup information
-      [ ] - add debugging option
-      [ ] - cross plattform Makefile
-      [ ] - cross plattform code
-      [ ] - implement max connections
-      [ ] - strlcat
+      [X] - cross plattform code
+
+ideas:
+      [ ] - ip block/allow of upload/download
 
 args:
+      [ ] - ip block
+      [ ] - getopt_long
       [X] - color
       [X] - port
       [X] - directory
@@ -38,8 +44,6 @@ args:
       [X] - ncurses enabled
       [X] - log option (needed for ncurses)
       [X] - usage
-      [ ] - getopt_long
-      [ ] - max connections
 
 config.h:
       [X] - default port
@@ -49,9 +53,9 @@ config.h:
       [X] - max header size
       [X] - add 404 and 403 messages
       [X] - max filename/url
-      [ ] - ignored files!
 
 messages:
+      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl/irc)
       [X] - message.h
       [X] - types (error, connection, leave, status)
       [X] - message status structs can be connected to clients
@@ -62,16 +66,16 @@ messages:
       [X] - timestamp
       [X] - sync all messages
       [X] - up and download
-      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl/irc)
 
 ncurses:
+      [ ] - improve performance
       [X] - basic implementation
       [X] - window for log
       [X] - window for status messages
       [X] - total stats, ip, port, root dir
       [X] - fancy top/bottom line (---(path)---(port)---)
       [X] - total connections, total errors, total 404, ...
-      [X] - scrollable windows
+      [X] - resizeable windows
 
 tests:
       [ ] - configure git repo to automate tests
