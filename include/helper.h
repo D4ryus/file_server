@@ -19,5 +19,6 @@ void die(const char *, const int, const char *, const char *);
 void warning(const char *, const int, const char *, const char *);
 void usage_quit(const char *, const char *);
 char *get_content_encoding(const char *);
+const char *get_err_msg(enum err_status);
 
 #endif

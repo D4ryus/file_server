@@ -465,7 +465,8 @@ die(const char *file, const int line, const char *function, const char *msg)
  * prints out given information to stderr
  */
 void
-warning(const char *file, const int line, const char *function, const char *msg)
+warning(const char *file, const int line, const char *function,
+    const char *msg)
 {
 	if (_LOG_FILE != NULL) {
 		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",
@@ -554,4 +555,37 @@ get_content_encoding(const char *file_name)
 	}
 
 	return "text/plain";
+}
+
+const char *
+get_err_msg(enum err_status error)
+{
+	static const char *err_msg[] = {
+	/* STAT_OK            */ "no error detected",
+	/* WRITE_CLOSED       */ "error - could not write, client closed connection",
+	/* ZERO_WRITTEN       */ "error - could not write, 0 bytes written",
+	/* CLOSED_CON         */ "error - client closed connection",
+	/* EMPTY_MESSAGE      */ "error - empty message",
+	/* INV_REQ_TYPE       */ "error - invalid or missing Request Type",
+	/* INV_GET            */ "error - invalid GET",
+	/* INV_POST           */ "error - invalid POST",
+	/* CON_LENGTH_MISSING */ "error - Content_Length missing",
+	/* BOUNDARY_MISSING   */ "error - boundary missing",
+	/* FILESIZE_ZERO      */ "error - filesize is 0 or error ocurred",
+	/* WRONG_BOUNDRY      */ "error - wrong boundry specified",
+	/* HTTP_HEAD_LINE_EXT */ "error - http header extended line limit",
+	/* FILE_HEAD_LINE_EXT */ "error - file header extended line limit",
+	/* POST_NO_FILENAME   */ "error - missing filename in post message",
+	/* NO_FREE_SPOT       */ "error - the posted filename already exists",
+	/* FILE_ERROR         */ "error - could not write the post content to file",
+	/* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
+	/* FILENAME_ERR       */ "error - could not parse filename",
+	/* CONTENT_LENGTH_EXT */ "error - content length extended",
+	/* POST_DISABLED      */ "error - post is disabled",
+	/* HEADER_LINES_EXT   */ "error - too many headerlines",
+	/* INV_CONTENT_TYPE   */ "error - invalid Content-Type",
+	/* INV_RANGE          */ "error - invalid Range"
+	};
+
+	return err_msg[error];
 }

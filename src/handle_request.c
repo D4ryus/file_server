@@ -27,37 +27,6 @@ extern int UPLOAD_ENABLED;
 extern int USE_NCURSES;
 #endif
 
-/*
- * corresponding error messages to err_status, see types.h
- */
-const char *err_msg[] =
-{
-/* STAT_OK            */ "no error detected",
-/* WRITE_CLOSED       */ "error - could not write, client closed connection",
-/* ZERO_WRITTEN       */ "error - could not write, 0 bytes written",
-/* CLOSED_CON         */ "error - client closed connection",
-/* EMPTY_MESSAGE      */ "error - empty message",
-/* INV_REQ_TYPE       */ "error - invalid or missing Request Type",
-/* INV_GET            */ "error - invalid GET",
-/* INV_POST           */ "error - invalid POST",
-/* CON_LENGTH_MISSING */ "error - Content_Length missing",
-/* BOUNDARY_MISSING   */ "error - boundary missing",
-/* FILESIZE_ZERO      */ "error - filesize is 0 or error ocurred",
-/* WRONG_BOUNDRY      */ "error - wrong boundry specified",
-/* HTTP_HEAD_LINE_EXT */ "error - http header extended line limit",
-/* FILE_HEAD_LINE_EXT */ "error - file header extended line limit",
-/* POST_NO_FILENAME   */ "error - missing filename in post message",
-/* NO_FREE_SPOT       */ "error - the posted filename already exists",
-/* FILE_ERROR         */ "error - could not write the post content to file",
-/* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
-/* FILENAME_ERR       */ "error - could not parse filename",
-/* CONTENT_LENGTH_EXT */ "error - content length extended",
-/* POST_DISABLED      */ "error - post is disabled",
-/* HEADER_LINES_EXT   */ "error - too many headerlines",
-/* INV_CONTENT_TYPE   */ "error - invalid Content-Type",
-/* INV_RANGE          */ "error - invalid Range"
-};
-
 void
 init_client_info(struct client_info *data)
 {
@@ -95,7 +64,7 @@ handle_request(void *ptr)
 	if (error) {
 		shutdown(data->sock, SHUT_RDWR);
 		close(data->sock);
-		msg_print_log(data, ERROR, err_msg[error]);
+		msg_print_log(data, ERROR, get_err_msg(error));
 		msg_hook_cleanup(data);
 
 		return NULL;
@@ -131,7 +100,7 @@ handle_request(void *ptr)
 		break;
 	}
 	if (error) {
-		msg_print_log(data, ERROR, err_msg[error]);
+		msg_print_log(data, ERROR, get_err_msg(error));
 	}
 
 	delete_http_header(&http_head);
