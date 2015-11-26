@@ -62,8 +62,7 @@ handle_request(void *ptr)
 	init_client_info(data);
 
 	/* check if ip is blocked */
-	if (strlen(IP) > 0 &&
-	    memcmp(IP, data->ip, strlen(IP))) {
+	if (IP && memcmp(IP, data->ip, strlen(IP))) {
 		shutdown(data->sock, SHUT_RDWR);
 		close(data->sock);
 		msg_print_log(data, ERROR, "ip blocked");
