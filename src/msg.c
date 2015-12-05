@@ -28,7 +28,7 @@ extern int USE_NCURSES;
 static struct status_list_node *first = NULL;
 static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
-int msg_enabled = 0;
+static int msg_enabled = 0;
 
 /*
  * initialize messages subsystem, which will create its own thread
