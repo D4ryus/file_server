@@ -109,3 +109,6 @@ graph : perf
              -Goverlap=prism \
              -Tpng graph.dot \
              > graph.png
+
+install_local : $(EXECUTABLE)
+	cp $(EXECUTABLE) ~/bin/
