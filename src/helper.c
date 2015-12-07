@@ -592,3 +592,90 @@ get_err_msg(enum err_status error)
 
 	return err_msg[error];
 }
+
+/*
+ * normalizes given ip, here are examples:
+ *   21.32.111.5 -> 021.032.111.005
+ * *21.32.111.*5 -> *21.032.111.0*5
+ *       1.1.1.1 -> 001.001.001.001
+ * functions is used to make ip checking easier.
+ * returned pointer will point to dst
+ * dst must be allocated memory (16 bytes).
+ */
+char *
+normalize_ip(char *dst, const char *src)
+{
+	int src_pos;
+	int dst_pos;
+
+	if (!src || strlen(src) > 15) {
+		die(ERR_INFO, "src NULL or length > 15.");
+	}
+
+	if (strlen(src) == 15) {
+		memcpy(dst, src, 15);
+		dst[15] = '\0';
+		return dst;
+	}
+
+	dst[15] = '\0';
+	src_pos = (int)strlen(src) - 1;
+	for (dst_pos = 14; dst_pos > -1; dst_pos--) {
+		if ((src_pos < 0 || src[src_pos] == '.')
+		    && (dst_pos + 1) % 4 != 0) {
+			dst[dst_pos] = '0';
+		} else {
+			dst[dst_pos] = src[src_pos];
+			src_pos--;
+		}
+	}
+
+	return dst;
+}
+
+/* checks ip_check against ip_allowed, returns 1 on match, 0 on failure */
+int
+ip_matches(const char *ip_allowed, const char *ip_check)
+{
+	char ip_allowed_norm[16];
+	char ip_check_norm[16];
+	int i;
+
+	if (!ip_allowed) {
+		die(ERR_INFO, "ip_allowed NULL");
+	}
+	if (!ip_check) {
+		die(ERR_INFO, "ip_check NULL");
+	}
+
+	if (strlen(ip_allowed) != 15) {
+		char ip_tmp[16];
+		normalize_ip(ip_tmp, ip_allowed);
+		memcpy(ip_allowed_norm, ip_tmp, 16);
+	} else {
+		memcpy(ip_allowed_norm, ip_allowed, 16);
+	}
+
+	if (strlen(ip_check) != 15) {
+		char ip_tmp[16];
+		normalize_ip(ip_tmp, ip_allowed);
+		memcpy(ip_check_norm, ip_tmp, 16);
+	} else {
+		memcpy(ip_check_norm, ip_check, 16);
+	}
+
+	for (i = 0; i < 15; i++) {
+		/* if i dont see a star -> check if they match, if not return
+		 *     -> failure.
+		 * if i dont see a star -> check if they match, if they do
+		 *     -> continue.
+		 * if i see a star -> continue;
+		 */
+		if (ip_allowed[i] != '*' && ip_allowed[i] != ip_check[i]) {
+			return 0;
+		}
+	}
+
+	/* if we came this far, return a success! */
+	return 1;
+}
