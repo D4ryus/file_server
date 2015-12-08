@@ -618,6 +618,12 @@ normalize_ip(char *dst, const char *src)
 		return dst;
 	}
 
+	if (strlen(src) == 1 && src[0] == '*') {
+		memcpy(dst, "***.***.***.***", 15);
+		dst[15] = '\0';
+		return dst;
+	}
+
 	dst[15] = '\0';
 	src_pos = (int)strlen(src) - 1;
 	for (dst_pos = 14; dst_pos > -1; dst_pos--) {
@@ -648,6 +654,10 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 		die(ERR_INFO, "ip_check NULL");
 	}
 
+	if (strlen(ip_allowed) == 1 && ip_allowed[0] == '*') {
+		return 1;
+	}
+
 	if (strlen(ip_allowed) != 15) {
 		char ip_tmp[16];
 		normalize_ip(ip_tmp, ip_allowed);
@@ -658,7 +668,7 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 
 	if (strlen(ip_check) != 15) {
 		char ip_tmp[16];
-		normalize_ip(ip_tmp, ip_allowed);
+		normalize_ip(ip_tmp, ip_check);
 		memcpy(ip_check_norm, ip_tmp, 16);
 	} else {
 		memcpy(ip_check_norm, ip_check, 16);
@@ -671,7 +681,7 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 		 *     -> continue.
 		 * if i see a star -> continue;
 		 */
-		if (ip_allowed[i] != '*' && ip_allowed[i] != ip_check[i]) {
+		if (ip_allowed_norm[i] != '*' && ip_allowed_norm[i] != ip_check_norm[i]) {
 			return 0;
 		}
 	}

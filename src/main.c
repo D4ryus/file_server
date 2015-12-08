@@ -106,6 +106,21 @@ main(const int argc, const char *argv[])
 			continue;
 		}
 #endif
+
+		/* check if ip is blocked */
+		printf("ip %s\n", IP);
+		if (!ip_matches(IP, inet_ntoa(cli_addr.sin_addr))) {
+		/* if (!ip_matches(IP, data->ip)) { */
+			printf("blocked %s!\n", inet_ntoa(cli_addr.sin_addr));
+			continue;
+			/* shutdown(data->sock, SHUT_RDWR); */
+			/* close(data->sock); */
+			/* msg_print_log(data, ERROR, "ip blocked"); */
+			/* msg_hook_cleanup(data); */
+
+			/* return NULL; */
+		}
+
 		data = err_malloc(sizeof(struct client_info));
 		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
@@ -202,7 +217,7 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit(argv[0], "user specified "
 				    "-i/--ip with ip length > 15.");
 			}
-			memcpy(IP, argv[i], strlen(argv[i]) + 1);
+			normalize_ip(IP, argv[i]);
 		} else {
 			usage_quit(argv[0], "unknown argument specified");
 		}

@@ -61,16 +61,6 @@ handle_request(void *ptr)
 
 	init_client_info(data);
 
-	/* check if ip is blocked */
-	if (IP && memcmp(IP, data->ip, strlen(IP))) {
-		shutdown(data->sock, SHUT_RDWR);
-		close(data->sock);
-		msg_print_log(data, ERROR, "ip blocked");
-		msg_hook_cleanup(data);
-
-		return NULL;
-	}
-
 	error = parse_header(&http_head, data->sock);
 	if (error) {
 		shutdown(data->sock, SHUT_RDWR);

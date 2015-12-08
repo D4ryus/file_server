@@ -22,9 +22,9 @@ uint16_t PORT = 8283;
 uint8_t VERBOSITY = 0;
 
 /*
- * default allowed ip
+ * default allowed ip, * disables ip blocking.
  */
-char IP[16] = "";
+char IP[16] = "*";
 
 /*
  * enable coloring
