@@ -3,10 +3,7 @@
 # imagemagick, if xclip is installed the link is copied to clipboard
 
 # server is the address curl will post to
-SERVER="http://d4ryus.h4ck.me:8283/"
-# SERVER_UPLOAD_DIR is the directoy on the server where the image is
-# getting saved
-SERVER_UPLOAD_DIR="upload"
+SERVER="http://d4ryus.h4ck.me:8283/ss"
 # TMP is a local directoy where the images are getting saved
 TMP="/tmp/upload"
 IMAGE="$1"
@@ -46,9 +43,9 @@ if [ -r ${FULL_PATH} ]; then
         fi
 
         # check if xclip is installed, if so copy link to clipboard
-        echo "${SERVER}${SERVER_UPLOAD_DIR}/${IMAGE}"
+        echo "${SERVER}/${IMAGE}"
         if type "xclip" &> /dev/null; then
-                echo "${SERVER}${SERVER_UPLOAD_DIR}/${IMAGE}" | xclip -in
+                echo "${SERVER}/${IMAGE}" | xclip -in
                 echo "copied to clipboard, paste with 'xclip -out' or middle mouse"
         fi
 else

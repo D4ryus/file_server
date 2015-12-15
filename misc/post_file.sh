@@ -3,10 +3,7 @@
 # if xclip is installed the link is copied to clipboard
 
 # server is the address curl will post to
-SERVER="http://d4ryus.h4ck.me:8283/"
-# SERVER_UPLOAD_DIR is the directoy on the server where the file is
-# getting saved
-SERVER_UPLOAD_DIR="upload"
+SERVER="http://d4ryus.h4ck.me:8283/upload"
 # FILE contains the filename, just in case a path is specified
 FILE=$(basename "$1")
 
@@ -28,8 +25,8 @@ if [[ $response == 405* ]] ; then
         exit 1
 fi
 # check if xclip is installed, if so copy link to clipboard
-echo "${SERVER}${SERVER_UPLOAD_DIR}/${IMAGE}"
+echo "${SERVER}/${IMAGE}"
 if type "xclip" &> /dev/null; then
-        echo "${SERVER}${SERVER_UPLOAD_DIR}/${FILE}" | xclip -in
+        echo "${SERVER}/${FILE}" | xclip -in
         echo "copied to clipboard, paste with 'xclip -out' or middle mouse."
 fi
