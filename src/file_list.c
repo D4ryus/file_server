@@ -7,16 +7,10 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "globals.h"
 #include "file_list.h"
 #include "helper.h"
 #include "defines.h"
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
-extern const char *TABLE_PLAIN[3];
-extern const char *TABLE_HTML[3];
 
 /*
  * creates a dir stuct with from given directory.

@@ -5,20 +5,12 @@
 #include <string.h>
 #include <pthread.h>
 
+#include "globals.h"
 #include "ncurses_msg.h"
 #include "helper.h"
 #include "defines.h"
 
 #define HEADER_COLOR_ID 1
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
-extern char *UPLOAD_DIR;
-extern int UPLOAD_ENABLED;
-extern uint16_t PORT;
-extern const size_t UPDATE_TIMEOUT;
 
 int USE_NCURSES;
 int WINDOW_RESIZED;

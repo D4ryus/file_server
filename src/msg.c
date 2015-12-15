@@ -6,23 +6,13 @@
 #include <time.h>
 #include <sys/types.h>
 
+#include "globals.h"
 #include "defines.h"
 #include "msg.h"
 #include "helper.h"
+
 #ifdef NCURSES
 #include "ncurses_msg.h"
-#endif
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
-extern FILE *_LOG_FILE;
-extern uint8_t VERBOSITY;
-extern int COLOR;
-extern size_t UPDATE_TIMEOUT;
-#ifdef NCURSES
-extern int USE_NCURSES;
 #endif
 
 static struct status_list_node *first = NULL;
@@ -179,8 +169,8 @@ msg_print_log(struct client_info *data, const enum message_type type,
 		return;
 	}
 
-	if (_LOG_FILE != NULL) {
-		stream = _LOG_FILE;
+	if (LOG_FILE_D != NULL) {
+		stream = LOG_FILE_D;
 	} else {
 		stream = stdout;
 	}
@@ -188,8 +178,8 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	pthread_mutex_lock(&print_mutex);
 	fprintf(stream, "%s\n", msg_buffer);
 
-	if (_LOG_FILE != NULL) {
-		fflush(_LOG_FILE);
+	if (LOG_FILE_D != NULL) {
+		fflush(LOG_FILE_D);
 	}
 	pthread_mutex_unlock(&print_mutex);
 }
@@ -335,8 +325,8 @@ msg_print_status(const char *msg, int position)
 		return;
 	}
 
-	if (_LOG_FILE != NULL) {
-		stream = _LOG_FILE;
+	if (LOG_FILE_D != NULL) {
+		stream = LOG_FILE_D;
 	} else {
 		stream = stdout;
 	}
@@ -354,8 +344,8 @@ msg_print_status(const char *msg, int position)
 		fprintf(stream, "%s\n", msg);
 	}
 
-	if (_LOG_FILE != NULL) {
-		fflush(_LOG_FILE);
+	if (LOG_FILE_D != NULL) {
+		fflush(LOG_FILE_D);
 	}
 	pthread_mutex_unlock(&print_mutex);
 }

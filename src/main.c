@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
+#include "globals.h"
 #include "handle_request.h"
 #include "msg.h"
 #include "types.h"
@@ -17,15 +18,6 @@
 
 #ifdef NCURSES
 #include "ncurses_msg.h"
-#endif
-
-FILE *_LOG_FILE = NULL;
-char *UPLOAD_DIR = NULL;
-int UPLOAD_ENABLED = 0;
-
-#ifdef NCURSES
-extern int USE_NCURSES;
-extern int WINDOW_RESIZED;
 #endif
 
 int _main(int, const char **);
@@ -106,20 +98,6 @@ main(const int argc, const char *argv[])
 			continue;
 		}
 #endif
-
-		/* check if ip is blocked */
-		printf("ip %s\n", IP);
-		if (!ip_matches(IP, inet_ntoa(cli_addr.sin_addr))) {
-		/* if (!ip_matches(IP, data->ip)) { */
-			printf("blocked %s!\n", inet_ntoa(cli_addr.sin_addr));
-			continue;
-			/* shutdown(data->sock, SHUT_RDWR); */
-			/* close(data->sock); */
-			/* msg_print_log(data, ERROR, "ip blocked"); */
-			/* msg_hook_cleanup(data); */
-
-			/* return NULL; */
-		}
 
 		data = err_malloc(sizeof(struct client_info));
 		data->sock = client_socket;
@@ -244,8 +222,8 @@ parse_arguments(const int argc, const char *argv[])
 	}
 
 	if (LOG_FILE != NULL) {
-		_LOG_FILE = fopen(LOG_FILE, "a+");
-		if (_LOG_FILE == NULL) {
+		LOG_FILE_D = fopen(LOG_FILE, "a+");
+		if (LOG_FILE_D == NULL) {
 			die(ERR_INFO, "could not open logfile");
 		}
 	}

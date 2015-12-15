@@ -5,22 +5,12 @@
 #include <sys/stat.h>
 #include <inttypes.h>
 
+#include "globals.h"
 #include "http_response.h"
 #include "types.h"
 #include "helper.h"
 #include "file_list.h"
 #include "defines.h"
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
-extern const char *RESPONSE_403;
-extern const char *RESPONSE_404;
-extern const char *RESPONSE_405;
-extern const char *RESPONSE_201;
-extern const char *HTTP_TOP;
-extern const char *HTTP_BOT;
 
 /*
  * sends a 200 OK HTTP header response

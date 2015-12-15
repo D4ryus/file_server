@@ -11,6 +11,7 @@ SRC_PATH=src/
 TMP_DEPEND=$(EXECUTABLE)_depend
 
 OBJS = $(OBJ_PATH)file_list.o \
+       $(OBJ_PATH)globals.o \
        $(OBJ_PATH)handle_request.o \
        $(OBJ_PATH)helper.o \
        $(OBJ_PATH)main.o \

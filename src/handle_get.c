@@ -6,17 +6,13 @@
 #include <sys/socket.h>
 #include <inttypes.h>
 
+#include "globals.h"
 #include "handle_request.h"
 #include "handle_get.h"
 #include "defines.h"
 #include "helper.h"
 #include "msg.h"
 #include "http_response.h"
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
 
 int
 handle_get(struct client_info *data, struct http_header *http_head)

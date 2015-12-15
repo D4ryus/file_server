@@ -4,17 +4,13 @@
 #include <unistd.h>
 #include <sys/socket.h>
 
+#include "globals.h"
 #include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
 #include "http_response.h"
 #include "msg.h"
 #include "handle_post.h"
-
-/*
- * see globals.h
- */
-extern char *UPLOAD_DIR;
 
 int
 handle_post(struct client_info *data, struct http_header *http_head)

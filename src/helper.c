@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <sys/socket.h>
 
+#include "globals.h"
 #include "helper.h"
 #include "msg.h"
 #include "defines.h"
@@ -187,12 +188,6 @@ char *mime_types[][2] = {
 	{ "qd3",     "x-world/x-3dmf" },
 	{ "wrl",     "x-world/x-vrml" },
 };
-
-/*
- * see globals.h
- */
-extern char *ROOT_DIR;
-extern FILE *_LOG_FILE;
 
 /*
  * returns:
@@ -450,10 +445,10 @@ err_realloc(void *ptr, size_t size)
 void
 die(const char *file, const int line, const char *function, const char *msg)
 {
-	if (_LOG_FILE != NULL) {
-		fprintf(_LOG_FILE, "%s:%d:%s: error: %s: %s\n",
+	if (LOG_FILE_D != NULL) {
+		fprintf(LOG_FILE_D, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
-		fflush(_LOG_FILE);
+		fflush(LOG_FILE_D);
 	} else {
 		fprintf(stderr, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
@@ -468,10 +463,10 @@ void
 warning(const char *file, const int line, const char *function,
     const char *msg)
 {
-	if (_LOG_FILE != NULL) {
-		fprintf(_LOG_FILE, "%s:%d:%s: warning: %s: %s\n",
+	if (LOG_FILE_D != NULL) {
+		fprintf(LOG_FILE_D, "%s:%d:%s: warning: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
-		fflush(_LOG_FILE);
+		fflush(LOG_FILE_D);
 	} else {
 		fprintf(stderr, "%s:%d:%s: warning: %s: %s\n",
 		    file, line, function, msg, strerror(errno));

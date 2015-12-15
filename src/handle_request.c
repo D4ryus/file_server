@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <stdint.h>
 
+#include "globals.h"
 #include "handle_post.h"
 #include "handle_get.h"
 #include "defines.h"
@@ -13,20 +14,6 @@
 #include "http_response.h"
 #include "msg.h"
 #include "parse_http.h"
-
-/*
- * see globals.h
- */
-extern char *IP;
-extern char *ROOT_DIR;
-extern char *UPLOAD_DIR;
-extern int UPLOAD_ENABLED;
-extern uint8_t VERBOSITY;
-extern int UPLOAD_ENABLED;
-
-#ifdef NCURSES
-extern int USE_NCURSES;
-#endif
 
 void
 init_client_info(struct client_info *data)
@@ -60,6 +47,16 @@ handle_request(void *ptr)
 	msg_print_log(data, CONNECTED, con_msg);
 
 	init_client_info(data);
+
+	/* check if ip is blocked */
+	if (!ip_matches(IP, data->ip)) {
+		shutdown(data->sock, SHUT_RDWR);
+		close(data->sock);
+		msg_print_log(data, ERROR, "ip blocked");
+		msg_hook_cleanup(data);
+
+		return NULL;
+	}
 
 	error = parse_header(&http_head, data->sock);
 	if (error) {
