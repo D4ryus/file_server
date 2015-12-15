@@ -12,6 +12,16 @@
 #include "helper.h"
 #include "defines.h"
 
+struct file {
+	char *name;
+	off_t size;
+	char time[20];
+	char type[11];
+};
+
+static struct dir *_add_file_to_dir(struct dir *, char *, char *);
+static int _compare_files(const void *, const void *);
+
 /*
  * creates a dir stuct with from given directory.
  * returns NULL if permission is denied.
@@ -25,7 +35,7 @@ get_dir(char *directory)
 	struct dir *result;
 
 	dirp = opendir(directory);
-	if (dirp == NULL) {
+	if (!dirp) {
 		if (errno == EACCES) {
 			return NULL;
 		}
@@ -37,7 +47,7 @@ get_dir(char *directory)
 	result->name = err_malloc(strlen(directory) + 1);
 	strncpy(result->name, directory, strlen(directory) + 1);
 
-	for (i = 0; (dp = (struct dirent *)readdir(dirp)) != NULL; i++) {
+	for (i = 0; (dp = (struct dirent *)readdir(dirp)); i++) {
 		result = _add_file_to_dir(result, dp->d_name, directory);
 	}
 
@@ -77,11 +87,11 @@ dir_to_table(enum http_type type, char *dir)
 
 	free(directory);
 
-	if (d == NULL) {
+	if (!d) {
 		die(ERR_INFO, "cannot open directory");
 	}
 
-	if (d->files == NULL) {
+	if (!d->files) {
 		die(ERR_INFO, "get_dir()->files are NULL");
 	}
 
@@ -104,7 +114,7 @@ dir_to_table(enum http_type type, char *dir)
 	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 
 	for (i = 0; i < d->length; i++) {
-		if (d->files[i]->name == NULL) {
+		if (!d->files[i]->name) {
 			continue;
 		}
 		/* table body */
@@ -133,16 +143,16 @@ free_dir(struct dir *d)
 {
 	int i;
 
-	if (d == NULL) {
+	if (!d) {
 		return;
 	}
 
-	if (d->name != NULL) {
+	if (d->name) {
 		free(d->name);
 	}
 
 	for (i = 0; i < d->length; i++) {
-		if (d->files[i]->name != NULL) {
+		if (d->files[i]->name) {
 			free(d->files[i]->name);
 		}
 		free(d->files[i]);
@@ -165,7 +175,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	struct tm *tmp;
 	size_t n;
 
-	if (file == NULL) {
+	if (!file) {
 		die(ERR_INFO, "tried to add file which was NULL");
 		return d;
 	}
@@ -199,7 +209,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 	}
 
 	tmp = localtime(&sb.st_mtime);
-	if (tmp == NULL) {
+	if (!tmp) {
 		die(ERR_INFO, "localtime()");
 	}
 	if (!strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp)) {

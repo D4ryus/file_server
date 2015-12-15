@@ -20,6 +20,10 @@ static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
 static int msg_enabled = 0;
 
+static void *_msg_print_loop(void *);
+static void _format_status_msg(char *, size_t, struct status_list_node *, const int);
+static void _msg_hook_delete(void);
+
 /*
  * initialize messages subsystem, which will create its own thread
  * and init mutex variables. if NCURSES is enabled ncurses will be
@@ -57,7 +61,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
  * wont end, will print every refresh_time seconds
  * each element from the linkedlist
  */
-void *
+static void *
 _msg_print_loop(void *ignored)
 {
 	struct status_list_node *cur;
@@ -77,7 +81,7 @@ _msg_print_loop(void *ignored)
 		position = 0;
 		tx = 0;
 		rx = 0;
-		for (cur = first; cur != NULL; cur = cur->next, position++) {
+		for (cur = first; cur; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
 
 			_format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
@@ -145,7 +149,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	tmp = err_malloc(sizeof(struct tm));
 	tmp = localtime_r(&t, tmp);
 
-	if (tmp == NULL) {
+	if (!tmp) {
 		die(ERR_INFO, "localtime()");
 	}
 
@@ -158,7 +162,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	    "%-19s [%15s]: %s",
 	    str_time,
 	    data->ip,
-	    message == NULL ? "" : message);
+	    !message ? "" : message);
 
 #ifdef NCURSES
 	ncurses_print_log(msg_buffer);
@@ -169,7 +173,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 		return;
 	}
 
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		stream = LOG_FILE_D;
 	} else {
 		stream = stdout;
@@ -178,7 +182,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	pthread_mutex_lock(&print_mutex);
 	fprintf(stream, "%s\n", msg_buffer);
 
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		fflush(LOG_FILE_D);
 	}
 	pthread_mutex_unlock(&print_mutex);
@@ -203,10 +207,10 @@ msg_hook_add(struct client_info *new_data)
 	new_node->next = NULL;
 
 	pthread_mutex_lock(&status_list_mutex);
-	if (first == NULL) {
+	if (!first) {
 		first = new_node;
 	} else {
-		for (cur = first; cur->next != NULL; cur = cur->next)
+		for (cur = first; cur->next; cur = cur->next)
 			; /* nothing */
 		cur->next = new_node;
 	}
@@ -226,7 +230,7 @@ msg_hook_cleanup(struct client_info *rem_data)
 
 	found = 0;
 
-	for (cur = first; cur != NULL; cur = cur->next) {
+	for (cur = first; cur; cur = cur->next) {
 		if (cur->data == rem_data) {
 			cur->remove_me = 1;
 			found = 1;
@@ -234,7 +238,7 @@ msg_hook_cleanup(struct client_info *rem_data)
 	}
 
 	if (!found) {
-		if (rem_data->requested_path != NULL) {
+		if (rem_data->requested_path) {
 			free(rem_data->requested_path);
 		}
 		free(rem_data);
@@ -244,7 +248,7 @@ msg_hook_cleanup(struct client_info *rem_data)
 /*
  * formats a data_list_node and calls print_info
  */
-void
+static void
 _format_status_msg(char *msg_buffer, size_t buff_size,
     struct status_list_node *cur, const int position)
 {
@@ -305,9 +309,7 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    (cur->data->requested_path == NULL) ?
-	        "-" :
-	        cur->data->requested_path
+	    !cur->data->requested_path ? "-" : cur->data->requested_path
 	    );
 
 	return;
@@ -325,7 +327,7 @@ msg_print_status(const char *msg, int position)
 		return;
 	}
 
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		stream = LOG_FILE_D;
 	} else {
 		stream = stdout;
@@ -344,7 +346,7 @@ msg_print_status(const char *msg, int position)
 		fprintf(stream, "%s\n", msg);
 	}
 
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		fflush(LOG_FILE_D);
 	}
 	pthread_mutex_unlock(&print_mutex);
@@ -353,7 +355,7 @@ msg_print_status(const char *msg, int position)
 /*
  * removes all flagged (remove_me) data hooks
  */
-void
+static void
 _msg_hook_delete()
 {
 	struct status_list_node *cur;
@@ -367,7 +369,7 @@ _msg_hook_delete()
 	last = NULL;
 
 	pthread_mutex_lock(&status_list_mutex);
-	for (cur = first; cur != NULL;) {
+	for (cur = first; cur;) {
 		if (cur->remove_me) {
 			if (cur == first) {
 				first = cur->next;
@@ -376,7 +378,7 @@ _msg_hook_delete()
 			}
 			tmp = cur;
 			cur = cur->next;
-			if (tmp->data->requested_path != NULL) {
+			if (tmp->data->requested_path) {
 				free(tmp->data->requested_path);
 			}
 			free(tmp->data);

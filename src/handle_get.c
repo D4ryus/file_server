@@ -14,6 +14,8 @@
 #include "msg.h"
 #include "http_response.h"
 
+static enum response_type get_response_type(char **);
+
 int
 handle_get(struct client_info *data, struct http_header *http_head)
 {
@@ -70,7 +72,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		break;
 	case DIR_200:
 		error = send_200_directory(data->sock, http_head->type,
-			    &(data->size), data->requested_path);
+			    &(data->size), data->requested_path, data->ip);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
 			    "%s sent dir: %s",
@@ -113,30 +115,31 @@ handle_get(struct client_info *data, struct http_header *http_head)
  * in case its a FILE_200 or DIR_200 the given request
  * is set to evaluated requested path
  */
-enum response_type
+static enum response_type
 get_response_type(char **request)
 {
 	char *full_requested_path;
 	char *requested_path;
 	enum response_type ret;
+	char *free_me;
 	struct stat s;
 
-	if ((*request) == NULL) {
+	if (!*request) {
 		return TXT_404;
 	}
-	if (memcmp((*request), "/\0", (size_t)2) == 0) {
+	if (memcmp(*request, "/\0", (size_t)2) == 0) {
 		return DIR_200;
 	}
 
 	full_requested_path = NULL;
 	full_requested_path = concat(concat(full_requested_path, ROOT_DIR),
-				  (*request));
+				  *request);
 
 	requested_path = realpath(full_requested_path, NULL);
 	free(full_requested_path);
 
 	/* on gnux/linux this will return NULL on file not found */
-	if (requested_path == NULL) {
+	if (!requested_path) {
 		return TXT_404;
 	}
 
@@ -164,13 +167,14 @@ get_response_type(char **request)
 	}
 
 	/* and update request string to a full path */
-	free((*request));
-	(*request) = NULL;
-	(*request) = concat((*request), requested_path
+	free_me = *request;
+	*request = NULL;
+	*request = concat(*request, requested_path
 		         + strlen(ROOT_DIR));
+	free(free_me);
+	free_me = NULL;
 
 	free(requested_path);
 
 	return ret;
 }
-

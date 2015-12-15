@@ -34,7 +34,7 @@ send_200_file_head(int socket, enum http_type type, uint64_t *size,
 		die(ERR_INFO, "stat()");
 	}
 	free(full_path);
-	(*size) = (uint64_t)sb.st_size;
+	*size = (uint64_t)sb.st_size;
 
 	if (type != HTTP) {
 		return STAT_OK;
@@ -97,7 +97,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
 	    to = file_size - 1;
 	}
 
-	(*size) = to - from + 1;
+	*size = to - from + 1;
 
 	snprintf(content_length, (size_t)64,
 	    "\r\nContent-Length: %" PRIu64 "\r\n",
@@ -132,7 +132,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
  */
 int
 send_200_directory(int socket, enum http_type type, uint64_t *size,
-    char *directory)
+    char *directory, char ip[16])
 {
 	enum err_status error;
 	char *body;
@@ -145,6 +145,16 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 
 	if (type == HTTP) {
 		body = concat(body, HTTP_TOP);
+		/* if upload allowed, print upload form */
+		if (ip_matches(UPLOAD_IP, ip)) {
+			body = concat(concat(concat(body,
+				"<form action='"), directory), "'"
+				      "method='post'"
+				      "enctype='multipart/form-data'>"
+					"<br><input type='file' name='file[]' multiple='true'>"
+					"<br><button type='submit'>Upload</button>"
+				"</form>");
+		}
 	}
 	table = dir_to_table(type, directory);
 	body = concat(body, table);
@@ -153,11 +163,11 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 		body = concat(body, HTTP_BOT);
 	}
 
-	(*size) = (uint64_t)strlen(body);
+	*size = (uint64_t)strlen(body);
 	if (type == HTTP) {
 		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
-		    (long long unsigned int)(*size));
+		    (long long unsigned int)*size);
 
 		head = concat(concat(head, "HTTP/1.1 200 OK\r\n"
 					   "Cache-Control: no-cache\r\n"
@@ -172,7 +182,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 		}
 	}
 
-	error = send_data(socket, body, (*size));
+	error = send_data(socket, body, *size);
 	free(body);
 
 	return error;
@@ -192,11 +202,11 @@ send_403(int socket, enum http_type type, uint64_t *size)
 
 	head = NULL;
 
-	(*size) = (uint64_t)strlen(RESPONSE_403);
+	*size = (uint64_t)strlen(RESPONSE_403);
 	if (type == HTTP) {
 		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
-		    (long long unsigned int)(*size));
+		    (long long unsigned int)*size);
 
 		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
 					   "Cache-Control: no-cache\r\n"
@@ -210,7 +220,7 @@ send_403(int socket, enum http_type type, uint64_t *size)
 		}
 	}
 
-	error = send_data(socket, RESPONSE_403, (*size));
+	error = send_data(socket, RESPONSE_403, *size);
 
 	return error;
 }
@@ -229,11 +239,11 @@ send_404(int socket, enum http_type type, uint64_t *size)
 
 	head = NULL;
 
-	(*size) = (uint64_t)strlen(RESPONSE_404);
+	*size = (uint64_t)strlen(RESPONSE_404);
 	if (type == HTTP) {
 		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
-		    (long long unsigned int)(*size));
+		    (long long unsigned int)*size);
 
 		head = concat(concat(head, "HTTP/1.1 404 Not Found\r\n"
 					   "Cache-Control: no-cache\r\n"
@@ -248,7 +258,7 @@ send_404(int socket, enum http_type type, uint64_t *size)
 		}
 	}
 
-	error = send_data(socket, RESPONSE_404, (*size));
+	error = send_data(socket, RESPONSE_404, *size);
 
 	return error;
 }
@@ -267,11 +277,11 @@ send_405(int socket, enum http_type type, uint64_t *size)
 
 	head = NULL;
 
-	(*size) = (uint64_t)strlen(RESPONSE_405);
+	*size = (uint64_t)strlen(RESPONSE_405);
 	if (type == HTTP) {
 		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
-		    (long long unsigned int)(*size));
+		    (long long unsigned int)*size);
 
 		head = concat(concat(head, "HTTP/1.1 405 Method Not Allowed\r\n"
 					   "Cache-Control: no-cache\r\n"
@@ -285,7 +295,7 @@ send_405(int socket, enum http_type type, uint64_t *size)
 		}
 	}
 
-	error = send_data(socket, RESPONSE_405, (*size));
+	error = send_data(socket, RESPONSE_405, *size);
 
 	return error;
 }
@@ -304,11 +314,11 @@ send_201(int socket, enum http_type type, uint64_t *size)
 
 	head = NULL;
 
-	(*size) = (uint64_t)strlen(RESPONSE_201);
+	*size = (uint64_t)strlen(RESPONSE_201);
 	if (type == HTTP) {
 		snprintf(content_length, (size_t)64,
 		    "Content-Length: %llu\r\n\r\n",
-		    (long long unsigned int)(*size));
+		    (long long unsigned int)*size);
 
 		head = concat(concat(head, "HTTP/1.1 201 Created\r\n"
 					   "Cache-Control: no-cache\r\n"
@@ -323,7 +333,7 @@ send_201(int socket, enum http_type type, uint64_t *size)
 		}
 	}
 
-	error = send_data(socket, RESPONSE_201, (*size));
+	error = send_data(socket, RESPONSE_201, *size);
 
 	return error;
 }

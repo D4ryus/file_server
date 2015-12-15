@@ -26,22 +26,8 @@ struct http_header {
 	uint8_t range : 1;
 };
 
-struct http_keyword {
-	char *key;
-	int (*fn) (struct http_header *data, char *);
-};
-
 void init_http_header(struct http_header *data);
 int parse_header(struct http_header *, int);
 void delete_http_header(struct http_header *);
-
-int _get_line(int, char**);
-int _parse_GET(struct http_header *, char *);
-int _parse_POST(struct http_header *, char *);
-int _parse_host(struct http_header *, char *);
-int _parse_range(struct http_header *, char *);
-int _parse_content_length(struct http_header *, char *);
-int _parse_content_type(struct http_header *, char *);
-void _debug_print_header(FILE *, struct http_header *);
 
 #endif

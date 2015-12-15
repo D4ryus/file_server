@@ -8,6 +8,21 @@
 #include "helper.h"
 #include "defines.h"
 
+static int _get_line(int, char**);
+static int _parse_GET(struct http_header *, char *);
+static int _parse_POST(struct http_header *, char *);
+static int _parse_url(struct http_header *, char *);
+static int _parse_host(struct http_header *, char *);
+static int _parse_range(struct http_header *, char *);
+static int _parse_content_length(struct http_header *, char *);
+static int _parse_content_type(struct http_header *, char *);
+static void _debug_print_header(FILE *, struct http_header *);
+
+struct http_keyword {
+	char *key;
+	int (*fn) (struct http_header *data, char *);
+};
+
 struct http_keyword parse_table[] = {
 	{ "GET ",             _parse_GET },
 	{ "POST ",            _parse_POST },
@@ -101,7 +116,7 @@ delete_http_header(struct http_header *data)
  * buff will be free'd and set to NULL on error
  * buffer will always be terminated with \0
  */
-int
+static int
 _get_line(int sock, char **buff)
 {
 	size_t buf_size;
@@ -110,26 +125,26 @@ _get_line(int sock, char **buff)
 	char cur_char;
 
 	buf_size = 256;
-	(*buff) = (char *)err_malloc(buf_size);
-	memset((*buff), '\0', buf_size);
+	*buff = (char *)err_malloc(buf_size);
+	memset(*buff, '\0', buf_size);
 
 	for (bytes_read = 0 ;; bytes_read++) {
 		err = recv(sock, &cur_char, (size_t)1, 0);
 		if (err < 0 || err == 0) {
-			free((*buff));
-			(*buff) = NULL;
+			free(*buff);
+			*buff = NULL;
 			return CLOSED_CON;
 		}
 
 		if (bytes_read >= buf_size) {
 			buf_size += 128;
 			if (buf_size > HTTP_HEADER_LINE_LIMIT) {
-				free((*buff));
-				(*buff) = NULL;
+				free(*buff);
+				*buff = NULL;
 				return HTTP_HEAD_LINE_EXT;
 			}
-			(*buff) = err_realloc((*buff), buf_size);
-			memset((*buff) + buf_size - 128, '\0', (size_t)128);
+			*buff = err_realloc((*buff), buf_size);
+			memset(*buff + buf_size - 128, '\0', (size_t)128);
 		}
 
 		if (cur_char == '\n') {
@@ -146,16 +161,28 @@ _get_line(int sock, char **buff)
 	return STAT_OK;
 }
 
-int
+static int
 _parse_GET(struct http_header *data, char *line)
+{
+	data->method = GET;
+	return _parse_url(data, line);
+}
+
+static int
+_parse_POST(struct http_header *data, char *line)
+{
+	data->method = POST;
+	return _parse_url(data, line);
+}
+
+static int
+_parse_url(struct http_header *data, char *line)
 {
 	char *cur;
 	size_t length;
 	size_t url_pos;
 	size_t i;
 	char *str_tok_ident;
-
-	data->method = GET;
 
 	cur = strtok_r(line, " ", &str_tok_ident);
 	length = strlen(line);
@@ -269,20 +296,7 @@ _parse_GET(struct http_header *data, char *line)
 	return STAT_OK;
 }
 
-int
-_parse_POST(struct http_header *data, char *line)
-{
-	data->method = POST;
-
-	if (memcmp(line, "/ HTTP/1.1", (size_t)8) != 0 &&
-	    memcmp(line, "/ HTTP/1.0", (size_t)8) != 0) {
-		return INV_POST;
-	}
-
-	return STAT_OK;
-}
-
-int
+static int
 _parse_host(struct http_header *data, char *line)
 {
 	size_t length;
@@ -295,7 +309,7 @@ _parse_host(struct http_header *data, char *line)
 	return STAT_OK;
 }
 
-int
+static int
 _parse_range(struct http_header *data, char *line)
 {
 	char *tmp;
@@ -333,7 +347,7 @@ _parse_range(struct http_header *data, char *line)
 	return STAT_OK;
 }
 
-int
+static int
 _parse_content_length(struct http_header *data, char *line)
 {
 	data->content_length = err_string_to_val(line);
@@ -345,7 +359,7 @@ _parse_content_length(struct http_header *data, char *line)
 	return STAT_OK;
 }
 
-int
+static int
 _parse_content_type(struct http_header *data, char *line)
 {
 	char *tmp;
@@ -370,7 +384,7 @@ _parse_content_type(struct http_header *data, char *line)
 	return STAT_OK;
 }
 
-void
+static void
 _debug_print_header(FILE *fd, struct http_header *data)
 {
 	static char *http_method_str[] = {

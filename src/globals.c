@@ -26,6 +26,11 @@ uint8_t VERBOSITY = 0;
 char IP[16] = "*";
 
 /*
+ * default upload IP, - disables upload
+ */
+char UPLOAD_IP[16] = "-";
+
+/*
  * enable coloring
  */
 int COLOR = 0;
@@ -44,16 +49,6 @@ char *LOG_FILE = NULL;
  * LOG_FILE descriptor
  */
 FILE *LOG_FILE_D = NULL;
-
-/*
- * upload disabled per default
- */
-int UPLOAD_ENABLED = 0;
-
-/*
- * default upload directory
- */
-char *UPLOAD_DIR = NULL;
 
 /*
  * Http table config

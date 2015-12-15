@@ -15,15 +15,7 @@
 #include "msg.h"
 #include "parse_http.h"
 
-void
-init_client_info(struct client_info *data)
-{
-	data->size = 0;
-	data->written = 0;
-	data->last_written = 0;
-	data->requested_path = NULL;
-	data->type = PLAIN;
-}
+static void init_client_info(struct client_info *);
 
 /*
  * function where each thread starts execution with given client_info
@@ -85,7 +77,7 @@ handle_request(void *ptr)
 		error = handle_get(data, &http_head);
 		break;
 	case POST:
-		if (!UPLOAD_ENABLED) {
+		if (!ip_matches(UPLOAD_IP, data->ip)) {
 			error = POST_DISABLED;
 			break;
 		}
@@ -107,4 +99,14 @@ handle_request(void *ptr)
 	msg_hook_cleanup(data);
 
 	return NULL;
+}
+
+static void
+init_client_info(struct client_info *data)
+{
+	data->size = 0;
+	data->written = 0;
+	data->last_written = 0;
+	data->requested_path = NULL;
+	data->type = PLAIN;
 }

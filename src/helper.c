@@ -13,7 +13,7 @@
 #include "msg.h"
 #include "defines.h"
 
-char *mime_types[][2] = {
+static char *mime_types[][2] = {
 	{ "txt",     "text/plain" },
 	{ "htm",     "text/html" },
 	{ "html",    "text/html" },
@@ -262,7 +262,7 @@ send_file(int sock, char *filename, uint64_t *written, uint64_t from,
 
 	fd = fopen(full_path, "rb");
 	free(full_path);
-	if (fd == NULL) {
+	if (!fd) {
 		die(ERR_INFO, "fopen()");
 	}
 
@@ -285,15 +285,15 @@ send_file(int sock, char *filename, uint64_t *written, uint64_t from,
 			}
 			sending = 0;
 		}
-		if ((*written) + read_bytes > max) {
-			read_bytes = (size_t)(max - (*written));
+		if (*written + read_bytes > max) {
+			read_bytes = (size_t)(max - *written);
 			sending = 0;
 		}
 		error = send_data(sock, buffer, (uint64_t)read_bytes);
 		if (error) {
 			break;
 		}
-		(*written) += read_bytes;
+		*written += read_bytes;
 	}
 	fclose(fd);
 	free(buffer);
@@ -327,7 +327,7 @@ err_string_to_val(char *str)
 char *
 concat(char *dst, const char *src)
 {
-	if (dst == NULL) {
+	if (!dst) {
 		dst = err_malloc(strlen(src) + 1);
 		strncpy(dst, src, strlen(src) + 1);
 	} else {
@@ -418,7 +418,7 @@ err_malloc(size_t size)
 	void *tmp;
 
 	tmp = malloc(size);
-	if (tmp == NULL) {
+	if (!tmp) {
 		die(ERR_INFO, "malloc()");
 	}
 
@@ -432,7 +432,7 @@ void *
 err_realloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
-	if (ptr == NULL) {
+	if (!ptr) {
 		die(ERR_INFO, "realloc()");
 	}
 
@@ -445,7 +445,7 @@ err_realloc(void *ptr, size_t size)
 void
 die(const char *file, const int line, const char *function, const char *msg)
 {
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		fprintf(LOG_FILE_D, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
 		fflush(LOG_FILE_D);
@@ -463,7 +463,7 @@ void
 warning(const char *file, const int line, const char *function,
     const char *msg)
 {
-	if (LOG_FILE_D != NULL) {
+	if (LOG_FILE_D) {
 		fprintf(LOG_FILE_D, "%s:%d:%s: warning: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
 		fflush(LOG_FILE_D);
@@ -479,7 +479,7 @@ warning(const char *file, const int line, const char *function,
 void
 usage_quit(const char *name, const char *msg)
 {
-	if (msg != NULL) {
+	if (msg) {
 		fprintf(stderr, "error: %s\n", msg);
 	}
 	/*
@@ -487,7 +487,7 @@ usage_quit(const char *name, const char *msg)
 	 * to 509 characters
 	 */
 	printf("usage: %s [-c | --color] [-d | --dir path] [-h | --help] "
-	    "[-l | --log_file file] [-u | --upload path]", name);
+	    "[-l | --log_file file] [-u | --upload ip]", name);
 	fputs(
 #ifdef NCURSES
 	    "[-n | --ncurses] "
@@ -515,9 +515,9 @@ usage_quit(const char *name, const char *msg)
 	    "		and 3 (prints connection and transfer status).\n"
 	    "	-i, --ip ip\n"
 	    "		specify the start of allowed ip's, all others will be blocked.\n"
-	    "		to Limit connections to 1.2.3.* -> -i 1.2.3.\n"
-	    "	-u, --upload path\n"
-	    "		enable upload via http POST and save files at given directory.\n"
+	    "		to Limit connections to 1.2.3.* -> -i 1.2.3.*\n"
+	    "	-u, --upload ip\n"
+	    "		enable upload via http POST for users with given ip.\n"
 	    , stdout);
 	exit(1);
 }
@@ -536,12 +536,12 @@ get_content_encoding(const char *file_name)
 	size_t elements;
 
 	type = strrchr(file_name, '.');
-	if (type == NULL || strlen(type) == 1) {
+	if (!type|| strlen(type) == 1) {
 		return "application/octet-stream";
 	}
 	type = type + 1; // move over dot
 
-	if (type == NULL || !strcmp(type, "")) {
+	if (!type|| !strcmp(type, "")) {
 		return "application/octet-stream";
 	}
 
@@ -582,7 +582,8 @@ get_err_msg(enum err_status error)
 	/* POST_DISABLED      */ "error - post is disabled",
 	/* HEADER_LINES_EXT   */ "error - too many headerlines",
 	/* INV_CONTENT_TYPE   */ "error - invalid Content-Type",
-	/* INV_RANGE          */ "error - invalid Range"
+	/* INV_RANGE          */ "error - invalid Range",
+	/* INV_POST_PATH      */ "error - invalid POST path specified"
 	};
 
 	return err_msg[error];

@@ -37,6 +37,11 @@ static char *head_info = "File Server version 0.2";
 static char *head_data;
 static char *status_data;
 
+static void _ncurses_push_log_buf(char *);
+static void _ncurses_draw_logging_box(void);
+static void _ncurses_draw_status_box(void);
+static void _ncurses_resize_handler(int);
+
 /*
  * initialises ncurses main window
  */
@@ -59,7 +64,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	initscr();
 
-	if (stdscr == NULL) {
+	if (!stdscr) {
 		die(ERR_INFO, "initscr()");
 	}
 
@@ -112,16 +117,13 @@ ncurses_handle_keyboard(void *ptr)
 	char ch;
 	int upload_allowed;
 	int resize_lines;
+	char upload_ip_buff[16];
+	char ncurses_msg_buff[19];
 
 	noecho();
 	nodelay(stdscr, (bool)FALSE);
 
-	if (UPLOAD_ENABLED) {
-		upload_allowed = 1;
-	} else {
-		upload_allowed = 0;
-	}
-
+	upload_allowed = 0;
 	resize_lines = 0;
 	while (1) {
 		ch = 0;
@@ -144,15 +146,22 @@ ncurses_handle_keyboard(void *ptr)
 			}
 			break;
 		case 'u':
-			if (!upload_allowed) {
-				break;
+			upload_allowed = !upload_allowed;
+			if (upload_allowed) {
+				memcpy(upload_ip_buff, UPLOAD_IP, 16);
+				memcpy(UPLOAD_IP, "***.***.***.***", 16);
+			} else {
+				memcpy(UPLOAD_IP, upload_ip_buff, 16);
 			}
-			UPLOAD_ENABLED = UPLOAD_ENABLED ? 0 : 1;
+			memset(ncurses_msg_buff, 0, 19);
+			strcat(ncurses_msg_buff, "(");
+			strcat(ncurses_msg_buff, UPLOAD_IP);
+			strcat(ncurses_msg_buff, ")-");
 			pthread_mutex_lock(&ncurses_mutex);
-			if ((size_t)terminal_width > strlen(head_data) + 5) {
-				mvwprintw(stdscr, 0, (int)terminal_width
-				    - ((int)strlen(head_data) + 5),
-				    UPLOAD_ENABLED ? "(on)-" : "     ");
+			if ((size_t)terminal_width > strlen(head_data) + strlen(ncurses_msg_buff)) {
+				mvwprintw(stdscr, 0, terminal_width
+				    - (int)(strlen(head_data) + strlen(ncurses_msg_buff)),
+				    ncurses_msg_buff);
 				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
 				    NULL);
 				refresh();
@@ -352,11 +361,11 @@ ncurses_organize_windows()
 	 * set them to NULL and return.
 	 */
 	if (status_heigth < 1) {
-		if (win_status != NULL) {
+		if (win_status) {
 			delwin(win_status);
 			win_status = NULL;
 		}
-		if (win_logging != NULL) {
+		if (win_logging) {
 			delwin(win_logging);
 			win_logging = NULL;
 		}
@@ -365,18 +374,18 @@ ncurses_organize_windows()
 	}
 
 	/* check if windows are initialized, if not initialize them */
-	if (win_status == NULL) {
+	if (!win_status) {
 		win_status = newwin(status_heigth, terminal_width, 1, 0);
-		if (win_status == NULL) {
+		if (!win_status) {
 			die(ERR_INFO, "newwin()");
 		}
 	} else {
 		wresize(win_status, status_heigth, terminal_width);
 	}
-	if (win_logging == NULL) {
+	if (!win_logging) {
 		win_logging = newwin(log_heigth, terminal_width,
 				  terminal_heigth - log_heigth, 0);
-		if (win_logging == NULL) {
+		if (!win_logging) {
 			die(ERR_INFO, "newwin()");
 		}
 	} else {
@@ -393,6 +402,7 @@ ncurses_organize_windows()
 	}
 
 	if (width_changed) {
+		char tmp[19] = "(";
 		/* rootpath, port and upload_enabled */
 		move(0, 0);
 		clrtoeol();
@@ -401,11 +411,12 @@ ncurses_organize_windows()
 			    (int)terminal_width - (int)strlen(head_data),
 			    "%s", head_data);
 		}
-		if (UPLOAD_ENABLED
-		    && (size_t)terminal_width > strlen(head_data) + 5) {
-			mvwprintw(stdscr, 0,
-			    (int)terminal_width - ((int)strlen(head_data) + 5),
-			    "(on)-");
+
+		strcat(tmp, UPLOAD_IP);
+		strcat(tmp, ")-");
+		if ((size_t)terminal_width > strlen(head_data) + strlen(tmp)) {
+			mvwprintw(stdscr, 0, terminal_width
+			    - (int)(strlen(head_data) + strlen(tmp)), tmp);
 		}
 
 		/* name and version */
@@ -428,7 +439,7 @@ ncurses_organize_windows()
 	pthread_mutex_unlock(&ncurses_mutex);
 }
 
-void
+static void
 _ncurses_push_log_buf(char *new_msg)
 {
 	pthread_mutex_lock(&ncurses_mutex);
@@ -438,7 +449,7 @@ _ncurses_push_log_buf(char *new_msg)
 		log_buf_pos -= NCURSES_LOG_LINES;
 	}
 
-	if (log_buf[log_buf_pos] != NULL) {
+	if (log_buf[log_buf_pos]) {
 		free(log_buf[log_buf_pos]);
 	}
 
@@ -451,7 +462,7 @@ _ncurses_push_log_buf(char *new_msg)
 	return;
 }
 
-void
+static void
 _ncurses_draw_logging_box()
 {
 	box(win_logging, ACS_VLINE, ACS_HLINE);
@@ -460,7 +471,7 @@ _ncurses_draw_logging_box()
 	}
 }
 
-void
+static void
 _ncurses_draw_status_box()
 {
 	box(win_status, ACS_VLINE, ACS_HLINE);
@@ -479,7 +490,7 @@ _ncurses_draw_status_box()
 /*
  * handles resize signal
  */
-void
+static void
 _ncurses_resize_handler(int sig)
 {
 	WINDOW_RESIZED = 1;

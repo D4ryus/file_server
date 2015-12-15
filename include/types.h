@@ -53,7 +53,8 @@ enum err_status {
 	POST_DISABLED,
 	HEADER_LINES_EXT,
 	INV_CONTENT_TYPE,
-	INV_RANGE
+	INV_RANGE,
+	INV_POST_PATH
 };
 
 /*
@@ -68,25 +69,6 @@ struct client_info {
 	int      port;			/* port from client */
 	int      sock;			/* socket descriptor */
 	enum     transfer_type type;
-};
-
-/*
- * file information
- */
-struct file {
-	char *name;
-	off_t size;
-	char time[20];
-	char type[11];
-};
-
-/*
- * contains multiple file structs
- */
-struct dir {
-	char *name;
-	int length;
-	struct file *files[];
 };
 
 /*

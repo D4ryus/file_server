@@ -112,9 +112,6 @@ main(const int argc, const char *argv[])
 
 	/* not reached */
 	// free(ROOT_DIR);
-	// if (UPLOAD_DIR != NULL) {
-	// 	free(UPLOAD_DIR);
-	// }
 	// close(server_socket);
 }
 
@@ -123,10 +120,8 @@ parse_arguments(const int argc, const char *argv[])
 {
 	int i;
 	int root_arg;
-	int upload_arg;
 
 	root_arg = 0;
-	upload_arg = 0;
 
 	for (i = 1; i < argc; i++) {
 		if ((strcmp(argv[i], "-c") == 0)
@@ -146,9 +141,9 @@ parse_arguments(const int argc, const char *argv[])
 			if (argc <= i) {
 				usage_quit(argv[0],
 				    "user specified -u/--upload without"
-				    " a path");
+				    " a ip");
 			}
-			upload_arg = i;
+			normalize_ip(UPLOAD_IP, argv[i]);
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
 			usage_quit(argv[0], NULL);
@@ -206,24 +201,16 @@ parse_arguments(const int argc, const char *argv[])
 	} else {
 		ROOT_DIR = realpath(argv[root_arg], NULL);
 	}
-	if (ROOT_DIR == NULL) {
+	if (!ROOT_DIR) {
 		die(ERR_INFO, "realpath() on ROOT_DIR returned NULL");
 	}
 	if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
 		die(ERR_INFO, "sharing / is not possible.");
 	}
 
-	if (upload_arg != 0) {
-		UPLOAD_DIR = realpath(argv[upload_arg], NULL);
-		if (UPLOAD_DIR == NULL) {
-			die(ERR_INFO, "realpath on UPLOAD_DIR returned NULL");
-		}
-		UPLOAD_ENABLED = 1;
-	}
-
-	if (LOG_FILE != NULL) {
+	if (LOG_FILE) {
 		LOG_FILE_D = fopen(LOG_FILE, "a+");
-		if (LOG_FILE_D == NULL) {
+		if (!LOG_FILE_D) {
 			die(ERR_INFO, "could not open logfile");
 		}
 	}
