@@ -488,10 +488,12 @@ usage_quit(const char *name, const char *msg)
 	 */
 	printf("usage: %s [-c | --color] [-d | --dir path] [-h | --help] "
 	    "[-l | --log_file file] [-u | --upload ip]", name);
-	fputs(
 #ifdef NCURSES
+	fputs(
 	    "[-n | --ncurses] "
+	    , stdout);
 #endif
+	fputs(
 	    "[-p | --port port] [-v | --verbosity level]\n"
 	    "	-c, --color\n"
 	    "		prints to terminal in fancy color.\n"
@@ -502,12 +504,14 @@ usage_quit(const char *name, const char *msg)
 	    "	-l, --log_file file\n"
 	    "		write to given file instead of stdout.\n"
 	    , stdout);
-	fputs(
 #ifdef NCURSES
+	fputs(
 	    "	-n, --ncurses\n"
 	    "		use ncurses display. if used with verbosity a log file is\n"
 	    "		advised since it would clutter the ncurses screen.\n"
+	    , stdout);
 #endif
+	fputs(
 	    "	-p, --port port\n"
 	    "		specify the port where server listens.\n"
 	    "	-v, --verbosity level\n"

@@ -153,11 +153,11 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 		/* if upload allowed, print upload form */
 		if (ip_matches(UPLOAD_IP, ip)) {
 			char *buff;
-			size_t size;
+			size_t length;
 
-			size = strlen(HTTP_UPLOAD) + strlen(directory) + 1;
-			buff = err_malloc(size);
-			snprintf(buff, size, HTTP_UPLOAD, directory);
+			length = strlen(HTTP_UPLOAD) + strlen(directory) + 1;
+			buff = err_malloc(length);
+			snprintf(buff, length, HTTP_UPLOAD, directory);
 			body = concat(body, buff);
 			free(buff);
 		}
