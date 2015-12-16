@@ -117,6 +117,7 @@ ncurses_handle_keyboard(void *ptr)
 	char ch;
 	int upload_allowed;
 	int resize_lines;
+	char whitespace[19] = "                  ";
 	char upload_ip_buff[16];
 	char ncurses_msg_buff[19];
 
@@ -154,13 +155,17 @@ ncurses_handle_keyboard(void *ptr)
 				memcpy(UPLOAD_IP, upload_ip_buff, 16);
 			}
 			memset(ncurses_msg_buff, 0, 19);
+			strcat(ncurses_msg_buff, whitespace
+						+ (strlen(UPLOAD_IP) + 3));
 			strcat(ncurses_msg_buff, "(");
 			strcat(ncurses_msg_buff, UPLOAD_IP);
 			strcat(ncurses_msg_buff, ")-");
 			pthread_mutex_lock(&ncurses_mutex);
-			if ((size_t)terminal_width > strlen(head_data) + strlen(ncurses_msg_buff)) {
+			if ((size_t)terminal_width > strlen(head_data)
+			    + strlen(ncurses_msg_buff)) {
 				mvwprintw(stdscr, 0, terminal_width
-				    - (int)(strlen(head_data) + strlen(ncurses_msg_buff)),
+				    - (int)(strlen(head_data)
+				    + strlen(ncurses_msg_buff)),
 				    ncurses_msg_buff);
 				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
 				    NULL);
@@ -414,14 +419,14 @@ ncurses_organize_windows()
 
 		strcat(tmp, UPLOAD_IP);
 		strcat(tmp, ")-");
-		if ((size_t)terminal_width > strlen(head_data) + strlen(tmp)) {
+		if ((size_t)terminal_width > strlen(head_data) + strlen(tmp) + 1) {
 			mvwprintw(stdscr, 0, terminal_width
 			    - (int)(strlen(head_data) + strlen(tmp)), tmp);
 		}
 
 		/* name and version */
 		if ((size_t)terminal_width > strlen(head_info)
-		    + strlen(head_data) + 6) {
+		    + strlen(head_data) + strlen(tmp) + 1) {
 			mvwprintw(stdscr, 0, 0, "%s", head_info);
 		}
 	}
