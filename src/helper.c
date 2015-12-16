@@ -22,6 +22,7 @@ static char *mime_types[][2] = {
 	{ "jpg",     "image/jpeg" },
 	{ "jpe",     "image/jpeg" },
 	{ "png",     "image/png" },
+	{ "mp3",     "audio/mpeg"},
 	{ "webm",    "video/webm" },
 	{ "mp4",     "video/mp4" },
 	{ "m4v",     "video/mp4" },
