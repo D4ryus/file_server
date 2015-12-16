@@ -145,21 +145,22 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 
 	if (type == HTTP) {
 		body = concat(body, HTTP_TOP);
-		/* if upload allowed, print upload form */
-		if (ip_matches(UPLOAD_IP, ip)) {
-			body = concat(concat(concat(body,
-				"<form action='"), directory), "'"
-				      "method='post'"
-				      "enctype='multipart/form-data'>"
-					"<br><input type='file' name='file[]' multiple='true'>"
-					"<br><button type='submit'>Upload</button>"
-				"</form>");
-		}
 	}
 	table = dir_to_table(type, directory);
 	body = concat(body, table);
 	free(table);
 	if (type == HTTP) {
+		/* if upload allowed, print upload form */
+		if (ip_matches(UPLOAD_IP, ip)) {
+			char *buff;
+			size_t size;
+
+			size = strlen(HTTP_UPLOAD) + strlen(directory) + 1;
+			buff = err_malloc(size);
+			snprintf(buff, size, HTTP_UPLOAD, directory);
+			body = concat(body, buff);
+			free(buff);
+		}
 		body = concat(body, HTTP_BOT);
 	}
 

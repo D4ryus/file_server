@@ -15,6 +15,7 @@ extern const size_t UPDATE_TIMEOUT;
 extern char *LOG_FILE;
 extern FILE *LOG_FILE_D;
 extern const char *HTTP_TOP;
+extern const char *HTTP_UPLOAD;
 extern const char *HTTP_BOT;
 extern const char *TABLE_PLAIN[3];
 extern const char *TABLE_HTML[3];

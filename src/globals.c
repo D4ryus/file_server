@@ -61,26 +61,66 @@ FILE *LOG_FILE_D = NULL;
 const char *HTTP_TOP =
 	"<!DOCTYPE html>"
 	"<style>"
-		"tbody tr:nth-child(odd) {"
-			"background: #eeeeee;"
+		"html, body, tbody {"
+			"background-color: #303030;"
+			"color: #888888;"
+		"}"
+		"th, h3, h2 {"
+			"color: #ffffff;"
+		"}"
+		"a {"
+			"color: #44aaff;"
+			"text-decoration: none;"
+		"}"
+		"table.download {"
+			"margin-top: -18px;"
+		"}"
+		"form.upload {"
+			"margin-top: -8px;"
+		"}"
+		"h3.download, h3.upload {"
+			"left: 0;"
+			"border-bottom: 1px solid #ffffff;"
+			"width: 100%;"
+			"padding: 0.2em;"
 		"}"
 		"a:hover {"
-			"color: #229922;"
+			"color: #ffffff;"
 		"}"
 	"</style>"
 	"<html>"
 		"<head>"
-			"<title>file_server version 0.2</title>"
+			"<title>file_server version 0.3</title>"
 		"</head>"
 		"<center>"
-			"<h4>file_server version 0.2</h4>"
+		"<table><tbody><tr><td>"
+			"<center>"
+				"<h2>file_server version 0.3</h2>"
+			"</center>"
+			"<div align='left'>"
+				"<h3 class='download'>Download</h3>"
+			"</div>"
+		"</td></tr><tr><td>"
 			"<body>";
+
+/*
+ * if current ip is allowed to upload this will be displayed b4 HTTP_BOT,
+ * %s will be replaced with upload directory
+ */
+const char *HTTP_UPLOAD = "<h3 class='upload'>Upload</h3></a>"
+			"<form class='upload' action='%s'"
+				     "method='post'"
+				     "enctype='multipart/form-data'>"
+				"<input type='file' name='file[]' multiple='true'>"
+				"<button type='submit'>Upload</button>"
+			"</form>";
 
 /*
  * string which will be at the bottom of http table response
  */
 const char *HTTP_BOT =
 			"</body>"
+		"</td></tr></tbody></table>"
 		"<div align='right'>"
 			"Powered by "
 			"<a href='https://freedns.afraid.org/'>freedns.afraid.org</a>"
@@ -110,7 +150,7 @@ const char *TABLE_PLAIN[3] = {
 
 const char *TABLE_HTML[3] = {
 	/* table head */
-	"<table>"
+	"<table class='download'>"
 		"<thead>"
 			"<tr>"
 				"<th align='left'>%s</th>"
