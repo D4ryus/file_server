@@ -16,7 +16,7 @@
 static int parse_post_body(int, char *, char **, uint64_t *, uint64_t *);
 static int buff_contains(int, char *, size_t, char *, size_t, ssize_t *);
 static int parse_file_header(char *, size_t, size_t *, char **);
-static int open_file(char *, FILE **, char *);
+static int open_file(char **, FILE **, char *);
 
 int
 handle_post(struct client_info *data, struct http_header *http_head)
@@ -173,7 +173,7 @@ file_head:
 		goto stop_transfer;
 	}
 
-	error = open_file(filename, &fd, directory);
+	error = open_file(&filename, &fd, directory);
 	if (error) {
 		goto stop_transfer;
 	}
@@ -250,13 +250,16 @@ stop_transfer:
 		fclose(fd);
 		fd = NULL;
 	}
-	if (bound_buff) {
-		free(bound_buff);
-		bound_buff = NULL;
+	if (error) {
+		unlink(filename);
 	}
 	if (filename) {
 		free(filename);
 		filename = NULL;
+	}
+	if (bound_buff) {
+		free(bound_buff);
+		bound_buff = NULL;
 	}
 	free(buff);
 	free(directory);
@@ -423,17 +426,17 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 }
 
 static int
-open_file(char *filename, FILE **fd, char *directory)
+open_file(char **filename, FILE **fd, char *directory)
 {
 	char *found_filename;
 
 	found_filename = NULL;
 	if (directory[strlen(directory)] == '/') {
 		found_filename = concat(concat(found_filename, directory),
-				    filename);
+				    *filename);
 	} else {
 		found_filename = concat(concat(concat(found_filename,
-				     directory), "/"), filename);
+				     directory), "/"), *filename);
 	}
 
 	/* in case file exists */
@@ -467,6 +470,9 @@ open_file(char *filename, FILE **fd, char *directory)
 	if (!*fd) {
 		die(ERR_INFO, "fopen()");
 	}
+	free(*filename);
+	*filename = err_malloc(strlen(found_filename) + 1);
+	memcpy(*filename, found_filename, strlen(found_filename) + 1);
 	free(found_filename);
 	found_filename = NULL;
 
