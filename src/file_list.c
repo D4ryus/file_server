@@ -19,15 +19,15 @@ struct file {
 	char type[11];
 };
 
-static struct dir *_add_file_to_dir(struct dir *, char *, char *);
-static int _compare_files(const void *, const void *);
+static struct dir *add_file_to_dir(struct dir *, const char *, const char *);
+static int compare_files(const void *, const void *);
 
 /*
  * creates a dir stuct with from given directory.
  * returns NULL if permission is denied.
  */
 struct dir *
-get_dir(char *directory)
+get_dir(const char *directory)
 {
 	DIR *dirp;
 	int i;
@@ -48,13 +48,13 @@ get_dir(char *directory)
 	strncpy(result->name, directory, strlen(directory) + 1);
 
 	for (i = 0; (dp = (struct dirent *)readdir(dirp)); i++) {
-		result = _add_file_to_dir(result, dp->d_name, directory);
+		result = add_file_to_dir(result, dp->d_name, directory);
 	}
 
 	closedir(dirp);
 
 	qsort(result->files, (size_t)result->length, sizeof(struct file *),
-	    _compare_files);
+	    compare_files);
 
 	return result;
 }
@@ -63,7 +63,7 @@ get_dir(char *directory)
  * returns given directory as formated string
  */
 char *
-dir_to_table(enum http_type type, char *dir)
+dir_to_table(const enum http_type type, const char *dir)
 {
 	int i;
 	char buffer[TABLE_BUFFER_SIZE];
@@ -72,7 +72,7 @@ dir_to_table(enum http_type type, char *dir)
 	const char **table_ptr;
 	char *table_buffer;
 	char *directory;
-	char *requ;
+	const char *requ;
 
 	if (strcmp(dir, "/") == 0) {
 		requ = "";
@@ -86,6 +86,7 @@ dir_to_table(enum http_type type, char *dir)
 	d = get_dir(directory);
 
 	free(directory);
+	directory = NULL;
 
 	if (!d) {
 		die(ERR_INFO, "cannot open directory");
@@ -131,6 +132,7 @@ dir_to_table(enum http_type type, char *dir)
 	table_buffer = concat(table_buffer, table_ptr[2]); /* table end */
 
 	free_dir(d);
+	d = NULL;
 
 	return table_buffer;
 }
@@ -149,16 +151,20 @@ free_dir(struct dir *d)
 
 	if (d->name) {
 		free(d->name);
+		d->name = NULL;
 	}
 
 	for (i = 0; i < d->length; i++) {
 		if (d->files[i]->name) {
 			free(d->files[i]->name);
+			d->files[i]->name = NULL;
 		}
 		free(d->files[i]);
+		d->files[i] = NULL;
 	}
 
 	free(d);
+	d = NULL;
 
 	return;
 }
@@ -166,8 +172,8 @@ free_dir(struct dir *d)
 /*
  * adds a file to the given dir struct, usses realloc
  */
-struct dir *
-_add_file_to_dir(struct dir *d, char *file, char *directory)
+static struct dir *
+add_file_to_dir(struct dir *d, const char *file, const char *directory)
 {
 	char *combined_path;
 	struct stat sb;
@@ -188,9 +194,11 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 		warning(ERR_INFO,
 		    "stat() returned -1 (could be a dead symbolic link)");
 		free(combined_path);
+		combined_path = NULL;
 		return d;
 	}
 	free(combined_path);
+	combined_path = NULL;
 
 	new_file = err_malloc(sizeof(struct file));
 	new_file->name = err_malloc(strlen(file) + 1);
@@ -220,7 +228,7 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 
 	/* remalloc directory struct to fit the new filepointer */
 	d = (struct dir *)err_realloc(d, sizeof(struct dir) +
-			     ((size_t)(d->length + 1) * sizeof(struct file *)));
+			    ((size_t)(d->length + 1) * sizeof(struct file *)));
 
 	/* set new ptr to new_file */
 	d->files[d->length] = new_file;
@@ -233,8 +241,8 @@ _add_file_to_dir(struct dir *d, char *file, char *directory)
 /*
  * compare function to compare file structs, used for qsort
  */
-int
-_compare_files(const void *elem1, const void *elem2)
+static int
+compare_files(const void *elem1, const void *elem2)
 {
 	const struct file *file1 = *(struct file * const *)elem1;
 	const struct file *file2 = *(struct file * const *)elem2;

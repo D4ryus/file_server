@@ -20,9 +20,9 @@ static pthread_mutex_t status_list_mutex;
 static pthread_mutex_t print_mutex;
 static int msg_enabled = 0;
 
-static void *_msg_print_loop(void *);
-static void _format_status_msg(char *, size_t, struct status_list_node *, const int);
-static void _msg_hook_delete(void);
+static void *msg_print_loop(void *);
+static void format_status_msg(char *, size_t, struct status_list_node *, int);
+static void msg_hook_delete(void);
 
 /*
  * initialize messages subsystem, which will create its own thread
@@ -50,7 +50,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 		pthread_mutex_init(&status_list_mutex, NULL);
 		pthread_mutex_init(&print_mutex, NULL);
 
-		error = pthread_create(thread, attr, &_msg_print_loop, NULL);
+		error = pthread_create(thread, attr, &msg_print_loop, NULL);
 		if (error != 0) {
 			die(ERR_INFO, "pthread_create()");
 		}
@@ -62,7 +62,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
  * each element from the linkedlist
  */
 static void *
-_msg_print_loop(void *ignored)
+msg_print_loop(void *ignored)
 {
 	struct status_list_node *cur;
 	int position;
@@ -84,7 +84,7 @@ _msg_print_loop(void *ignored)
 		for (cur = first; cur; cur = cur->next, position++) {
 			last_written = cur->data->last_written;
 
-			_format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
+			format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 			    cur, position);
 			msg_print_status(msg_buffer, position);
 
@@ -107,7 +107,7 @@ _msg_print_loop(void *ignored)
 #ifdef NCURSES
 		ncurses_update_end(rx, tx, position);
 #endif
-		_msg_hook_delete();
+		msg_hook_delete();
 		sleep((unsigned int)UPDATE_TIMEOUT);
 	}
 	/* not reached */
@@ -157,12 +157,13 @@ msg_print_log(struct client_info *data, const enum message_type type,
 		die(ERR_INFO, "strftime()");
 	}
 	free(tmp);
+	tmp = NULL;
 
 	snprintf(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 	    "%-19s [%15s]: %s",
 	    str_time,
 	    data->ip,
-	    !message ? "" : message);
+	    message ? message : "");
 
 #ifdef NCURSES
 	ncurses_print_log(msg_buffer);
@@ -240,8 +241,10 @@ msg_hook_cleanup(struct client_info *rem_data)
 	if (!found) {
 		if (rem_data->requested_path) {
 			free(rem_data->requested_path);
+			rem_data->requested_path = NULL;
 		}
 		free(rem_data);
+		rem_data = NULL;
 	}
 }
 
@@ -249,8 +252,8 @@ msg_hook_cleanup(struct client_info *rem_data)
  * formats a data_list_node and calls print_info
  */
 static void
-_format_status_msg(char *msg_buffer, size_t buff_size,
-    struct status_list_node *cur, const int position)
+format_status_msg(char *msg_buffer, size_t buff_size,
+    struct status_list_node *cur, int position)
 {
 	/*
 	 * later last_written is set and the initial written value is needed,
@@ -309,8 +312,7 @@ _format_status_msg(char *msg_buffer, size_t buff_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
 	    (unsigned int)UPDATE_TIMEOUT,
-	    !cur->data->requested_path ? "-" : cur->data->requested_path
-	    );
+	    cur->data->requested_path ? cur->data->requested_path : "-");
 
 	return;
 }
@@ -356,7 +358,7 @@ msg_print_status(const char *msg, int position)
  * removes all flagged (remove_me) data hooks
  */
 static void
-_msg_hook_delete()
+msg_hook_delete()
 {
 	struct status_list_node *cur;
 	struct status_list_node *tmp;
@@ -380,9 +382,12 @@ _msg_hook_delete()
 			cur = cur->next;
 			if (tmp->data->requested_path) {
 				free(tmp->data->requested_path);
+				tmp->data->requested_path = NULL;
 			}
 			free(tmp->data);
+			tmp->data = NULL;
 			free(tmp);
+			tmp = NULL;
 		} else {
 			last = cur;
 			cur = cur->next;
@@ -392,4 +397,3 @@ _msg_hook_delete()
 
 	return;
 }
-

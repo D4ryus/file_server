@@ -8,15 +8,15 @@
 #include "helper.h"
 #include "defines.h"
 
-static int _get_line(int, char**);
-static int _parse_GET(struct http_header *, char *);
-static int _parse_POST(struct http_header *, char *);
-static int _parse_url(struct http_header *, char *);
-static int _parse_host(struct http_header *, char *);
-static int _parse_range(struct http_header *, char *);
-static int _parse_content_length(struct http_header *, char *);
-static int _parse_content_type(struct http_header *, char *);
-static void _debug_print_header(FILE *, struct http_header *);
+static int get_line(int, char**);
+static int parse_GET(struct http_header *, char *);
+static int parse_POST(struct http_header *, char *);
+static int parse_url(struct http_header *, char *);
+static int parse_host(struct http_header *, char *);
+static int parse_range(struct http_header *, char *);
+static int parse_content_length(struct http_header *, char *);
+static int parse_content_type(struct http_header *, char *);
+static void debug_print_header(FILE *, struct http_header *);
 
 struct http_keyword {
 	char *key;
@@ -24,12 +24,12 @@ struct http_keyword {
 };
 
 struct http_keyword parse_table[] = {
-	{ "GET ",             _parse_GET },
-	{ "POST ",            _parse_POST },
-	{ "Host: ",           _parse_host },
-	{ "Range: ",          _parse_range },
-	{ "Content-Type: ",   _parse_content_type },
-	{ "Content-Length: ", _parse_content_length }
+	{ "GET ",             parse_GET },
+	{ "POST ",            parse_POST },
+	{ "Host: ",           parse_host },
+	{ "Range: ",          parse_range },
+	{ "Content-Type: ",   parse_content_type },
+	{ "Content-Length: ", parse_content_length }
 };
 
 void
@@ -59,7 +59,7 @@ parse_header(struct http_header *data, int sock)
 	table_size = (int) sizeof(parse_table) / sizeof(struct http_keyword);
 
 	line = NULL;
-	err = _get_line(sock, &line);
+	err = get_line(sock, &line);
 	if (err) {
 		return err;
 	}
@@ -76,13 +76,15 @@ parse_header(struct http_header *data, int sock)
 			}
 		}
 		free(line);
-		err = _get_line(sock, &line);
+		line = NULL;
+		err = get_line(sock, &line);
 		if (err) {
 			delete_http_header(data);
 			return err;
 		}
 	}
 	free(line);
+	line = NULL;
 
 	return STAT_OK;
 }
@@ -111,13 +113,13 @@ delete_http_header(struct http_header *data)
 
 /*
  * gets a line from socket, and writes it to buffer
- * buffer will be err_malloc'ed by _get_line.
+ * buffer will be err_malloc'ed by get_line.
  * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be free'd and set to NULL on error
  * buffer will always be terminated with \0
  */
 static int
-_get_line(int sock, char **buff)
+get_line(int sock, char **buff)
 {
 	size_t buf_size;
 	size_t bytes_read;
@@ -162,21 +164,21 @@ _get_line(int sock, char **buff)
 }
 
 static int
-_parse_GET(struct http_header *data, char *line)
+parse_GET(struct http_header *data, char *line)
 {
 	data->method = GET;
-	return _parse_url(data, line);
+	return parse_url(data, line);
 }
 
 static int
-_parse_POST(struct http_header *data, char *line)
+parse_POST(struct http_header *data, char *line)
 {
 	data->method = POST;
-	return _parse_url(data, line);
+	return parse_url(data, line);
 }
 
 static int
-_parse_url(struct http_header *data, char *line)
+parse_url(struct http_header *data, char *line)
 {
 	char *cur;
 	size_t length;
@@ -297,7 +299,7 @@ _parse_url(struct http_header *data, char *line)
 }
 
 static int
-_parse_host(struct http_header *data, char *line)
+parse_host(struct http_header *data, char *line)
 {
 	size_t length;
 
@@ -310,7 +312,7 @@ _parse_host(struct http_header *data, char *line)
 }
 
 static int
-_parse_range(struct http_header *data, char *line)
+parse_range(struct http_header *data, char *line)
 {
 	char *tmp;
 	char *str_tok_ident;
@@ -348,7 +350,7 @@ _parse_range(struct http_header *data, char *line)
 }
 
 static int
-_parse_content_length(struct http_header *data, char *line)
+parse_content_length(struct http_header *data, char *line)
 {
 	data->content_length = err_string_to_val(line);
 
@@ -360,7 +362,7 @@ _parse_content_length(struct http_header *data, char *line)
 }
 
 static int
-_parse_content_type(struct http_header *data, char *line)
+parse_content_type(struct http_header *data, char *line)
 {
 	char *tmp;
 	size_t length;
@@ -385,7 +387,7 @@ _parse_content_type(struct http_header *data, char *line)
 }
 
 static void
-_debug_print_header(FILE *fd, struct http_header *data)
+debug_print_header(FILE *fd, struct http_header *data)
 {
 	static char *http_method_str[] = {
 		"missing",
@@ -400,10 +402,10 @@ _debug_print_header(FILE *fd, struct http_header *data)
 
 	fprintf(fd, "method: %s\n", http_method_str[data->method]);
 	fprintf(fd, "type: %s\n", http_type_str[data->type]);
-	fprintf(fd, "url: %s\n", data->url ? data->url : "null");
-	fprintf(fd, "host: %s\n", data->host ? data->host : "null");
+	fprintf(fd, "url: %s\n", data->url);
+	fprintf(fd, "host: %s\n", data->host);
 	fprintf(fd, "range_from: %" PRId64 "\n", data->range_from);
 	fprintf(fd, "range_to: %" PRId64 "\n", data->range_to);
 	fprintf(fd, "content_length: %" PRId64 "\n", data->content_length);
-	fprintf(fd, "boundary: %s\n", data->boundary ? data->boundary : "null");
+	fprintf(fd, "boundary: %s\n", data->boundary);
 }

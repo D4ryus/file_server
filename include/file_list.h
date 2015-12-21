@@ -10,8 +10,8 @@ struct dir {
 	struct file *files[];
 };
 
-struct dir *get_dir(char *);
-char *dir_to_table(enum http_type, char *);
+struct dir *get_dir(const char *);
+char *dir_to_table(enum http_type, const char *);
 void free_dir(struct dir *);
 
 #endif

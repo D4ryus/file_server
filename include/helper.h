@@ -8,8 +8,8 @@
 #define ERR_INFO __FILE__, __LINE__, __func__
 
 int send_data(int, const char *, uint64_t);
-int send_file(int, char *, uint64_t *, uint64_t, uint64_t);
-uint64_t err_string_to_val(char *);
+int send_file(int, const char *, uint64_t *, uint64_t, uint64_t);
+uint64_t err_string_to_val(const char *);
 char *concat(char *, const char *);
 int is_directory(const char *);
 char *format_size(uint64_t, char[7]);

@@ -13,9 +13,10 @@
 #include "msg.h"
 #include "handle_post.h"
 
-static int parse_post_body(int, char *, char **, uint64_t *, uint64_t *);
-static int buff_contains(int, char *, size_t, char *, size_t, ssize_t *);
-static int parse_file_header(char *, size_t, size_t *, char **);
+static int parse_post_body(int, const char *, char **, uint64_t *, uint64_t *);
+static int buff_contains(int, const char *, size_t, const char *, size_t,
+    ssize_t *);
+static int parse_file_header(const char *, size_t, size_t *, char **);
 static int open_file(char **, FILE **, char *);
 
 int
@@ -35,7 +36,8 @@ handle_post(struct client_info *data, struct http_header *http_head)
 	}
 
 	data->requested_path = err_malloc(strlen(http_head->url) + 1);
-	memcpy(data->requested_path, http_head->url, strlen(http_head->url) + 1);
+	memcpy(data->requested_path, http_head->url,
+	    strlen(http_head->url) + 1);
 
 	error = parse_post_body(data->sock, http_head->boundary,
 	    &(data->requested_path), &(data->written), &(data->size));
@@ -59,7 +61,7 @@ handle_post(struct client_info *data, struct http_header *http_head)
 }
 
 static int
-parse_post_body(int sock, char *boundary, char **requested_path,
+parse_post_body(int sock, const char *boundary, char **requested_path,
     uint64_t *written, uint64_t *max_size)
 {
 	enum err_status error;
@@ -163,7 +165,7 @@ parse_post_body(int sock, char *boundary, char **requested_path,
 	*written += (uint64_t)read_from_socket;
 file_head:
 	/* buff contains file head */
-	if ((read_from_socket == 4) && memcmp(buff, "--\r\n", (size_t)4) == 0) {
+	if ((read_from_socket == 4) && !memcmp(buff, "--\r\n", (size_t)4)) {
 		error = STAT_OK;
 		goto stop_transfer;
 	}
@@ -262,7 +264,9 @@ stop_transfer:
 		bound_buff = NULL;
 	}
 	free(buff);
+	buff = NULL;
 	free(directory);
+	directory = NULL;
 
 	return error;
 }
@@ -275,8 +279,8 @@ stop_transfer:
  * if error occurs its err_status will be returned, if not STAT_OK
  */
 static int
-buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
-    size_t needle_size, ssize_t *pos)
+buff_contains(int sock, const char *haystack, size_t haystack_size,
+    const char *needle, size_t needle_size, ssize_t *pos)
 {
 	size_t i;
 	size_t needle_matched;
@@ -294,7 +298,8 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 				return STAT_OK;
 			}
 		} else {
-			/* if the cur pos didnt match, check if first matches */
+			/* if the cur pos did not match, check if first
+			 * matches */
 			if (haystack[i] == needle[0]) {
 				needle_matched = 1;
 			} else {
@@ -315,6 +320,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 		rec = recv(sock, rest, rest_size, MSG_PEEK);
 		if (rec < 0) {
 			free(rest);
+			rest = NULL;
 			return CLOSED_CON;
 		}
 		if ((size_t)rec != rest_size) {
@@ -325,6 +331,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 		        strlen(needle + needle_matched)) == 0) {
 			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
+			rest = NULL;
 			if ((rec < 0) || ((size_t)rec != rest_size)) {
 				die(ERR_INFO,
 				    "the data i just peeked is gone");
@@ -333,6 +340,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
 			return STAT_OK;
 		} else {
 			free(rest);
+			rest = NULL;
 			*pos = -1;
 			return STAT_OK;
 		}
@@ -350,7 +358,7 @@ buff_contains(int sock, char *haystack, size_t haystack_size, char *needle,
  * if filename is missing or not found POST_NO_FILENAME is returned.
  */
 static int
-parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
+parse_file_header(const char *buff, size_t buff_size, size_t *file_head_size,
     char **filename)
 {
 	char *header;
@@ -375,6 +383,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	end_of_head = strstr(header, "\r\n\r\n");
 	if (!end_of_head) {
 		free(header);
+		header = NULL;
 		return FILE_HEAD_LINE_EXT;
 	}
 	end_of_head[4] = '\0';
@@ -382,6 +391,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	filename_start = strstr(header, "Content-Disposition: form-data;");
 	if (!filename_start) {
 		free(header);
+		header = NULL;
 		return NO_CONTENT_DISP;
 	}
 
@@ -390,6 +400,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	filename_start = strstr(filename_start, "filename=\"");
 	if (!filename_start) {
 		free(header);
+		header = NULL;
 		return POST_NO_FILENAME;
 	}
 	/* point to first character of filename */
@@ -399,6 +410,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	filename_end = strchr(filename_start, '"');
 	if (!filename_end) {
 		free(header);
+		header = NULL;
 		return FILENAME_ERR;
 	}
 
@@ -406,6 +418,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	    (size_t)(filename_end - filename_start) : 0;
 	if (str_len == 0) {
 		free(header);
+		header = NULL;
 		return FILENAME_ERR;
 	}
 
@@ -421,6 +434,7 @@ parse_file_header(char *buff, size_t buff_size, size_t *file_head_size,
 	*file_head_size = strlen(header);
 
 	free(header);
+	header = NULL;
 
 	return STAT_OK;
 }

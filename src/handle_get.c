@@ -137,6 +137,7 @@ get_response_type(char **request)
 
 	requested_path = realpath(full_requested_path, NULL);
 	free(full_requested_path);
+	full_requested_path = NULL;
 
 	/* on gnux/linux this will return NULL on file not found */
 	if (!requested_path) {
@@ -146,6 +147,7 @@ get_response_type(char **request)
 	/* but not on bsd, so check with stat */
 	if (stat(requested_path, &s) != 0) {
 		free(requested_path);
+		requested_path = NULL;
 		return TXT_404;
 	}
 
@@ -153,6 +155,7 @@ get_response_type(char **request)
 	if ((memcmp(requested_path, ROOT_DIR, strlen(ROOT_DIR)) != 0)
 	    || strlen(ROOT_DIR) > strlen(requested_path)) {
 		free(requested_path);
+		requested_path = NULL;
 		return TXT_403;
 	}
 
@@ -175,6 +178,7 @@ get_response_type(char **request)
 	free_me = NULL;
 
 	free(requested_path);
+	requested_path = NULL;
 
 	return ret;
 }

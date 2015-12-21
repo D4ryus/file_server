@@ -245,7 +245,7 @@ send_data(int sock, const char *data, uint64_t length)
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_file(int sock, char *filename, uint64_t *written, uint64_t from,
+send_file(int sock, const char *filename, uint64_t *written, uint64_t from,
     uint64_t to)
 {
 	int sending;
@@ -263,6 +263,7 @@ send_file(int sock, char *filename, uint64_t *written, uint64_t from,
 
 	fd = fopen(full_path, "rb");
 	free(full_path);
+	full_path = NULL;
 	if (!fd) {
 		die(ERR_INFO, "fopen()");
 	}
@@ -298,6 +299,7 @@ send_file(int sock, char *filename, uint64_t *written, uint64_t from,
 	}
 	fclose(fd);
 	free(buffer);
+	buffer = NULL;
 
 	return error;
 }
@@ -306,7 +308,7 @@ send_file(int sock, char *filename, uint64_t *written, uint64_t from,
  * evaluates string to uint64_t, on error 0 is returned
  */
 uint64_t
-err_string_to_val(char *str)
+err_string_to_val(const char *str)
 {
 	char *endptr;
 	uint64_t val;
@@ -565,7 +567,8 @@ get_err_msg(enum err_status error)
 {
 	static const char *err_msg[] = {
 	/* STAT_OK            */ "no error detected",
-	/* WRITE_CLOSED       */ "error - could not write, client closed connection",
+	/* WRITE_CLOSED       */ "error - could not write, client closed "
+					 "connection",
 	/* ZERO_WRITTEN       */ "error - could not write, 0 bytes written",
 	/* CLOSED_CON         */ "error - client closed connection",
 	/* EMPTY_MESSAGE      */ "error - empty message",
@@ -580,7 +583,8 @@ get_err_msg(enum err_status error)
 	/* FILE_HEAD_LINE_EXT */ "error - file header extended line limit",
 	/* POST_NO_FILENAME   */ "error - missing filename in post message",
 	/* NO_FREE_SPOT       */ "error - the posted filename already exists",
-	/* FILE_ERROR         */ "error - could not write the post content to file",
+	/* FILE_ERROR         */ "error - could not write the post content to "
+					 "file",
 	/* NO_CONTENT_DISP    */ "error - Content-Disposition missing",
 	/* FILENAME_ERR       */ "error - could not parse filename",
 	/* CONTENT_LENGTH_EXT */ "error - content length extended",
@@ -682,7 +686,8 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 		 *     -> continue.
 		 * if i see a star -> continue;
 		 */
-		if (ip_allowed_norm[i] != '*' && ip_allowed_norm[i] != ip_check_norm[i]) {
+		if (ip_allowed_norm[i] != '*'
+		    && ip_allowed_norm[i] != ip_check_norm[i]) {
 			return 0;
 		}
 	}

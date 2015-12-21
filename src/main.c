@@ -20,8 +20,7 @@
 #include "ncurses_msg.h"
 #endif
 
-int _main(int, const char **);
-void parse_arguments(int, const char **);
+static void parse_arguments(int, const char **);
 
 int
 main(const int argc, const char *argv[])
@@ -115,7 +114,7 @@ main(const int argc, const char *argv[])
 	// close(server_socket);
 }
 
-void
+static void
 parse_arguments(const int argc, const char *argv[])
 {
 	int i;
@@ -215,4 +214,3 @@ parse_arguments(const int argc, const char *argv[])
 		}
 	}
 }
-

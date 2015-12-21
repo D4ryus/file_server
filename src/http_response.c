@@ -19,7 +19,7 @@
  */
 int
 send_200_file_head(int socket, enum http_type type, uint64_t *size,
-    char *filename)
+    const char *filename)
 {
 	struct stat sb;
 	char *head;
@@ -34,6 +34,7 @@ send_200_file_head(int socket, enum http_type type, uint64_t *size,
 		die(ERR_INFO, "stat()");
 	}
 	free(full_path);
+	full_path = NULL;
 	*size = (uint64_t)sb.st_size;
 
 	if (type != HTTP) {
@@ -55,10 +56,10 @@ send_200_file_head(int socket, enum http_type type, uint64_t *size,
 
 	error = send_data(socket, head, (uint64_t)strlen(head));
 	free(head);
+	head = NULL;
 	if (error) {
 		return error;
 	}
-
 
 	return STAT_OK;
 }
@@ -70,7 +71,7 @@ send_200_file_head(int socket, enum http_type type, uint64_t *size,
  */
 int
 send_206_file_head(int socket, enum http_type type, uint64_t *size,
-    char *filename, uint64_t from, uint64_t to)
+    const char *filename, uint64_t from, uint64_t to)
 {
 	struct stat sb;
 	char *head;
@@ -91,6 +92,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
 		die(ERR_INFO, "stat()");
 	}
 	free(full_path);
+	full_path = NULL;
 	file_size = (uint64_t)sb.st_size;
 
 	if (to == 0) {
@@ -118,6 +120,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
 
 	error = send_data(socket, head, (uint64_t)strlen(head));
 	free(head);
+	head = NULL;
 	if (error) {
 		return error;
 	}
@@ -132,7 +135,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
  */
 int
 send_200_directory(int socket, enum http_type type, uint64_t *size,
-    char *directory, char ip[16])
+    const char *directory, char ip[16])
 {
 	enum err_status error;
 	char *body;
@@ -149,6 +152,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 	table = dir_to_table(type, directory);
 	body = concat(body, table);
 	free(table);
+	table = NULL;
 	if (type == HTTP) {
 		/* if upload allowed, print upload form */
 		if (ip_matches(UPLOAD_IP, ip)) {
@@ -160,6 +164,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 			snprintf(buff, length, HTTP_UPLOAD, directory);
 			body = concat(body, buff);
 			free(buff);
+			buff = NULL;
 		}
 		body = concat(body, HTTP_BOT);
 	}
@@ -178,6 +183,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
+		head = NULL;
 		if (error) {
 			return error;
 		}
@@ -185,6 +191,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 
 	error = send_data(socket, body, *size);
 	free(body);
+	body = NULL;
 
 	return error;
 }
@@ -254,6 +261,7 @@ send_404(int socket, enum http_type type, uint64_t *size)
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
+		head = NULL;
 		if (error) {
 			return error;
 		}
@@ -329,6 +337,7 @@ send_201(int socket, enum http_type type, uint64_t *size)
 					   content_length);
 		error = send_data(socket, head, (uint64_t)strlen(head));
 		free(head);
+		head = NULL;
 		if (error) {
 			return error;
 		}
@@ -338,4 +347,3 @@ send_201(int socket, enum http_type type, uint64_t *size)
 
 	return error;
 }
-
