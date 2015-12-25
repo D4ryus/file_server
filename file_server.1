@@ -1,0 +1,77 @@
+.\" Process this file with
+.\" groff -man -Tascii file_server.1
+.TH FILE_SERVER 1 "DEZEMBER 2015" Linux "User Manuals"
+.SH NAME
+file_server \- shares a directory via http
+.SH SYNOPSIS
+.B file_server [-c | --color] [-d | --dir
+-I path
+.B ] [-h | --help] [-l | --log_file
+.I file
+.B ] [-u | --upload
+.I ip
+.B ] [-n | --ncurses] [-p | --port
+.I port
+.B ] [-v | --verbosity
+.I level
+.B ] ...
+.SH DESCRIPTION
+.B file_server
+shares a directory via http. Upload via POST and partial download via
+Range requests is also possible. It can also be used to stream videos,
+Range requests will allow seeking.
+.SH OPTIONS
+.IP "-c, --color"
+prints to terminal in fancy color.
+.IP "-d, --dir path"
+use given
+.IR path
+as root/shared directory.
+.IP "-h, --help"
+print this help/usage.
+.IP "-l, --log_file file"
+write to given
+.IR file
+instead of stdout.
+.IP "-n, --ncurses"
+use ncurses display. if used with verbosity a log file is advised since
+it would clutter the ncurses screen.
+.IP "-p, --port port"
+specify the
+.IR port
+where server listens.
+.IP "-v, --verbosity level"
+change verbosity level,
+.IR level
+should be between 0 (no messages) and 3 (prints connection and transfer
+status).
+.IP "-i, --ip ip"
+specify the start of allowed
+.IR ip
+\'s, all others will be blocked. to Limit connections to 1.2.3.* -> -i
+1.2.3.\\*
+.IP "-u, --upload ip"
+enable upload via http POST for users with given
+.IR ip
+.SH FILES
+none
+.SH ENVIRONMENT
+none
+.SH EXAMPLES
+see USAGE
+.SH USAGE
+.TP
+file_server
+start file_server and share `pwd` on port 8283
+.TP
+file_server -i 192.168.1.\\*\\*\\* -u 127.0.0.1
+start file_server and share `pwd` on port 8283, only allow ip's in range form
+192.168.2.{0..255} and upload only from localhost (127.0.0.1).
+.TP
+file_server -n -v 3 -p 1234 -d ~/shared -l ~/fs.log
+start file_server and share ~/shared on port 1234, enable ncurses gui and
+log on verbosity level 3 to ~/fs.log.
+.SH BUGS
+i guess there are some :/
+.SH AUTHOR
+d4ryus <d4ryus@openmailbox.org>
