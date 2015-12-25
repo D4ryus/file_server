@@ -490,7 +490,7 @@ usage_quit(const char *name, const char *msg)
 	 * to 509 characters
 	 */
 	printf("usage: %s [-c | --color] [-d | --dir path] [-h | --help] "
-	    "[-l | --log_file file] [-u | --upload ip]", name);
+	    "[-l | --log_file file] [-u | --upload ip] ", name);
 #ifdef NCURSES
 	fputs(
 	    "[-n | --ncurses] "
