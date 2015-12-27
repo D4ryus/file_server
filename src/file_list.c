@@ -189,11 +189,8 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	combined_path[strlen(directory)] = '/';
 	memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
 	if (stat(combined_path, &sb) == -1) {
-		warning(ERR_INFO,
+		die(ERR_INFO,
 		    "stat() returned -1 (could be a dead symbolic link)");
-		free(combined_path);
-		combined_path = NULL;
-		return d;
 	}
 	free(combined_path);
 	combined_path = NULL;
