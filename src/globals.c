@@ -130,18 +130,18 @@ const char *HTTP_BOT =
 /*
  * table head values which will be filed in at %s
  * given values are:
- * "Last modified" "Type" "Size" "Filename"
+ * "Last modified" "Size" "Filename"
  * the body part will be repeaded for each file found inside the directory
  * given values are:
- * "[last modified]" "[filetype]" "[filesize]" "[directory]" "[filename]"
+ * "[last modified]" "[filesize]" "[directory]" "[filename]"
  * the buffer limit is defined in defines.h
  */
 const char *TABLE_PLAIN[3] = {
 	/* table head */
-	"%-19s %-11s %-6s %s\n"
-	"-----------------------------------------------\n",
+	"%-19s %-6s %s\n"
+	"-----------------------------------\n",
 	/* table body */
-	"%19s %11s %6s %s/%s\n",
+	"%19s %6s %s/%s%s\n",
 	/* table end */
 	""};
 
@@ -153,16 +153,14 @@ const char *TABLE_HTML[3] = {
 				"<th align='left'>%s</th>"
 				"<th align='left'>%s</th>"
 				"<th align='left'>%s</th>"
-				"<th align='left'>%s</th>"
 			"</tr>"
 		"</thead>"
 		"<tbody>",
 	/* table body */
 			"<tr>"
 				"<td align='center'>%s</td>"
-				"<td align='center'>%s</td>"
-				"<td align='right'>%6s</td>"
-				"<td align='left'><a href=\"%s/%s\">%5$s</a></td>"
+				"<td align='right'>%s</td>"
+				"<td align='left'><a href=\"%s/%s\">%4$s%s</a></td>"
 			"</tr>",
 	/* table end */
 		"</tbody>"

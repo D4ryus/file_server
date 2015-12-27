@@ -16,7 +16,7 @@ struct file {
 	char *name;
 	off_t size;
 	char time[20];
-	char type[11];
+	uint8_t is_dir;
 };
 
 static struct dir *add_file_to_dir(struct dir *, const char *, const char *);
@@ -106,7 +106,6 @@ dir_to_table(const enum http_type type, const char *dir)
 	/* table head, see globals.h */
 	snprintf(buffer, (size_t)TABLE_BUFFER_SIZE, table_ptr[0],
 	    "Last_modified",
-	    "Type",
 	    "Size",
 	    "Filename");
 
@@ -121,10 +120,10 @@ dir_to_table(const enum http_type type, const char *dir)
 		/* table body */
 		snprintf(buffer, (size_t)TABLE_BUFFER_SIZE, table_ptr[1],
 		    d->files[i]->time,
-		    d->files[i]->type,
 		    format_size((uint64_t)d->files[i]->size, fmt_size),
 		    requ,
-		    d->files[i]->name);
+		    d->files[i]->name,
+		    d->files[i]->is_dir ? "/" : "");
 		table_buffer = concat(table_buffer, buffer);
 		memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 	}
@@ -179,7 +178,6 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	struct stat sb;
 	struct file *new_file;
 	struct tm *tmp;
-	size_t n;
 
 	if (!file) {
 		die(ERR_INFO, "tried to add file which was NULL");
@@ -204,16 +202,10 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	new_file->name = err_malloc(strlen(file) + 1);
 	strncpy(new_file->name, file, strlen(file) + 1);
 
-	n = 11;
-	switch (sb.st_mode & S_IFMT) {
-	case S_IFREG:  strncpy(new_file->type, "file"      , n); break;
-	case S_IFDIR:  strncpy(new_file->type, "directory" , n); break;
-	case S_IFLNK:  strncpy(new_file->type, "symlink"   , n); break;
-	case S_IFBLK:  strncpy(new_file->type, "blk_device", n); break;
-	case S_IFCHR:  strncpy(new_file->type, "chr_device", n); break;
-	case S_IFIFO:  strncpy(new_file->type, "fifo_pipe" , n); break;
-	case S_IFSOCK: strncpy(new_file->type, "socket"    , n); break;
-	default:       strncpy(new_file->type, "unknown"   , n); break;
+	if ((sb.st_mode & S_IFMT) == S_IFDIR) {
+		new_file->is_dir = 1;
+	} else {
+		new_file->is_dir = 0;
 	}
 
 	tmp = localtime(&sb.st_mtime);
