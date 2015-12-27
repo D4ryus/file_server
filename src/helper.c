@@ -460,23 +460,6 @@ die(const char *file, const int line, const char *function, const char *msg)
 }
 
 /*
- * prints out given information to stderr
- */
-void
-warning(const char *file, const int line, const char *function,
-    const char *msg)
-{
-	if (LOG_FILE_D) {
-		fprintf(LOG_FILE_D, "%s:%d:%s: warning: %s: %s\n",
-		    file, line, function, msg, strerror(errno));
-		fflush(LOG_FILE_D);
-	} else {
-		fprintf(stderr, "%s:%d:%s: warning: %s: %s\n",
-		    file, line, function, msg, strerror(errno));
-	}
-}
-
-/*
  * prints usage and quits
  */
 void
