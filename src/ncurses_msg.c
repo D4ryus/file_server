@@ -14,6 +14,7 @@
 
 int USE_NCURSES;
 int WINDOW_RESIZED;
+int WINDOW_RESIZEING;
 
 WINDOW *win_status = NULL;
 WINDOW *win_logging = NULL;
@@ -177,7 +178,6 @@ ncurses_handle_keyboard(void *ptr)
 			resize_lines = resize_lines ? resize_lines : 1;
 			if ((status_heigth - resize_lines) >= 2) {
 				log_heigth += resize_lines;
-				ncurses_organize_windows();
 			} else {
 				log_heigth += (status_heigth - 2);
 			}
@@ -254,8 +254,30 @@ ncurses_print_status(const char *msg, int pos)
 void
 ncurses_update_begin(int last_pos)
 {
+	static int had_resized = 0;
+
 	if (!USE_NCURSES) {
 		return;
+	}
+
+	/*
+	 * if terminal gets resized WINDOW_RESIZEING is set to 1, if that
+	 * happened had_resized is set to 1 and WINDOW_RESIZEING is set
+	 * to 0. now we wait UPDATE_TIMEOUT and check again if
+	 * WINDOW_RESIZEING was again set to 1 (terminal is still beeing
+	 * resized),
+	 * if so: set it to 0 again and wait another timeout.
+	 * if not: set WINDOW_RESIZED to 1, reorganize all windows and
+	 *         set had_resized to 0.
+	 */
+	if (had_resized && !WINDOW_RESIZEING) {
+		WINDOW_RESIZED = 1;
+		ncurses_organize_windows();
+		had_resized = 0;
+	}
+	if (WINDOW_RESIZEING) {
+		WINDOW_RESIZEING = 0;
+		had_resized = 1;
 	}
 
 	/* if there where no messages last time, dont erase screen */
@@ -288,18 +310,18 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 
 	format_size(uploaded, fmt_uploaded);
 	format_size(downloaded, fmt_downloaded);
-	format_size(up / UPDATE_TIMEOUT, fmt_bytes_per_tval_up);
-	format_size(down / UPDATE_TIMEOUT, fmt_bytes_per_tval_down);
+	format_size((uint64_t)((float)up / UPDATE_TIMEOUT),
+	    fmt_bytes_per_tval_up);
+	format_size((uint64_t)((float)down / UPDATE_TIMEOUT),
+	    fmt_bytes_per_tval_down);
 
 	snprintf(status_data, (size_t)MSG_BUFFER_SIZE,
-	    "(%d)-(%6s|%6s)-(%6s/%us|%6s/%us)",
+	    "(%d)-(%6s|%6s)-(%6s/s|%6s/s)",
 	    clients,
 	    fmt_uploaded,
 	    fmt_downloaded,
 	    fmt_bytes_per_tval_up,
-	    (unsigned int)UPDATE_TIMEOUT,
-	    fmt_bytes_per_tval_down,
-	    (unsigned int)UPDATE_TIMEOUT);
+	    fmt_bytes_per_tval_down);
 
 	pthread_mutex_lock(&ncurses_mutex);
 	if ((size_t)terminal_width > strlen(status_data) + 2 && win_status) {
@@ -500,5 +522,5 @@ ncurses_draw_status_box()
 static void
 ncurses_resize_handler(int sig)
 {
-	WINDOW_RESIZED = 1;
+	WINDOW_RESIZEING = 1;
 }

@@ -36,9 +36,9 @@ char UPLOAD_IP[16] = "-";
 int COLOR = 0;
 
 /*
- * status update timeout
+ * ncurses status and redraw timeout
  */
-const size_t UPDATE_TIMEOUT = 1;
+const float UPDATE_TIMEOUT = 0.2f;
 
 /*
  * log file, if != NULL it will be used.

@@ -13,6 +13,5 @@ void ncurses_terminate(void);
 void ncurses_organize_windows(void);
 
 extern int USE_NCURSES;
-extern int WINDOW_RESIZED;
 
 #endif

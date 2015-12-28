@@ -36,7 +36,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
-	if (UPDATE_TIMEOUT <= 0) {
+	if (UPDATE_TIMEOUT < 0.0f) {
 		die(ERR_INFO, "UPDATE_TIMEOUT < 0");
 	}
 
@@ -58,8 +58,9 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 }
 
 /*
- * wont end, will print every refresh_time seconds
- * each element from the linkedlist
+ * wont end, will print every UPDATE_TIMEOUT seconds
+ * each element from the linkedlist, on resize ncurses_organize_windows() is
+ * called
  */
 static void *
 msg_print_loop(void *ignored)
@@ -70,7 +71,12 @@ msg_print_loop(void *ignored)
 	uint64_t tx;
 	uint64_t rx;
 	char msg_buffer[MSG_BUFFER_SIZE];
+	struct timespec tsleep;
 
+	/* will round down, what we want */
+	tsleep.tv_sec = (long)UPDATE_TIMEOUT;
+	tsleep.tv_nsec = (long)((UPDATE_TIMEOUT - (float)tsleep.tv_sec)
+			* 1000000000L);
 	position = 0;
 
 	while (1) {
@@ -108,7 +114,7 @@ msg_print_loop(void *ignored)
 		ncurses_update_end(rx, tx, position);
 #endif
 		msg_hook_delete();
-		sleep((unsigned int)UPDATE_TIMEOUT);
+		nanosleep(&tsleep, NULL);
 	}
 	/* not reached */
 #ifdef NCURSES
@@ -272,10 +278,11 @@ format_status_msg(char *msg_buffer, size_t buff_size,
 	char *fmt_type;
 
 	/* read value only once from struct */
-	written		= cur->data->written;
-	left		= cur->data->size - written;
-	size		= cur->data->size;
-	bytes_per_tval	= (written - cur->data->last_written) / UPDATE_TIMEOUT;
+	written = cur->data->written;
+	left = cur->data->size - written;
+	size = cur->data->size;
+	bytes_per_tval = (uint64_t)((float)(written - cur->data->last_written)
+				/ UPDATE_TIMEOUT);
 
 	/* set last written to inital read value */
 	cur->data->last_written = written;
@@ -302,7 +309,7 @@ format_status_msg(char *msg_buffer, size_t buff_size,
 	}
 
 	snprintf(msg_buffer, buff_size,
-	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/%us %s",
+	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/s %s",
 	    cur->data->ip,
 	    (unsigned int)(written * 100 /
 		(cur->data->size > 0 ? cur->data->size : 1)),
@@ -311,7 +318,6 @@ format_status_msg(char *msg_buffer, size_t buff_size,
 	    fmt_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
-	    (unsigned int)UPDATE_TIMEOUT,
 	    cur->data->requested_path ? cur->data->requested_path : "-");
 
 	return;

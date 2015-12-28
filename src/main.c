@@ -91,9 +91,8 @@ main(const int argc, const char *argv[])
 		client_socket = accept(server_socket,
 				   (struct sockaddr *)&cli_addr, &clilen);
 #ifdef NCURSES
-		/* ncurses uses signals on resize, so accept will continue */
-		if (USE_NCURSES && WINDOW_RESIZED) {
-			ncurses_organize_windows();
+		/* ncurses uses signals on resize, so accept() will return */
+		if (USE_NCURSES && client_socket == -1) {
 			continue;
 		}
 #endif

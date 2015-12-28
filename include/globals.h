@@ -11,7 +11,7 @@ extern uint8_t VERBOSITY;
 extern char IP[16];
 extern char UPLOAD_IP[16];
 extern int COLOR;
-extern const size_t UPDATE_TIMEOUT;
+extern const float UPDATE_TIMEOUT;
 extern char *LOG_FILE;
 extern FILE *LOG_FILE_D;
 extern const char *HTTP_TOP;
