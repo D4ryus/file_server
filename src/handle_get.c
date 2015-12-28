@@ -44,7 +44,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 			    &(data->written), (uint64_t)0, data->size - 1);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "%s sent file: %s",
+			    "%s tx: %s",
 			    format_size(data->size, fmt_size),
 			    data->requested_path);
 		}
@@ -65,7 +65,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 			    http_head->range_to);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "%s sent partial file: %s",
+			    "%s px: %s",
 			    format_size(data->size, fmt_size),
 			    data->requested_path);
 		}
@@ -75,9 +75,11 @@ handle_get(struct client_info *data, struct http_header *http_head)
 			    &(data->size), data->requested_path, data->ip);
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "%s sent dir: %s",
+			    "%s tx: %s%s",
 			    format_size(data->size, fmt_size),
-			    data->requested_path);
+			    data->requested_path,
+			    memcmp(data->requested_path, "/\0", 2) == 0 ?
+				"": "/");
 			data->written = data->size;
 		}
 		break;
@@ -85,7 +87,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		error = send_403(data->sock, http_head->type, &(data->size));
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "sent error 403");
+			    "err 403");
 			data->written = data->size;
 		}
 		break;
@@ -93,7 +95,7 @@ handle_get(struct client_info *data, struct http_header *http_head)
 		error = send_404(data->sock, http_head->type, &(data->size));
 		if (!error) {
 			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "sent error 404");
+			    "err 404");
 			data->written = data->size;
 		}
 		break;

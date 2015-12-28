@@ -52,7 +52,7 @@ handle_post(struct client_info *data, struct http_header *http_head)
 
 	snprintf(message_buffer,
 	    (size_t)MSG_BUFFER_SIZE,
-	    "%s received file: %s",
+	    "%s rx: %s",
 	    format_size(data->size, fmt_size),
 	    data->requested_path);
 	msg_print_log(data, FINISHED, message_buffer);
