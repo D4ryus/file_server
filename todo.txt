@@ -1,87 +1,94 @@
+# vim:ts=4:sw=4:expandtab:
 fixes and code changes:
-      [ ] - convert all int to typedefs of fixed size
-      [ ] - vsnprintf on warning and error to include %d, %s, ...
-      [ ] - keep-alive/pipelining
-      [ ] - 201 Created read sent Header to avoid connection abbort
-      [ ] - support # in filename
-      [ ] - quit/cleanup function
-      [ ] - add startup information
-      [ ] - add debugging option
-      [ ] - cross plattform Makefile
-      [ ] - implement max connections/threadpools
-      [ ] - strlcat
-      [ ] - libex impl.
-      [X] - fix pipe singal
-      [X] - fix pthread_create memory leak
-      [X] - fix high virt mem
-      [X] - rename variables
-      [X] - combine req, res, thread data and socket data structs
-      [X] - replace string concats with "" "" ""
-      [X] - documentation and comments
-      [X] - only print if there was a transfer
-      [X] - better error messages
-      [X] - wrap malloc with integrated err check
-      [X] - PLAIN wont send header
-      [X] - data structure to reference to main
-      [X] - implement 'gcc -M'
-      [X] - fix ugly color implementation
-      [X] - display size function (kb/mb/gb sent/http_plain display)
-      [X] - HTTP Request escape sequenzes (space/...)!!
-      [X] - http header extendet on nothing read
-      [X] - concat
-      [X] - cross plattform code
+    [ ] - convert all int to typedefs of fixed size
+    [ ] - vsnprintf on warning and error to include %d, %s, ...
+    [ ] - 201 Created read sent Header to avoid connection abbort
+    [ ] - quit/cleanup function
+    [ ] - cross plattform Makefile
+    [X] - fix pipe singal
+    [X] - fix pthread_create memory leak
+    [X] - fix high virt mem
+    [X] - rename variables
+    [X] - combine req, res, thread data and socket data structs
+    [X] - replace string concats with "" "" ""
+    [X] - documentation and comments
+    [X] - only print if there was a transfer
+    [X] - better error messages
+    [X] - wrap malloc with integrated err check
+    [X] - PLAIN wont send header
+    [X] - data structure to reference to main
+    [X] - implement 'gcc -M'
+    [X] - fix ugly color implementation
+    [X] - display size function (kb/mb/gb sent/http_plain display)
+    [X] - HTTP Request escape sequenzes (space/...)!!
+    [X] - http header extendet on nothing read
+    [X] - concat
+    [X] - cross plattform code
 
 ideas:
-      [ ] - ip block/allow of upload/download
+    [ ] - global data struct instead of linked lists (data.[ch])
+    [ ] - dynamic array
+    [ ] - global config struct instead of global.h (config.[ch])
+    [ ] - add debugging option
+    [ ] - better error handling (die, malloc, check, ...)
+    [ ] - vaargs on concat
+    [ ] - debug ncurses screen with data information
+    [ ] - combine partial download info (ip + file)
+    [ ] - fmt string for status msg
+    [ ] - statusbar [######----] 64%
+    [ ] - implement max connections/threadpools
+    [ ] - add startup information
+    [ ] - keep-alive/pipelining
+    [X] - ip block/allow of upload/download
 
 args:
-      [ ] - ip block
-      [ ] - getopt_long
-      [X] - color
-      [X] - port
-      [X] - directory
-      [X] - verbosity
-      [X] - ncurses enabled
-      [X] - log option (needed for ncurses)
-      [X] - usage
+    [ ] - getopt_long
+    [X] - ip block
+    [X] - color
+    [X] - port
+    [X] - directory
+    [X] - verbosity
+    [X] - ncurses enabled
+    [X] - log option (needed for ncurses)
+    [X] - usage
 
 config.h:
-      [X] - default port
-      [X] - default directory
-      [X] - templates for http tables
-      [X] - max request size (depends on max filename i guess)
-      [X] - max header size
-      [X] - add 404 and 403 messages
-      [X] - max filename/url
+    [X] - default port
+    [X] - default directory
+    [X] - templates for http tables
+    [X] - max request size (depends on max filename i guess)
+    [X] - max header size
+    [X] - add 404 and 403 messages
+    [X] - max filename/url
 
 messages:
-      [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl/irc)
-      [X] - message.h
-      [X] - types (error, connection, leave, status)
-      [X] - message status structs can be connected to clients
-      [X] - clients can connect to messages
-      [X] - linked list with status information, add/del mutex
-      [X] - status infomation specified in growing amounts (see /proc/stat)
-      [X] - enable optional logging which takes regular verbosity
-      [X] - timestamp
-      [X] - sync all messages
-      [X] - up and download
+    [ ] - interface for messages (ncurses/stdout/log_file/redis/opengl/irc)
+    [X] - message.h
+    [X] - types (error, connection, leave, status)
+    [X] - message status structs can be connected to clients
+    [X] - clients can connect to messages
+    [X] - linked list with status information, add/del mutex
+    [X] - status infomation specified in growing amounts (see /proc/stat)
+    [X] - enable optional logging which takes regular verbosity
+    [X] - timestamp
+    [X] - sync all messages
+    [X] - up and download
 
 ncurses:
-      [ ] - improve performance
-      [X] - basic implementation
-      [X] - window for log
-      [X] - window for status messages
-      [X] - total stats, ip, port, root dir
-      [X] - fancy top/bottom line (---(path)---(port)---)
-      [X] - total connections, total errors, total 404, ...
-      [X] - resizeable windows
+    [ ] - improve performance
+    [X] - basic implementation
+    [X] - window for log
+    [X] - window for status messages
+    [X] - total stats, ip, port, root dir
+    [X] - fancy top/bottom line (---(path)---(port)---)
+    [X] - total connections, total errors, total 404, ...
+    [X] - resizeable windows
 
 tests:
-      [ ] - configure git repo to automate tests
-      [ ] - all file endings
-      [ ] - files with size 0
-      [ ] - content test via checksums
-      [ ] - plain and html
-      [ ] - error 404/403
-      [ ] - all escapes
+    [ ] - configure git repo to automate tests
+    [ ] - all file endings
+    [ ] - files with size 0
+    [ ] - content test via checksums
+    [ ] - plain and html
+    [ ] - error 404/403
+    [ ] - all escapes
