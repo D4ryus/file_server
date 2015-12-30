@@ -59,8 +59,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 /*
  * wont end, will print every UPDATE_TIMEOUT seconds
- * each element from the linkedlist, on resize ncurses_organize_windows() is
- * called
+ * each element from the linkedlist
  */
 static void *
 msg_print_loop(void *ignored)

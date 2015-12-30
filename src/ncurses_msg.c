@@ -12,44 +12,62 @@
 
 #define HEADER_COLOR_ID 1
 
+/* global flag, is set to 1 if ncurses is active */
 int USE_NCURSES;
-int WINDOW_RESIZED;
-int WINDOW_RESIZEING;
 
-WINDOW *win_status = NULL;
-WINDOW *win_logging = NULL;
+static WINDOW *win_status = NULL;
+static WINDOW *win_logging = NULL;
 
+/* mutex to prevent cluttering of terminal */
 static pthread_mutex_t ncurses_mutex;
+#define LOCK_TERM pthread_mutex_lock(&ncurses_mutex)
+#define UNLOCK_TERM pthread_mutex_unlock(&ncurses_mutex)
 
 static uint64_t downloaded = 0;
 static uint64_t uploaded = 0;
 
+/* containing terminal and window dimensions */
 static int terminal_heigth;
 static int terminal_width;
 static int status_heigth;
 static int log_heigth;
 
-static char **log_buf;
-int log_buf_pos;
-
 static char *head_body_status = "Current file transfers: ";
 static char *head_body_log = "Log messages: ";
 static char *head_info = "File Server version 0.3";
-static char *head_data;
-static char *status_data;
 
-static void ncurses_push_log_buf(const char *);
+/* contains header string with rootpath and port */
+static char *head_data;
+
+/* contains status header string with current connections, up/download size
+ * since startup current up/download speed */
+static char status_data[MSG_BUFFER_SIZE] =
+		"(0)-(   0b |   0b )-(   0b/1s|   0b/1s)";
+
+/* will hold log messages */
+#define LOG_LINES 128
+static struct {
+	pthread_mutex_t mutex;
+	int pos;
+	char *data[LOG_LINES];
+} log_buf;
+static void ncurses_init_log(void);
+static void ncurses_push_log(const char *);
+static char *ncurses_get_log(int);
+static void ncurses_delete_log(void);
+
+static void *ncurses_handle_keyboard(void *);
+static void ncurses_draw_header(void);
 static void ncurses_draw_logging_box(void);
 static void ncurses_draw_status_box(void);
 static void ncurses_resize_handler(int);
 
 /*
- * initialises ncurses main window
+ * initialises ncurses
  */
 void
 ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 {
-	int i;
 	struct sigaction sa;
 	enum err_status error;
 
@@ -76,27 +94,17 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	}
 
 	log_heigth = 10;
-	log_buf_pos = 0;
-	log_buf = err_malloc(sizeof(char *) * (size_t)NCURSES_LOG_LINES);
-	for (i = 0; i < NCURSES_LOG_LINES; i++) {
-		log_buf[i] = err_malloc(sizeof(char));
-		log_buf[i][0] = '\0';
-	}
+
+	ncurses_init_log();
 
 	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 11);
 	snprintf(head_data, strlen(ROOT_DIR) + 11,
 	    "(%s)-(%d)", ROOT_DIR, PORT);
 
-	status_data = (char *)err_malloc((size_t)MSG_BUFFER_SIZE);
-	strncpy(status_data, "(0)-(   0b |   0b )-(   0b/1s|   0b/1s)",
-	    (size_t)39);
-	status_data[39] = '\0';
-
 	terminal_heigth = 0;
 	terminal_width = 0;
 	/* ncurses_organize_windows will rearrange windows */
-	WINDOW_RESIZED = 1;
-	ncurses_organize_windows();
+	ncurses_organize_windows(1);
 	if (win_logging) {
 		scrollok(win_logging, (bool)TRUE);
 	} else {
@@ -112,7 +120,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	}
 }
 
-void *
+static void *
 ncurses_handle_keyboard(void *ptr)
 {
 	char ch;
@@ -141,6 +149,7 @@ ncurses_handle_keyboard(void *ptr)
 		case '7':
 		case '8':
 		case '9':
+			/* offset for j/k resize, 10j -> resize by 10 lines */
 			if (resize_lines == 0) {
 				resize_lines = ch - 48;
 			} else {
@@ -148,10 +157,11 @@ ncurses_handle_keyboard(void *ptr)
 			}
 			break;
 		case 'u':
+			/* enable upload for all ip's */
 			upload_allowed = !upload_allowed;
 			if (upload_allowed) {
 				memcpy(upload_ip_buff, UPLOAD_IP, 16);
-				memcpy(UPLOAD_IP, "***.***.***.***", 16);
+				memcpy(UPLOAD_IP, "*", 16);
 			} else {
 				memcpy(UPLOAD_IP, upload_ip_buff, 16);
 			}
@@ -161,43 +171,48 @@ ncurses_handle_keyboard(void *ptr)
 			strcat(ncurses_msg_buff, "(");
 			strcat(ncurses_msg_buff, UPLOAD_IP);
 			strcat(ncurses_msg_buff, ")-");
-			pthread_mutex_lock(&ncurses_mutex);
+			LOCK_TERM;
 			if ((size_t)terminal_width > strlen(head_data)
 			    + strlen(ncurses_msg_buff)) {
-				mvwprintw(stdscr, 0, terminal_width
+				mvwaddnstr(stdscr, 0, terminal_width
 				    - (int)(strlen(head_data)
-				    + strlen(ncurses_msg_buff)),
-				    ncurses_msg_buff);
-				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
-				    NULL);
+					+ strlen(ncurses_msg_buff)),
+				    ncurses_msg_buff, -1);
+				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
 				refresh();
 			}
-			pthread_mutex_unlock(&ncurses_mutex);
+			UNLOCK_TERM;
 			break;
 		case 'k':
+			/* resize log window (bigger) */
 			resize_lines = resize_lines ? resize_lines : 1;
 			if ((status_heigth - resize_lines) >= 2) {
 				log_heigth += resize_lines;
 			} else {
 				log_heigth += (status_heigth - 2);
 			}
-			ncurses_organize_windows();
+			ncurses_organize_windows(0);
 			resize_lines = 0;
 			break;
 		case 'j':
+			/* resize log window (smaller) */
 			resize_lines = resize_lines ? resize_lines : 1;
 			if ((log_heigth - resize_lines) >= 2) {
 				log_heigth -= resize_lines;
 			} else {
 				log_heigth = 2;
 			}
-			ncurses_organize_windows();
+			ncurses_organize_windows(0);
 			resize_lines = 0;
 			break;
 		case 'r':
-			ncurses_organize_windows();
+			/* refresh terminal */
+			wclear(win_status);
+			wclear(win_logging);
+			ncurses_organize_windows(1);
 			break;
 		case 'q':
+			/* quit */
 			ncurses_terminate();
 			exit(0);
 			break;
@@ -217,18 +232,22 @@ ncurses_print_log(const char *msg)
 		return;
 	}
 
-	pthread_mutex_lock(&ncurses_mutex);
-	if (win_logging) {
-		scroll(win_logging);
-		wmove(win_logging, log_heigth - 2, 0);
-		wclrtoeol(win_logging);
-		mvwprintw(win_logging, log_heigth - 2, 1, "%s", msg);
-		ncurses_draw_logging_box();
-		wrefresh(win_logging);
-	}
-	pthread_mutex_unlock(&ncurses_mutex);
+	ncurses_push_log(msg);
 
-	ncurses_push_log_buf(msg);
+	/* in case there is no window or its too small to display anything */
+	if (!win_logging || log_heigth < 3) {
+		return;
+	}
+
+	LOCK_TERM;
+	scroll(win_logging);
+	wmove(win_logging, log_heigth - 2, 0);
+	wclrtoeol(win_logging);
+	mvwaddnstr(win_logging, log_heigth - 2, 1, msg,
+	    terminal_width - 2);
+	ncurses_draw_logging_box();
+	wrefresh(win_logging);
+	UNLOCK_TERM;
 }
 
 /*
@@ -241,11 +260,11 @@ ncurses_print_status(const char *msg, int pos)
 		return;
 	}
 
-	pthread_mutex_lock(&ncurses_mutex);
+	LOCK_TERM;
 	if (win_status && pos + 1 < status_heigth - 1) {
-		mvwprintw(win_status, pos + 1, 1, "%s", msg);
+		mvwaddnstr(win_status, pos + 1, 1, msg, terminal_width - 2);
 	}
-	pthread_mutex_unlock(&ncurses_mutex);
+	UNLOCK_TERM;
 }
 
 /*
@@ -254,40 +273,20 @@ ncurses_print_status(const char *msg, int pos)
 void
 ncurses_update_begin(int last_pos)
 {
-	static int had_resized = 0;
-
 	if (!USE_NCURSES) {
 		return;
 	}
 
-	/*
-	 * if terminal gets resized WINDOW_RESIZEING is set to 1, if that
-	 * happened had_resized is set to 1 and WINDOW_RESIZEING is set
-	 * to 0. now we wait UPDATE_TIMEOUT and check again if
-	 * WINDOW_RESIZEING was again set to 1 (terminal is still beeing
-	 * resized),
-	 * if so: set it to 0 again and wait another timeout.
-	 * if not: set WINDOW_RESIZED to 1, reorganize all windows and
-	 *         set had_resized to 0.
-	 */
-	if (had_resized && !WINDOW_RESIZEING) {
-		WINDOW_RESIZED = 1;
-		ncurses_organize_windows();
-		had_resized = 0;
-	}
-	if (WINDOW_RESIZEING) {
-		WINDOW_RESIZEING = 0;
-		had_resized = 1;
+	/* if there where no messages last time, dont erase screen */
+	if (last_pos == 0) {
+		return;
 	}
 
-	/* if there where no messages last time, dont erase screen */
-	if (last_pos > 0) {
-		pthread_mutex_lock(&ncurses_mutex);
-		if (win_status) {
-			werase(win_status);
-		}
-		pthread_mutex_unlock(&ncurses_mutex);
+	LOCK_TERM;
+	if (win_status) {
+		werase(win_status);
 	}
+	UNLOCK_TERM;
 }
 
 /*
@@ -323,12 +322,10 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 	    fmt_bytes_per_tval_up,
 	    fmt_bytes_per_tval_down);
 
-	pthread_mutex_lock(&ncurses_mutex);
-	if ((size_t)terminal_width > strlen(status_data) + 2 && win_status) {
-		ncurses_draw_status_box();
-		wrefresh(win_status);
-	}
-	pthread_mutex_unlock(&ncurses_mutex);
+	LOCK_TERM;
+	ncurses_draw_status_box();
+	wrefresh(win_status);
+	UNLOCK_TERM;
 }
 
 /*
@@ -342,20 +339,22 @@ ncurses_terminate()
 	}
 
 	/* TODO: fix cleanup */
-	pthread_mutex_lock(&ncurses_mutex);
+	LOCK_TERM;
 	delwin(win_status);
 	delwin(win_logging);
 	endwin();
 	delwin(stdscr);
-	pthread_mutex_unlock(&ncurses_mutex);
+	UNLOCK_TERM;
 	pthread_mutex_destroy(&ncurses_mutex);
+
+	ncurses_delete_log();
 }
 
 /*
  * initializes ncurses windows, called on startup and resize
  */
 void
-ncurses_organize_windows()
+ncurses_organize_windows(int resized)
 {
 	int i;
 	int width_changed;
@@ -365,12 +364,12 @@ ncurses_organize_windows()
 	}
 
 	width_changed = 0;
-	pthread_mutex_lock(&ncurses_mutex);
+
+	LOCK_TERM;
 	/* reinitialize ncurses after resize */
-	if (WINDOW_RESIZED) {
+	if (resized) {
 		int old_terminal_width;
 
-		WINDOW_RESIZED = 0;
 		old_terminal_width = terminal_width;
 		endwin();
 		refresh();
@@ -387,7 +386,7 @@ ncurses_organize_windows()
 	 * if terminal is to small to display information delete both windows,
 	 * set them to NULL and return.
 	 */
-	if (status_heigth < 1) {
+	if (status_heigth < 2) {
 		if (win_status) {
 			delwin(win_status);
 			win_status = NULL;
@@ -396,8 +395,20 @@ ncurses_organize_windows()
 			delwin(win_logging);
 			win_logging = NULL;
 		}
-		pthread_mutex_unlock(&ncurses_mutex);
+		werase(stdscr);
+		mvwaddnstr(stdscr, 0, 0,
+		    "terminal heigth to small, pls resize.",
+		    terminal_width);
+		wrefresh(stdscr);
+		UNLOCK_TERM;
 		return;
+	}
+
+	/*
+	 * if width changed or screen is getting initialized
+	 */
+	if (width_changed || (!win_status && !win_logging)) {
+		ncurses_draw_header();
 	}
 
 	/* check if windows are initialized, if not initialize them */
@@ -408,7 +419,9 @@ ncurses_organize_windows()
 		}
 	} else {
 		wresize(win_status, status_heigth, terminal_width);
+		werase(win_status);
 	}
+
 	if (!win_logging) {
 		win_logging = newwin(log_heigth, terminal_width,
 				  terminal_heigth - log_heigth, 0);
@@ -417,78 +430,133 @@ ncurses_organize_windows()
 		}
 	} else {
 		wresize(win_logging, log_heigth, terminal_width);
+		werase(win_logging);
 	}
 
-	wclear(win_status);
-	wclear(win_logging);
+	/* move logging window into place, then write log */
 	mvwin(win_logging, terminal_heigth - log_heigth, 0);
-	for (i = 1; i < log_heigth - 1; i++) {
-		mvwprintw(win_logging, i, 1,
-		    "%s", log_buf[(log_buf_pos - (log_heigth - 2) + i
-		              + NCURSES_LOG_LINES) % NCURSES_LOG_LINES]);
+	/* bottom to top */
+	pthread_mutex_lock(&log_buf.mutex);
+	for (i = 0; i < log_heigth - 2; i++) {
+		mvwaddnstr(win_logging, log_heigth - (i + 2), 1,
+		    ncurses_get_log(-i),
+		    terminal_width - 2);
 	}
+	pthread_mutex_unlock(&log_buf.mutex);
 
-	if (width_changed) {
-		char tmp[19] = "(";
-		/* rootpath, port and upload_enabled */
-		move(0, 0);
-		clrtoeol();
-		if ((size_t)terminal_width > strlen(head_data) + 1) {
-			mvwprintw(stdscr, 0,
-			    (int)terminal_width - (int)strlen(head_data),
-			    "%s", head_data);
-		}
-
-		strcat(tmp, UPLOAD_IP);
-		strcat(tmp, ")-");
-		if ((size_t)terminal_width > strlen(head_data)
-						+ strlen(tmp) + 1) {
-			mvwprintw(stdscr, 0, terminal_width
-			    - (int)(strlen(head_data) + strlen(tmp)), tmp);
-		}
-
-		/* name and version */
-		if ((size_t)terminal_width > strlen(head_info)
-		    + strlen(head_data) + strlen(tmp) + 1) {
-			mvwprintw(stdscr, 0, 0, "%s", head_info);
-		}
-	}
-
-	ncurses_draw_logging_box();
+	/* draw boxes and header info */
 	ncurses_draw_status_box();
-
-	if (width_changed) {
-		mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
-		refresh();
-	}
+	ncurses_draw_logging_box();
 
 	wrefresh(win_status);
 	wrefresh(win_logging);
-	pthread_mutex_unlock(&ncurses_mutex);
+
+	UNLOCK_TERM;
 }
 
 static void
-ncurses_push_log_buf(const char *new_msg)
+ncurses_init_log()
 {
-	pthread_mutex_lock(&ncurses_mutex);
+	int i;
 
-	log_buf_pos++;
-	if (log_buf_pos >= NCURSES_LOG_LINES) {
-		log_buf_pos -= NCURSES_LOG_LINES;
+	pthread_mutex_init(&log_buf.mutex, NULL);
+	log_buf.pos = 0;
+	for (i = 0; i < LOG_LINES; i++) {
+		log_buf.data[i] = err_malloc(sizeof(char));
+		log_buf.data[i][0] = '\0';
+	}
+}
+
+static void
+ncurses_push_log(const char *new_msg)
+{
+	pthread_mutex_lock(&log_buf.mutex);
+
+	/* ++ and modulo to prevent overruns */
+	log_buf.pos = (log_buf.pos + 1) % LOG_LINES;
+
+	if (log_buf.data[log_buf.pos]) {
+		char *free_me;
+
+		free_me = log_buf.data[log_buf.pos];
+		log_buf.data[log_buf.pos] = NULL;
+		free(free_me);
+		free_me = NULL;
 	}
 
-	if (log_buf[log_buf_pos]) {
-		free(log_buf[log_buf_pos]);
-		log_buf[log_buf_pos] = NULL;
-	}
+	log_buf.data[log_buf.pos] = err_malloc(strlen(new_msg) + 1);
+	memset(log_buf.data[log_buf.pos], '\0', strlen(new_msg) + 1);
+	strncpy(log_buf.data[log_buf.pos], new_msg, strlen(new_msg));
 
-	log_buf[log_buf_pos] = err_malloc(strlen(new_msg) + 1);
-	memset(log_buf[log_buf_pos], '\0', strlen(new_msg) + 1);
-	strncpy(log_buf[log_buf_pos], new_msg, strlen(new_msg));
-
-	pthread_mutex_unlock(&ncurses_mutex);
+	pthread_mutex_unlock(&log_buf.mutex);
 
 	return;
+}
+
+static char *
+ncurses_get_log(int offset)
+{
+	int pos;
+
+	/* normalize offset */
+	offset = offset - (offset / LOG_LINES) * LOG_LINES;
+
+	/* prevent negative numbers */
+	pos = (log_buf.pos + offset + LOG_LINES) % LOG_LINES;
+
+	return log_buf.data[pos];
+}
+
+static void
+ncurses_delete_log()
+{
+	int i;
+
+	for (i = 0; i < LOG_LINES; i++) {
+		free(log_buf.data[i]);
+		log_buf.data[i] = NULL;
+	}
+	pthread_mutex_destroy(&log_buf.mutex);
+}
+
+static void
+ncurses_draw_header()
+{
+	char tmp[19] = "(";
+	size_t head_info_l;
+	size_t head_data_l;
+	size_t tmp_l;
+
+	strcat(tmp, UPLOAD_IP);
+	strcat(tmp, ")-");
+	head_info_l = strlen(head_info);
+	head_data_l = strlen(head_data);
+	tmp_l = strlen(tmp);
+
+	/* clear line */
+	move(0, 0);
+	clrtoeol();
+
+	/* rootpath and port */
+	if ((size_t)terminal_width > head_data_l + 1) {
+		mvwaddnstr(stdscr, 0, terminal_width - (int)head_data_l,
+		    head_data, -1);
+	}
+
+	/* upload ip */
+	if ((size_t)terminal_width > head_data_l + tmp_l + 1) {
+		mvwaddnstr(stdscr, 0, terminal_width
+		    - (int)(head_data_l + tmp_l), tmp, -1);
+	}
+
+	/* name and version */
+	if ((size_t)terminal_width > head_info_l + head_data_l + tmp_l
+	    + 1) {
+		mvwaddnstr(stdscr, 0, 0, head_info, -1);
+	}
+
+	mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
+	refresh();
 }
 
 static void
@@ -496,7 +564,7 @@ ncurses_draw_logging_box()
 {
 	box(win_logging, ACS_VLINE, ACS_HLINE);
 	if ((size_t)terminal_width > strlen(head_body_log) + 2) {
-		mvwprintw(win_logging, 0, 2, "%s", head_body_log);
+		mvwaddstr(win_logging, 0, 2, head_body_log);
 	}
 }
 
@@ -505,14 +573,14 @@ ncurses_draw_status_box()
 {
 	box(win_status, ACS_VLINE, ACS_HLINE);
 	if ((size_t)terminal_width > strlen(status_data) + 4) {
-		mvwprintw(win_status, 0,
+		mvwaddstr(win_status, 0,
 		    (int)terminal_width - ((int)strlen(status_data) + 2),
-		    "%s", status_data);
+		    status_data);
 	}
 
 	if ((size_t)terminal_width > strlen(status_data)
 	    + strlen(head_body_status) + 4) {
-		mvwprintw(win_status, 0, 2, "%s", head_body_status);
+		mvwaddstr(win_status, 0, 2, head_body_status);
 	}
 }
 
@@ -522,5 +590,5 @@ ncurses_draw_status_box()
 static void
 ncurses_resize_handler(int sig)
 {
-	WINDOW_RESIZEING = 1;
+	ncurses_organize_windows(1);
 }

@@ -29,9 +29,4 @@
  */
 #define MSG_BUFFER_SIZE 256
 
-/*
- * Ncurses Logging window message buffer size
- */
-#define NCURSES_LOG_LINES 128
-
 #endif

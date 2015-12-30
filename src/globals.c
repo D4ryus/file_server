@@ -36,7 +36,7 @@ char UPLOAD_IP[16] = "-";
 int COLOR = 0;
 
 /*
- * ncurses status and redraw timeout
+ * ncurses status timeout
  */
 const float UPDATE_TIMEOUT = 0.2f;
 
