@@ -14,8 +14,14 @@ enum http_type {
 	PLAIN
 };
 
+enum connection_type {
+	CLOSE,
+	KEEP_ALIVE
+};
+
 struct http_header {
 	enum http_method method;
+	enum connection_type con;
 	enum http_type type;
 	char *url;
 	char *host;

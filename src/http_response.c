@@ -50,7 +50,7 @@ send_200_file_head(int socket, enum http_type type, uint64_t *size,
 		   head, "HTTP/1.1 200 OK\r\n"
 			 "Accept-Ranges: bytes\r\n"
 			 "Cache-Control: no-cache\r\n"
-			 "Connection: close\r\n"
+			 "Connection: keep-alive\r\n"
 			 "Content-Type: "), get_content_encoding(filename)),
 			 content_length);
 
@@ -113,7 +113,7 @@ send_206_file_head(int socket, enum http_type type, uint64_t *size,
 	head = concat(concat(concat(concat(
 		   head, "HTTP/1.1 206 Partial Content\r\n"
 			 "Accept-Ranges: bytes\r\n"
-			 "Connection: close\r\n"
+			 "Connection: keep-alive\r\n"
 			 "Content-Type: "), get_content_encoding(filename)),
 			 content_length),
 			 content_range);
@@ -177,7 +177,7 @@ send_200_directory(int socket, enum http_type type, uint64_t *size,
 
 		head = concat(concat(head, "HTTP/1.1 200 OK\r\n"
 					   "Cache-Control: no-cache\r\n"
-					   "Connection: close\r\n"
+					   "Connection: keep-alive\r\n"
 					   "Content-Type: text/html; "
 					   "charset=utf-8\r\n"),
 					   content_length);
@@ -218,7 +218,7 @@ send_403(int socket, enum http_type type, uint64_t *size)
 
 		head = concat(concat(head, "HTTP/1.1 403 Forbidden\r\n"
 					   "Cache-Control: no-cache\r\n"
-					   "Connection: close\r\n"
+					   "Connection: keep-alive\r\n"
 					   "Content-Type: text/plain; "
 					   "charset=utf-8\r\n"),
 					   content_length);
@@ -255,7 +255,7 @@ send_404(int socket, enum http_type type, uint64_t *size)
 
 		head = concat(concat(head, "HTTP/1.1 404 Not Found\r\n"
 					   "Cache-Control: no-cache\r\n"
-					   "Connection: close\r\n"
+					   "Connection: keep-alive\r\n"
 					   "Content-Type: text/plain; "
 					   "charset=utf-8\r\n"),
 					   content_length);
@@ -294,7 +294,7 @@ send_405(int socket, enum http_type type, uint64_t *size)
 
 		head = concat(concat(head, "HTTP/1.1 405 Method Not Allowed\r\n"
 					   "Cache-Control: no-cache\r\n"
-					   "Connection: close\r\n"
+					   "Connection: keep-alive\r\n"
 					   "Content-Type: text/plain; "
 					   "charset=utf-8\r\n"),
 					   content_length);
@@ -331,7 +331,7 @@ send_201(int socket, enum http_type type, uint64_t *size)
 
 		head = concat(concat(head, "HTTP/1.1 201 Created\r\n"
 					   "Cache-Control: no-cache\r\n"
-					   "Connection: close\r\n"
+					   "Connection: keep-alive\r\n"
 					   "Content-Type: text/html; "
 					   "charset=utf-8\r\n"),
 					   content_length);

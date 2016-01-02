@@ -13,6 +13,7 @@ static int parse_GET(struct http_header *, char *);
 static int parse_POST(struct http_header *, char *);
 static int parse_url(struct http_header *, char *);
 static int parse_host(struct http_header *, char *);
+static int parse_connection(struct http_header *, char *);
 static int parse_range(struct http_header *, char *);
 static int parse_content_length(struct http_header *, char *);
 static int parse_content_type(struct http_header *, char *);
@@ -27,6 +28,7 @@ struct http_keyword parse_table[] = {
 	{ "GET ",             parse_GET },
 	{ "POST ",            parse_POST },
 	{ "Host: ",           parse_host },
+	{ "Connection: ",     parse_connection },
 	{ "Range: ",          parse_range },
 	{ "Content-Type: ",   parse_content_type },
 	{ "Content-Length: ", parse_content_length }
@@ -39,6 +41,7 @@ init_http_header(struct http_header *data)
 	data->type = HTTP;
 	data->url = NULL;
 	data->host = NULL;
+	data->con = CLOSE;
 	data->range_from = 0;
 	data->range_to = 0;
 	data->content_length = 0;
@@ -299,15 +302,38 @@ parse_url(struct http_header *data, char *line)
 }
 
 static int
+parse_connection(struct http_header *data, char *line)
+{
+	size_t length;
+
+	length = strlen(line);
+	if (!length) {
+		return INV_CONNECTION;
+	}
+
+	if (length == 5 && !memcmp(line, "close", 5)) {
+		data->con = CLOSE;
+	} else if (length == 10 && !memcmp(line, "keep-alive", 10)) {
+		data->con = KEEP_ALIVE;
+	} else {
+		return INV_CONNECTION;
+	}
+
+	return STAT_OK;
+}
+
+static int
 parse_host(struct http_header *data, char *line)
 {
 	size_t length;
 
 	length = strlen(line);
-	if (length) {
-		data->host = err_malloc(length + 1);
-		memcpy(data->host, line, length + 1);
+	if (!length) {
+		return INV_HOST;
 	}
+	data->host = err_malloc(length + 1);
+	memcpy(data->host, line, length + 1);
+
 	return STAT_OK;
 }
 

@@ -50,6 +50,10 @@ handle_request(void *ptr)
 		return NULL;
 	}
 
+	msg_hook_add(data);
+
+keep_alive:
+
 	error = parse_header(&http_head, data->sock);
 	if (error) {
 		shutdown(data->sock, SHUT_RDWR);
@@ -73,7 +77,6 @@ handle_request(void *ptr)
 		length = strlen(http_head.url);
 		data->requested_path = err_malloc(length + 1);
 		memcpy(data->requested_path, http_head.url, length + 1);
-		msg_hook_add(data);
 		error = handle_get(data, &http_head);
 		break;
 	case POST:
@@ -82,7 +85,6 @@ handle_request(void *ptr)
 			break;
 		}
 		data->type = UPLOAD;
-		msg_hook_add(data);
 		error = handle_post(data, &http_head);
 		break;
 	default:
@@ -91,6 +93,17 @@ handle_request(void *ptr)
 	}
 	if (error) {
 		msg_print_log(data, ERROR, get_err_msg(error));
+	}
+
+	if (data->sock != 0 && http_head.con == KEEP_ALIVE) {
+		/* clean up data struct and reinitialize it */
+		if (data->requested_path) {
+			free(data->requested_path);
+			data->requested_path = NULL;
+		}
+		init_client_info(data);
+		delete_http_header(&http_head);
+		goto keep_alive;
 	}
 
 	delete_http_header(&http_head);

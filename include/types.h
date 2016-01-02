@@ -54,21 +54,25 @@ enum err_status {
 	HEADER_LINES_EXT,
 	INV_CONTENT_TYPE,
 	INV_RANGE,
-	INV_POST_PATH
+	INV_POST_PATH,
+	INV_CONNECTION,
+	INV_HOST
 };
 
 /*
  * per request a data store is generated and then during execution filled
  */
 struct client_info {
+	/* will be set by main thread */
 	char     ip[16];		/* ip from client */
+	int      port;			/* port from client */
+	int      sock;			/* socket descriptor */
+	/* set by handle request thread */
 	uint64_t size;			/* file size */
 	uint64_t written;		/* written data */
 	uint64_t last_written;		/* will be updated by print thread */
 	char     *requested_path;	/* requested path */
-	int      port;			/* port from client */
-	int      sock;			/* socket descriptor */
-	enum     transfer_type type;
+	enum     transfer_type type;    /* PLAIN or HTTP */
 };
 
 /*

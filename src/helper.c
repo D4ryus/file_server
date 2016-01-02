@@ -575,7 +575,9 @@ get_err_msg(enum err_status error)
 	/* HEADER_LINES_EXT   */ "error - too many headerlines",
 	/* INV_CONTENT_TYPE   */ "error - invalid Content-Type",
 	/* INV_RANGE          */ "error - invalid Range",
-	/* INV_POST_PATH      */ "error - invalid POST path specified"
+	/* INV_POST_PATH      */ "error - invalid POST path specified",
+	/* INV_CONNECTION     */ "error - invalid connection type",
+	/* INV_HOST           */ "error - invalid host"
 	};
 
 	return err_msg[error];
