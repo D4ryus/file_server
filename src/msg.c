@@ -230,7 +230,8 @@ msg_print_loop(void *ignored)
 			cur = &msg_hooks.data[i];
 			last_written = cur->trans.last_written;
 
-			/* format_status_msg will update cur->trans.last_written */
+			/* format_status_msg will update
+			 * cur->trans.last_written */
 			format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 			    i, position);
 			msg_print_status(msg_buffer, position);

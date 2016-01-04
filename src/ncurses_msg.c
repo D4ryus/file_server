@@ -178,7 +178,8 @@ ncurses_handle_keyboard(void *ptr)
 				    - (int)(strlen(head_data)
 					+ strlen(ncurses_msg_buff)),
 				    ncurses_msg_buff, -1);
-				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
+				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
+				    NULL);
 				refresh();
 			}
 			UNLOCK_TERM;

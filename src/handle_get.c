@@ -54,7 +54,8 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 				char *header;
 
 				header = print_header(&response);
-				error = send_data(sock, header, strlen(header));
+				error = send_data(sock, header,
+					    strlen(header));
 				free(header);
 				if (error) {
 					free(body);
