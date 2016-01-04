@@ -140,9 +140,9 @@ dir_to_table(int http, const char *dir, int upload)
 			char *buff;
 			size_t length;
 
-			length = strlen(HTTP_UPLOAD) + strlen(directory) + 1;
+			length = strlen(HTTP_UPLOAD) + strlen(dir) + 1;
 			buff = err_malloc(length);
-			snprintf(buff, length, HTTP_UPLOAD, directory);
+			snprintf(buff, length, HTTP_UPLOAD, dir);
 			table_buffer = concat(table_buffer, buff);
 			free(buff);
 			buff = NULL;
