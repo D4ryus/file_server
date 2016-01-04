@@ -90,9 +90,6 @@ dir_to_table(int http, const char *dir, int upload)
 
 	d = get_dir(directory);
 
-	free(directory);
-	directory = NULL;
-
 	if (!d) {
 		die(ERR_INFO, "cannot open directory");
 	}
@@ -152,6 +149,10 @@ dir_to_table(int http, const char *dir, int upload)
 		}
 		table_buffer = concat(table_buffer, HTTP_BOT);
 	}
+
+	free(directory);
+	directory = NULL;
+
 
 	return table_buffer;
 }
