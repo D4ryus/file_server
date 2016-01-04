@@ -1,10 +1,9 @@
 # vim:ts=4:sw=4:expandtab:
 fixes and code changes:
     [ ] - convert all int to typedefs of fixed size
-    [ ] - vsnprintf on warning and error to include %d, %s, ...
-    [ ] - 201 Created read sent Header to avoid connection abbort
     [ ] - quit/cleanup function
     [ ] - cross plattform Makefile
+    [X] - 201 Created read sent Header to avoid connection abbort
     [X] - fix pipe singal
     [X] - fix pthread_create memory leak
     [X] - fix high virt mem
@@ -26,8 +25,6 @@ fixes and code changes:
     [X] - cross plattform code
 
 ideas:
-    [ ] - global data struct instead of linked lists (data.[ch])
-    [ ] - dynamic array
     [ ] - global config struct instead of global.h (config.[ch])
     [ ] - add debugging option
     [ ] - better error handling (die, malloc, check, ...)
@@ -35,10 +32,12 @@ ideas:
     [ ] - debug ncurses screen with data information
     [ ] - combine partial download info (ip + file)
     [ ] - fmt string for status msg
-    [ ] - statusbar [######----] 64%
     [ ] - implement max connections/threadpools
     [ ] - add startup information
-    [ ] - keep-alive/pipelining
+    [X] - global data struct instead of linked lists (data.[ch])
+    [X] - dynamic array
+    [X] - keep-alive/pipelining
+    [X] - statusbar [######----] 64%
     [X] - ip block/allow of upload/download
 
 args:

@@ -23,6 +23,7 @@ static pthread_mutex_t print_mutex;
 static void msg_print_status(const char *, int);
 static void *msg_print_loop(void *);
 static void format_status_msg(char *, size_t, int, int);
+static const char *get_status_bar(uint8_t);
 
 struct msg_hook {
 	uint8_t in_use : 1;
@@ -373,6 +374,7 @@ format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 	uint64_t left;
 	uint64_t size;
 	uint64_t bytes_per_tval;
+	uint8_t percent;
 
 	char fmt_written[7];
 	char fmt_left[7];
@@ -389,6 +391,8 @@ format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 
 	/* set last written to inital read value */
 	cur->trans.last_written = written;
+	percent = (uint8_t)(written * 100
+		      / (cur->trans.size > 0 ? cur->trans.size : 1));
 
 	format_size(written, fmt_written);
 	format_size(left, fmt_left);
@@ -396,18 +400,43 @@ format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
 	snprintf(msg_buffer, buff_size,
-	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/s %s",
+	    "%15s: %s [%s|%3u%% (%6s/%6s @ %6s/s)] %s",
 	    cur->ip,
-	    (unsigned int)(written * 100 /
-		(cur->trans.size > 0 ? cur->trans.size : 1)),
 	    cur->trans.type,
+	    get_status_bar(percent),
+	    percent,
 	    fmt_written,
 	    fmt_size,
-	    fmt_left,
+	    /* fmt_left, */
 	    fmt_bytes_per_tval,
 	    cur->trans.name);
 
 	return;
+}
+
+static const char *
+get_status_bar(uint8_t percent)
+{
+	uint8_t pos;
+	static const char *bars[] = {
+		"          ", ".         ", "o         ",
+		"O         ", "O.        ", "Oo        ",
+		"OO        ", "OO.       ", "OOo       ",
+		"OOO       ", "OOO.      ", "OOOo      ",
+		"OOOO      ", "OOOO.     ", "OOOOo     ",
+		"OOOOO     ", "OOOOO.    ", "OOOOOo    ",
+		"OOOOOO    ", "OOOOOO.   ", "OOOOOOo   ",
+		"OOOOOOO   ", "OOOOOOO.  ", "OOOOOOOo  ",
+		"OOOOOOOO  ", "OOOOOOOO. ", "OOOOOOOOo ",
+		"OOOOOOOOO ", "OOOOOOOOO.", "OOOOOOOOOo",
+		"OOOOOOOOOO",
+	};
+
+	pos = (uint8_t)((float)percent / 3.33f + 0.5f);
+	if (pos > 30) {
+		pos = 30;
+	}
+	return bars[pos];
 }
 
 void
