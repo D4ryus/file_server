@@ -544,7 +544,7 @@ parse_range(struct http_header *data, char *line)
 			return INV_RANGE;
 		}
 	} else {
-		return INV_RANGE;
+		data->range.to = 0;
 	}
 
 	/* size */
@@ -560,7 +560,7 @@ parse_range(struct http_header *data, char *line)
 			}
 		}
 	} else {
-		return INV_RANGE;
+		data->range.size = 0;
 	}
 
 	return STAT_OK;

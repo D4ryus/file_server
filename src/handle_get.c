@@ -84,16 +84,22 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 		switch (response.status) {
 		case _200_OK:
 			response.content_length = (uint64_t)sb.st_size;
+			tmp = "tx";
 			break;
 		case _206_Partial_Content:
 			if (response.range.to == 0) {
 				response.range.to = (uint64_t)(sb.st_size - 1);
 			}
+			if (response.range.size == 0) {
+				response.range.size = (uint64_t)sb.st_size;
+			}
 			response.content_length = response.range.to
 						- response.range.from + 1;
 			response.range.size = (uint64_t)sb.st_size;
+			tmp = "px";
 			break;
 		default:
+			tmp = "er";
 			/* not reached */
 			break;
 		}
@@ -110,7 +116,7 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 			}
 		}
 		written = msg_hook_new_transfer(msg_id, request->url,
-			      response.content_length, "tx");
+			      response.content_length, tmp);
 
 		switch (response.status) {
 		case _200_OK:
