@@ -2,7 +2,7 @@
 #define HANDLE_POST_H
 
 #include "types.h"
-#include "parse_http.h"
+#include "http.h"
 
 int handle_post(int, int, struct http_header *);
 

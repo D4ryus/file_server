@@ -2,7 +2,7 @@
 #define FILE_LIST_H
 
 #include "types.h"
-#include "parse_http.h"
+#include "http.h"
 
 struct dir {
 	char *name;

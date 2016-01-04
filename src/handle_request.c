@@ -12,7 +12,7 @@
 #include "helper.h"
 #include "handle_request.h"
 #include "msg.h"
-#include "parse_http.h"
+#include "http.h"
 
 /*
  * function where each thread starts execution with given client_info

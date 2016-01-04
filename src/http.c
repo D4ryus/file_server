@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <inttypes.h>
 
-#include "parse_http.h"
+#include "http.h"
 #include "helper.h"
 #include "defines.h"
 
