@@ -9,7 +9,7 @@
 #include <sys/socket.h>
 #include <stdarg.h>
 
-#include "globals.h"
+#include "config.h"
 #include "helper.h"
 #include "msg.h"
 #include "defines.h"
@@ -282,10 +282,10 @@ err_realloc(void *ptr, size_t size)
 void
 die(const char *file, const int line, const char *function, const char *msg)
 {
-	if (LOG_FILE_D) {
-		fprintf(LOG_FILE_D, "%s:%d:%s: error: %s: %s\n",
+	if (CONF.log_file_d) {
+		fprintf(CONF.log_file_d, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));
-		fflush(LOG_FILE_D);
+		fflush(CONF.log_file_d);
 	} else {
 		fprintf(stderr, "%s:%d:%s: error: %s: %s\n",
 		    file, line, function, msg, strerror(errno));

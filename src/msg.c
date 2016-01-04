@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <inttypes.h>
 
-#include "globals.h"
+#include "config.h"
 #include "defines.h"
 #include "msg.h"
 #include "helper.h"
@@ -15,8 +15,6 @@
 #ifdef NCURSES
 #include "ncurses_msg.h"
 #endif
-
-#define NAME_LENGTH 128
 
 static pthread_mutex_t print_mutex;
 
@@ -61,15 +59,15 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
-	if (UPDATE_TIMEOUT < 0.0f) {
-		die(ERR_INFO, "UPDATE_TIMEOUT < 0");
+	if (CONF.update_timeout < 0.0f) {
+		die(ERR_INFO, "CONF.update_timeout < 0");
 	}
 
 #ifdef NCURSES
 	ncurses_init(thread, attr);
-	if (USE_NCURSES || VERBOSITY >= 3) {
+	if (USE_NCURSES || CONF.verbosity >= 3) {
 #else
-	if (VERBOSITY >= 3) {
+	if (CONF.verbosity >= 3) {
 #endif
 		int i;
 
@@ -223,8 +221,8 @@ msg_print_loop(void *ignored)
 	struct msg_hook *cur;
 
 	/* will round down, what we want */
-	tsleep.tv_sec = (long)UPDATE_TIMEOUT;
-	tsleep.tv_nsec = (long)((UPDATE_TIMEOUT - (float)tsleep.tv_sec)
+	tsleep.tv_sec = (long)CONF.update_timeout;
+	tsleep.tv_nsec = (long)((CONF.update_timeout - (float)tsleep.tv_sec)
 			* 1000000000L);
 	position = 0;
 
@@ -303,9 +301,9 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 	char msg_buffer[MSG_BUFFER_SIZE];
 
 #ifdef NCURSES
-	if (!USE_NCURSES && type > VERBOSITY) {
+	if (!USE_NCURSES && type > CONF.verbosity) {
 #else
-	if (type > VERBOSITY) {
+	if (type > CONF.verbosity) {
 #endif
 		return;
 	}
@@ -339,12 +337,12 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 #endif
 
 	/* ncurses printed, check again if we also print to logfile */
-	if (type > VERBOSITY) {
+	if (type > CONF.verbosity) {
 		return;
 	}
 
-	if (LOG_FILE_D) {
-		stream = LOG_FILE_D;
+	if (CONF.log_file_d) {
+		stream = CONF.log_file_d;
 	} else {
 		stream = stdout;
 	}
@@ -352,8 +350,8 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 	pthread_mutex_lock(&print_mutex);
 	fprintf(stream, "%s\n", msg_buffer);
 
-	if (LOG_FILE_D) {
-		fflush(LOG_FILE_D);
+	if (CONF.log_file_d) {
+		fflush(CONF.log_file_d);
 	}
 	pthread_mutex_unlock(&print_mutex);
 }
@@ -387,7 +385,7 @@ format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 	size = cur->trans.size;
 	left = size - written;
 	bytes_per_tval = (uint64_t)((float)(written - cur->trans.last_written)
-				/ UPDATE_TIMEOUT);
+				/ CONF.update_timeout);
 
 	/* set last written to inital read value */
 	cur->trans.last_written = written;
@@ -447,18 +445,18 @@ msg_print_status(const char *msg, int position)
 #ifdef NCURSES
 	ncurses_print_status(msg, position);
 #endif
-	if (VERBOSITY < 3) {
+	if (CONF.verbosity < 3) {
 		return;
 	}
 
-	if (LOG_FILE_D) {
-		stream = LOG_FILE_D;
+	if (CONF.log_file_d) {
+		stream = CONF.log_file_d;
 	} else {
 		stream = stdout;
 	}
 
 	pthread_mutex_lock(&print_mutex);
-	if (COLOR) {
+	if (CONF.color) {
 		if (position == -1) {
 			position = 7;
 		} else {
@@ -470,8 +468,8 @@ msg_print_status(const char *msg, int position)
 		fprintf(stream, "%s\n", msg);
 	}
 
-	if (LOG_FILE_D) {
-		fflush(LOG_FILE_D);
+	if (CONF.log_file_d) {
+		fflush(CONF.log_file_d);
 	}
 	pthread_mutex_unlock(&print_mutex);
 }

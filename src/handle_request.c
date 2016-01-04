@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <stdint.h>
 
-#include "globals.h"
+#include "config.h"
 #include "handle_post.h"
 #include "handle_get.h"
 #include "defines.h"
@@ -47,7 +47,7 @@ handle_request(void *ptr)
 	msg_print_log(msg_id, CONNECTED, con_msg);
 
 	/* check if ip is blocked */
-	if (!ip_matches(IP, ip)) {
+	if (!ip_matches(CONF.ip, ip)) {
 		error = IP_BLOCKED;
 		goto disconnect;
 	}
@@ -62,10 +62,10 @@ keep_alive:
 	switch (request.method) {
 	case GET:
 		error = handle_get(msg_id, sock, &request,
-			    ip_matches(UPLOAD_IP, ip));
+			    ip_matches(CONF.upload_ip, ip));
 		break;
 	case POST:
-		if (!ip_matches(UPLOAD_IP, ip)) {
+		if (!ip_matches(CONF.upload_ip, ip)) {
 			error = POST_DISABLED;
 			break;
 		}

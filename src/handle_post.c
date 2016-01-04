@@ -5,7 +5,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 
-#include "globals.h"
+#include "config.h"
 #include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
@@ -17,6 +17,37 @@ static int buff_contains(int, const char *, size_t, const char *, size_t,
     ssize_t *, uint64_t *);
 static int parse_file_header(const char *, size_t, size_t *, char **);
 static int open_file(char **, FILE **, char *);
+
+/*
+ * html response for http status 201 (file created),
+ * needed for POST messages
+ */
+static const char *RESPONSE_201=
+"<!DOCTYPE html>"
+"<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
+	"<style>"
+		"html, body {"
+			"background-color: #303030;"
+			"color: #888888;"
+		"}"
+		"h1, a:hover {"
+			"color: #ffffff;"
+		"}"
+		"a {"
+			"color: #44aaff;"
+			"text-decoration: none;"
+		"}"
+	"</style>"
+	"<center>"
+		"<h1>its done!</h1>"
+		"<body>"
+		"<a href='/'>back to Main page</a><br>"
+		"<a href='#' onclick='history.back()'>"
+			"load up another file"
+		"</a>"
+		"</body>"
+	"</center>"
+"</html>";
 
 int
 handle_post(int msg_id, int sock, struct http_header *request)
@@ -113,11 +144,11 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	directory = NULL;
 
 	if (memcmp(*url, "/\0", (size_t)2) == 0) {
-		directory = concat(concat(directory, ROOT_DIR), "/");
+		directory = concat(concat(directory, CONF.root_dir), "/");
 	} else {
 		/* in case requested path is not / */
 		buff = NULL;
-		buff = concat(concat(buff, ROOT_DIR), *url);
+		buff = concat(concat(buff, CONF.root_dir), *url);
 
 		directory = realpath(buff, NULL);
 		free(buff);
@@ -138,16 +169,16 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 			return INV_POST_PATH;
 		}
 
-		/* now check if file starts with ROOT_DIR path */
-		if ((memcmp(directory, ROOT_DIR, strlen(ROOT_DIR)) != 0)
-		    || strlen(ROOT_DIR) > strlen(directory)) {
+		/* now check if file starts with CONF.root_dir path */
+		if ((memcmp(directory, CONF.root_dir, strlen(CONF.root_dir)) != 0)
+		    || strlen(CONF.root_dir) > strlen(directory)) {
 			return INV_POST_PATH;
 		}
 
 		/* and update url to full path */
 		free(*url);
 		*url = NULL;
-		*url = concat(*url, directory + strlen(ROOT_DIR));
+		*url = concat(*url, directory + strlen(CONF.root_dir));
 	}
 
 	buff = err_malloc((size_t)BUFFSIZE_READ);

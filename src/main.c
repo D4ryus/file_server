@@ -9,12 +9,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "globals.h"
+#include "config.h"
 #include "handle_request.h"
 #include "msg.h"
 #include "types.h"
 #include "helper.h"
-#include "globals.h"
 
 #ifdef NCURSES
 #include "ncurses_msg.h"
@@ -70,7 +69,7 @@ main(const int argc, const char *argv[])
 	memset((char *) &serv_addr, '\0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
-	serv_addr.sin_port = htons(PORT);
+	serv_addr.sin_port = htons(CONF.port);
 
 	/* bind socket */
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
@@ -109,7 +108,7 @@ main(const int argc, const char *argv[])
 	}
 
 	/* not reached */
-	// free(ROOT_DIR);
+	// free(CONF.root_dir);
 	// close(server_socket);
 }
 
@@ -124,7 +123,7 @@ parse_arguments(const int argc, const char *argv[])
 	for (i = 1; i < argc; i++) {
 		if ((strcmp(argv[i], "-c") == 0)
 		    || (strcmp(argv[i], "--color") == 0)) {
-			COLOR = 1;
+			CONF.color = 1;
 		} else if ((strcmp(argv[i], "-d") == 0)
 		    || (strcmp(argv[i], "--dir") == 0)) {
 			i++;
@@ -141,7 +140,7 @@ parse_arguments(const int argc, const char *argv[])
 				    "user specified -u/--upload without"
 				    " a ip");
 			}
-			normalize_ip(UPLOAD_IP, argv[i]);
+			normalize_ip(CONF.upload_ip, argv[i]);
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
 			usage_quit(argv[0], NULL);
@@ -153,8 +152,8 @@ parse_arguments(const int argc, const char *argv[])
 				    "user specified -l/--log_file without a "
 				    "file");
 			}
-			LOG_FILE = err_malloc(strlen(argv[i]) + 1);
-			strncpy(LOG_FILE, argv[i], strlen(argv[i]) + 1);
+			CONF.log_file = err_malloc(strlen(argv[i]) + 1);
+			strncpy(CONF.log_file, argv[i], strlen(argv[i]) + 1);
 #ifdef NCURSES
 		} else if ((strcmp(argv[i], "-n") == 0)
 		    || (strcmp(argv[i], "--ncurses") == 0)) {
@@ -167,7 +166,7 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit(argv[0],
 				    "user specified -p/--port without a port");
 			}
-			PORT = (uint16_t)atoi(argv[i]);
+			CONF.port = (uint16_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-v") == 0)
 		    || (strcmp(argv[i], "--verbosity") == 0)) {
 			i++;
@@ -176,7 +175,7 @@ parse_arguments(const int argc, const char *argv[])
 				    "-v/--verbosity without a number (values "
 				    "are [0] 1 2 3)");
 			}
-			VERBOSITY = (uint8_t)atoi(argv[i]);
+			CONF.verbosity = (uint8_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-i") == 0)
 		    || (strcmp(argv[i], "--ip") == 0)) {
 			i++;
@@ -188,27 +187,27 @@ parse_arguments(const int argc, const char *argv[])
 				usage_quit(argv[0], "user specified "
 				    "-i/--ip with ip length > 15.");
 			}
-			normalize_ip(IP, argv[i]);
+			normalize_ip(CONF.ip, argv[i]);
 		} else {
 			usage_quit(argv[0], "unknown argument specified");
 		}
 	}
 
 	if (root_arg == 0) {
-		ROOT_DIR = realpath(ROOT_DIR, NULL);
+		CONF.root_dir = realpath(CONF.root_dir, NULL);
 	} else {
-		ROOT_DIR = realpath(argv[root_arg], NULL);
+		CONF.root_dir = realpath(argv[root_arg], NULL);
 	}
-	if (!ROOT_DIR) {
-		die(ERR_INFO, "realpath() on ROOT_DIR returned NULL");
+	if (!CONF.root_dir) {
+		die(ERR_INFO, "realpath() on CONF.root_dir returned NULL");
 	}
-	if (strlen(ROOT_DIR) == 1 && ROOT_DIR[0] == '/') {
+	if (strlen(CONF.root_dir) == 1 && CONF.root_dir[0] == '/') {
 		die(ERR_INFO, "sharing / is not possible.");
 	}
 
-	if (LOG_FILE) {
-		LOG_FILE_D = fopen(LOG_FILE, "a+");
-		if (!LOG_FILE_D) {
+	if (CONF.log_file) {
+		CONF.log_file_d = fopen(CONF.log_file, "a+");
+		if (!CONF.log_file_d) {
 			die(ERR_INFO, "could not open logfile");
 		}
 	}

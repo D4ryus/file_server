@@ -29,4 +29,9 @@
  */
 #define MSG_BUFFER_SIZE 256
 
+/*
+ * length of displayed name (+ path) on status window (ncurses)
+ */
+#define NAME_LENGTH 64
+
 #endif

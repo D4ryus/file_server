@@ -25,7 +25,6 @@ fixes and code changes:
     [X] - cross plattform code
 
 ideas:
-    [ ] - global config struct instead of global.h (config.[ch])
     [ ] - add debugging option
     [ ] - better error handling (die, malloc, check, ...)
     [ ] - vaargs on concat
@@ -34,6 +33,7 @@ ideas:
     [ ] - fmt string for status msg
     [ ] - implement max connections/threadpools
     [ ] - add startup information
+    [X] - global config struct instead of global.h (config.[ch])
     [X] - global data struct instead of linked lists (data.[ch])
     [X] - dynamic array
     [X] - keep-alive/pipelining

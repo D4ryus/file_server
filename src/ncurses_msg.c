@@ -5,7 +5,7 @@
 #include <string.h>
 #include <pthread.h>
 
-#include "globals.h"
+#include "config.h"
 #include "ncurses_msg.h"
 #include "helper.h"
 #include "defines.h"
@@ -97,9 +97,9 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	ncurses_init_log();
 
-	head_data = (char *)err_malloc(strlen(ROOT_DIR) + 11);
-	snprintf(head_data, strlen(ROOT_DIR) + 11,
-	    "(%s)-(%d)", ROOT_DIR, PORT);
+	head_data = (char *)err_malloc(strlen(CONF.root_dir) + 11);
+	snprintf(head_data, strlen(CONF.root_dir) + 11,
+	    "(%s)-(%d)", CONF.root_dir, CONF.port);
 
 	terminal_heigth = 0;
 	terminal_width = 0;
@@ -160,16 +160,16 @@ ncurses_handle_keyboard(void *ptr)
 			/* enable upload for all ip's */
 			upload_allowed = !upload_allowed;
 			if (upload_allowed) {
-				memcpy(upload_ip_buff, UPLOAD_IP, 16);
-				memcpy(UPLOAD_IP, "*", 16);
+				memcpy(upload_ip_buff, CONF.upload_ip, 16);
+				memcpy(CONF.upload_ip, "*", 16);
 			} else {
-				memcpy(UPLOAD_IP, upload_ip_buff, 16);
+				memcpy(CONF.upload_ip, upload_ip_buff, 16);
 			}
 			memset(ncurses_msg_buff, 0, 19);
 			strcat(ncurses_msg_buff, whitespace
-						+ (strlen(UPLOAD_IP) + 3));
+						+ (strlen(CONF.upload_ip) + 3));
 			strcat(ncurses_msg_buff, "(");
-			strcat(ncurses_msg_buff, UPLOAD_IP);
+			strcat(ncurses_msg_buff, CONF.upload_ip);
 			strcat(ncurses_msg_buff, ")-");
 			LOCK_TERM;
 			if ((size_t)terminal_width > strlen(head_data)
@@ -310,9 +310,9 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 
 	format_size(uploaded, fmt_uploaded);
 	format_size(downloaded, fmt_downloaded);
-	format_size((uint64_t)((float)up / UPDATE_TIMEOUT),
+	format_size((uint64_t)((float)up / CONF.update_timeout),
 	    fmt_bytes_per_tval_up);
-	format_size((uint64_t)((float)down / UPDATE_TIMEOUT),
+	format_size((uint64_t)((float)down / CONF.update_timeout),
 	    fmt_bytes_per_tval_down);
 
 	snprintf(status_data, (size_t)MSG_BUFFER_SIZE,
@@ -528,7 +528,7 @@ ncurses_draw_header()
 	size_t head_data_l;
 	size_t tmp_l;
 
-	strcat(tmp, UPLOAD_IP);
+	strcat(tmp, CONF.upload_ip);
 	strcat(tmp, ")-");
 	head_info_l = strlen(head_info);
 	head_data_l = strlen(head_data);

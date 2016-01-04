@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <inttypes.h>
 
-#include "globals.h"
+#include "config.h"
 #include "handle_request.h"
 #include "handle_get.h"
 #include "defines.h"
@@ -17,6 +17,25 @@
 static void generate_response_header(struct http_header *,
     struct http_header *);
 static enum http_status get_response_status(char **);
+
+/*
+ * plaintext message which will be sent on 403 - Forbidden
+ */
+static const char *RESPONSE_403 =
+	"403 - U better not go down this road!\r\n";
+
+/*
+ * plaintext message which will be sent on 404 - File not found
+ */
+static const char *RESPONSE_404 =
+	"404 - Watcha pulling here buddy?\r\n";
+
+/*
+ * plaintext message which will be sent on 405 - Method Not Allowed
+ */
+static const char *RESPONSE_405 =
+	"405 - ur Method is not allowed sir, if tried to "
+	"POST, ask for permission.\r\n";
 
 int
 handle_get(int msg_id, int sock, struct http_header *request, int upload)
@@ -39,7 +58,7 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 	switch (response.status) {
 	case _200_OK:
 	case _206_Partial_Content:
-		filename = concat(concat(filename, ROOT_DIR), request->url);
+		filename = concat(concat(filename, CONF.root_dir), request->url);
 
 		/* in case its a directory */
 		if (response.status == _200_OK && is_directory(filename)) {
@@ -251,7 +270,7 @@ get_response_status(char **request)
 	}
 
 	full_requested_path = NULL;
-	full_requested_path = concat(concat(full_requested_path, ROOT_DIR),
+	full_requested_path = concat(concat(full_requested_path, CONF.root_dir),
 				  *request);
 
 	requested_path = realpath(full_requested_path, NULL);
@@ -270,9 +289,9 @@ get_response_status(char **request)
 		return _404_Not_Found;
 	}
 
-	/* now check if file starts with ROOT_DIR path */
-	if ((memcmp(requested_path, ROOT_DIR, strlen(ROOT_DIR)) != 0)
-	    || strlen(ROOT_DIR) > strlen(requested_path)) {
+	/* now check if file starts with CONF.root_dir path */
+	if ((memcmp(requested_path, CONF.root_dir, strlen(CONF.root_dir)) != 0)
+	    || strlen(CONF.root_dir) > strlen(requested_path)) {
 		free(requested_path);
 		requested_path = NULL;
 		return _403_Forbidden;
@@ -287,7 +306,7 @@ get_response_status(char **request)
 	free_me = *request;
 	*request = NULL;
 	*request = concat(*request, requested_path
-		         + strlen(ROOT_DIR));
+		         + strlen(CONF.root_dir));
 	free(free_me);
 	free_me = NULL;
 
