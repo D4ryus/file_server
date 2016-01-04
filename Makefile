@@ -72,7 +72,7 @@ LFLAGS += -lcurses
 CFLAGS += -fPIC
 CFLAGS += -ggdb
 CFLAGS += -pg
-CFLAGS += -O3
+#CFLAGS += -O3
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
 .PHONY : all

@@ -129,6 +129,7 @@ msg_hook_add(char ip[16], int port)
 		strncpy(cur->ip, ip, 16);
 		cur->port = port;
 		cur->trans.name[0] = '\0';
+		cur->trans.type[0] = '\0';
 		cur->trans.size = 0;
 		cur->trans.written = 0;
 		cur->trans.last_written = 0;

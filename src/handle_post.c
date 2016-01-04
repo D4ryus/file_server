@@ -392,7 +392,6 @@ parse_file_header(const char *buff, size_t buff_size, size_t *file_head_size,
 	char *end_of_head;
 	size_t str_len;
 
-	*filename = NULL;
 	header = NULL;
 	filename_start = NULL;
 	filename_end = NULL;
@@ -452,6 +451,9 @@ parse_file_header(const char *buff, size_t buff_size, size_t *file_head_size,
 	 * header, now set filename and file_head_size and return
 	 */
 
+	if (*filename) {
+		free(*filename);
+	}
 	*filename = err_malloc(str_len + 1);
 	memset(*filename, '\0', str_len + 1);
 	memcpy(*filename, filename_start, str_len);
@@ -486,7 +488,7 @@ open_file(char **filename, FILE **fd, char *directory)
 		filename_length = strlen(found_filename);
 		found_filename = err_realloc(found_filename,
 				     filename_length + 3);
-		found_filename[filename_length] = '_';
+		found_filename[filename_length] = '.';
 		found_filename[filename_length + 2] = '\0';
 		/* count up until a free filename is found */
 		for (number = '0'; number <= '9'; number++) {
