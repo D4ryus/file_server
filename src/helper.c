@@ -482,34 +482,3 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 	/* if we came this far, return a success! */
 	return 1;
 }
-
-/*
- * prints to socket
- * returns:
- * STAT_OK      : everything went fine.
- * WRITE_CLOSED : could not write, client closed connection
- * ZERO_WRITTEN : could not write, 0 bytes written
- */
-int
-s_printf(int sock, const char *fmt, ...)
-{
-	int err;
-	size_t size;
-	char *buf;
-	va_list args;
-
-	va_start(args, fmt);
-
-	/* get size */
-	size = (size_t)vsnprintf(0, 0, fmt, args);
-
-	buf = (char *)err_malloc(size + 1);
-
-	va_start(args, fmt);
-	vsnprintf(buf, size, fmt, args);
-
-	err = send_data(sock, buf, size);
-	free(buf);
-
-	return err;
-}
