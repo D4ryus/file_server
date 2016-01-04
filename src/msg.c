@@ -191,9 +191,21 @@ msg_hook_new_transfer(int msg_id, char *name, uint64_t size, char type[3])
 	strncpy(cur->trans.name, name, NAME_LENGTH);
 	cur->trans.size = size;
 	memcpy(cur->trans.type, type, 3);
+	cur->trans.written = 0;
 	pthread_mutex_unlock(&msg_hooks.mutex);
 
 	return &cur->trans.written;
+}
+
+void
+msg_hook_update_name(int msg_id, char *name)
+{
+	pthread_mutex_lock(&msg_hooks.mutex);
+	if (msg_id >= msg_hooks.size) {
+		die(ERR_INFO, "given msg_id >= msg_hooks.size");
+	}
+	strncpy(msg_hooks.data[msg_id].trans.name, name, NAME_LENGTH);
+	pthread_mutex_unlock(&msg_hooks.mutex);
 }
 
 static void *

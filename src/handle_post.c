@@ -100,14 +100,11 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	ssize_t offset;
 	struct stat s;
 	uint64_t *written;
-	uint64_t wtmp;
 
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
 		die(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
 	}
-
-	written = err_malloc(sizeof(uint64_t));
 
 	boundary_pos = 0;
 	error = STAT_OK;
@@ -115,7 +112,6 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	filename = NULL;
 	free_me = NULL;
 	fd = NULL;
-	*written = 0;
 	directory = NULL;
 
 	if (memcmp(*url, "/\0", (size_t)2) == 0) {
@@ -162,6 +158,8 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	buff = err_malloc((size_t)BUFFSIZE_READ);
 	memset(buff, '\0', (size_t)BUFFSIZE_READ);
 
+	written = msg_hook_new_transfer(msg_id, *url, max_size, "rx");
+
 	/* check for first boundary --[boundary]\r\n */
 	read_from_socket = recv(sock, buff, strlen(boundary) + 4, 0);
 	if (read_from_socket < 0
@@ -199,9 +197,7 @@ file_head:
 		goto stop_transfer;
 	}
 
-	wtmp = *written;
-	written = msg_hook_new_transfer(msg_id, filename, max_size, "rx");
-	*written = wtmp;
+	msg_hook_update_name(msg_id, filename);
 
 	error = open_file(&filename, &fd, directory);
 	if (error) {
