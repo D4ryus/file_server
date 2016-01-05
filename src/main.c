@@ -43,7 +43,8 @@ main(const int argc, const char *argv[])
 
 	/* set threads to be detached, so they dont need to be joined */
 	error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	check(error != 0, "pthread_attr_setdetachstate():PTHREAD_CREATE_DETACHED");
+	check(error != 0, "pthread_attr_setdetachstate(\"%s\")",
+	    "PTHREAD_CREATE_DETACHED");
 
 	msg_init(&thread, &attr);
 
@@ -194,6 +195,7 @@ parse_arguments(const int argc, const char *argv[])
 
 	if (CONF.log_file) {
 		CONF.log_file_d = fopen(CONF.log_file, "a+");
-		check(!CONF.log_file_d, "fopen(\"%s\") returned NULL", CONF.log_file);
+		check(!CONF.log_file_d, "fopen(\"%s\") returned NULL",
+		    CONF.log_file);
 	}
 }

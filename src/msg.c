@@ -142,7 +142,8 @@ msg_hook_rem(int msg_id)
 
 	pthread_mutex_lock(&msg_hooks.mutex);
 	check(msg_id >= msg_hooks.size,
-	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id, msg_hooks.size);
+	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id,
+	    msg_hooks.size);
 
 	cur = &msg_hooks.data[msg_id];
 
@@ -168,7 +169,8 @@ msg_hook_new_transfer(int msg_id, char *name, uint64_t size, char type[3])
 
 	pthread_mutex_lock(&msg_hooks.mutex);
 	check(msg_id >= msg_hooks.size,
-	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id, msg_hooks.size);
+	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id,
+	    msg_hooks.size);
 
 	cur = &msg_hooks.data[msg_id];
 
@@ -195,7 +197,8 @@ void
 msg_hook_update_name(int msg_id, char *name)
 {
 	pthread_mutex_lock(&msg_hooks.mutex);
-	check(msg_id >= msg_hooks.size, "given msg_id (%d) >= msg_hooks.size (%d)",
+	check(msg_id >= msg_hooks.size,
+	    "given msg_id (%d) >= msg_hooks.size (%d)",
 	    msg_id, msg_hooks.size);
 	strncpy(msg_hooks.data[msg_id].trans.name, name, NAME_LENGTH);
 	pthread_mutex_unlock(&msg_hooks.mutex);

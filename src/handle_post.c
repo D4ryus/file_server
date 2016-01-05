@@ -168,7 +168,7 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 		}
 
 		/* now check if file starts with CONF.root_dir path */
-		if ((memcmp(directory, CONF.root_dir, strlen(CONF.root_dir)) != 0)
+		if ((memcmp(directory, CONF.root_dir, strlen(CONF.root_dir)))
 		    || strlen(CONF.root_dir) > strlen(directory)) {
 			return INV_POST_PATH;
 		}
@@ -238,7 +238,8 @@ file_head:
 	while (*written <= max_size) {
 		/* check buffer for boundry */
 		error = buff_contains(sock, buff, (size_t)read_from_socket,
-			    bound_buff, bound_buff_length, &boundary_pos, written);
+			    bound_buff, bound_buff_length, &boundary_pos,
+			    written);
 		if (error) {
 			goto stop_transfer;
 		}

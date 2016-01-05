@@ -106,8 +106,8 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	/* if upload is enabled, handle keys from keyboard */
 	error = pthread_create(thread, attr, &ncurses_handle_keyboard, NULL);
-	check(error != 0, "pthread_create(ncurses_handle_keyboard) returned %d",
-	    error);
+	check(error != 0,
+	    "pthread_create(ncurses_handle_keyboard) returned %d", error);
 }
 
 static void *
@@ -151,13 +151,13 @@ ncurses_handle_keyboard(void *ptr)
 			upload_allowed = !upload_allowed;
 			if (upload_allowed) {
 				memcpy(upload_ip_buff, CONF.upload_ip, 16);
-				memcpy(CONF.upload_ip, "*", 16);
+				memcpy(CONF.upload_ip, "*", 2);
 			} else {
 				memcpy(CONF.upload_ip, upload_ip_buff, 16);
 			}
 			memset(ncurses_msg_buff, 0, 19);
 			strcat(ncurses_msg_buff, whitespace
-						+ (strlen(CONF.upload_ip) + 3));
+						+ strlen(CONF.upload_ip) + 3);
 			strcat(ncurses_msg_buff, "(");
 			strcat(ncurses_msg_buff, CONF.upload_ip);
 			strcat(ncurses_msg_buff, ")-");

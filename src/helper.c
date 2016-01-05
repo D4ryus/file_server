@@ -190,7 +190,8 @@ is_directory(const char *path)
 		} else if (s.st_mode & S_IFREG) {
 			return 0;
 		} else {
-			die("stat(\"%s\") is not a file nor a directory", path);
+			die("stat(\"%s\") is not a file nor a directory",
+			    path);
 		}
 	} else {
 		die("stat(\"%s\") returned NULL", path);

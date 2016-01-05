@@ -121,7 +121,9 @@ const char *HTTP_UPLOAD =
 			"<form class='upload' action='%s'"
 				     "method='post'"
 				     "enctype='multipart/form-data'>"
-				"<input type='file' name='file[]' multiple='true'>"
+				"<input type='file'"
+				       "name='file[]'"
+				       "multiple='true'>"
 				"<button type='submit'>Upload</button>"
 			"</form>";
 
