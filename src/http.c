@@ -614,6 +614,7 @@ print_header(struct http_header *data)
 {
 	char *header;
 	char *buf;
+	char *tmp;
 
 	static char *http_method_str[] = {
 		"response",
@@ -645,52 +646,44 @@ print_header(struct http_header *data)
 		    "HTTP/1.1 %d %s\r\n",
 		    status_table[data->status].id,
 		    status_table[data->status].msg);
-		header = concat(header, buf);
 	} else {
 		/* http request (POST or GET) */
 		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
 		    "%s %s%s\r\n",
 		    http_method_str[data->method], data->url,
 		    data->flags.http ? " HTTP/1.1" : "");
-		header = concat(header, buf);
 	}
+	header = concat(header, 1, buf);
 
 	if (data->host) {
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
-		    "Host: %s\r\n",
-		    data->host);
-		header = concat(header, buf);
+		header = concat(header, 3, "Host: ", data->host, "\r\n");
 	}
-
-	header = concat(header, "Accept-Ranges: bytes\r\n");
 
 	if (data->flags.keep_alive) {
-		header = concat(header, "Connection: keep-alive\r\n");
+		tmp = "Connection: keep-alive\r\n";
 	} else {
-		header = concat(header, "Connection: close\r\n");
+		tmp = "Connection: close\r\n";
 	}
+	header = concat(header, 2, "Accept-Ranges: bytes\r\n", tmp);
 
 	if (data->content_type) {
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
-		    "Content_Type: %s",
-		    mime_string[data->content_type]);
-		header = concat(header, buf);
-
 		if (data->boundary) {
 			snprintf(buf, HTTP_HEADER_LINE_LIMIT,
 			    "; boundary=%s\r\n",
 			    data->boundary);
-			header = concat(header, buf);
+			tmp = buf;
 		} else {
-			header = concat(header, "\r\n");
+			tmp = "\r\n";
 		}
+		header = concat(header, 3, "Content_Type: ",
+			     mime_string[data->content_type], tmp);
 	}
 
 	if (data->content_length) {
 		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
 		    "Content-Length: %" PRId64 "\r\n",
 		    data->content_length);
-		header = concat(header, buf);
+		header = concat(header, 1, buf);
 	}
 
 	if (data->flags.range) {
@@ -700,9 +693,9 @@ print_header(struct http_header *data)
 		    data->range.from,
 		    data->range.to,
 		    data->range.size);
-		header = concat(header, buf);
+		header = concat(header, 1, buf);
 	}
-	header = concat(header, "\r\n");
+	header = concat(header, 1, "\r\n");
 	free(buf);
 
 	return header;

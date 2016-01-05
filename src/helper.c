@@ -146,17 +146,36 @@ err_string_to_val(const char *str)
  * will reallocated dst and strcat src onto it
  */
 char *
-concat(char *dst, const char *src)
+concat(char *dest, int count, ...)
 {
-	if (!dst) {
-		dst = err_malloc(strlen(src) + 1);
-		strncpy(dst, src, strlen(src) + 1);
+	va_list ap1, ap2;
+	int i;
+	size_t size;
+
+	if (dest) {
+		size = strlen(dest);
 	} else {
-		dst = err_realloc(dst, strlen(dst) + strlen(src) + 1);
-		strncat(dst, src, strlen(src));
+		size = 0;
 	}
 
-	return dst;
+	va_start(ap1, count);
+	va_copy(ap2, ap1);
+
+	/* get length */
+	for (i = 0; i < count; i++) {
+		size += strlen(va_arg(ap1, char *));
+	}
+	va_end(ap1);
+
+	dest = realloc(dest, size + 1);
+
+	/* concat strings */
+	for (i = 0; i < count; i++) {
+		strcat(dest, va_arg(ap2, char *));
+	}
+	va_end(ap2);
+
+	return dest;
 }
 
 /*

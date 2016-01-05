@@ -58,7 +58,7 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 	switch (response.status) {
 	case _200_OK:
 	case _206_Partial_Content:
-		filename = concat(concat(filename, CONF.root_dir), request->url);
+		filename = concat(filename, 2, CONF.root_dir, request->url);
 
 		/* in case its a directory */
 		if (response.status == _200_OK && is_directory(filename)) {
@@ -269,9 +269,7 @@ get_response_status(char **request)
 		return _200_OK;
 	}
 
-	full_requested_path = NULL;
-	full_requested_path = concat(concat(full_requested_path, CONF.root_dir),
-				  *request);
+	full_requested_path = concat(NULL, 2, CONF.root_dir, *request);
 
 	requested_path = realpath(full_requested_path, NULL);
 	free(full_requested_path);
@@ -304,9 +302,7 @@ get_response_status(char **request)
 
 	/* and update request string to a full path */
 	free_me = *request;
-	*request = NULL;
-	*request = concat(*request, requested_path
-		         + strlen(CONF.root_dir));
+	*request = concat(NULL, 1, requested_path + strlen(CONF.root_dir));
 	free(free_me);
 	free_me = NULL;
 

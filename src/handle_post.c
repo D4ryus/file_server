@@ -141,14 +141,12 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	bound_buff = NULL;
 	filename = NULL;
 	fd = NULL;
-	directory = NULL;
 
 	if (memcmp(*url, "/\0", (size_t)2) == 0) {
-		directory = concat(concat(directory, CONF.root_dir), "/");
+		directory = concat(NULL, 2, CONF.root_dir, "/");
 	} else {
 		/* in case requested path is not / */
-		buff = NULL;
-		buff = concat(concat(buff, CONF.root_dir), *url);
+		buff = concat(NULL, 2, CONF.root_dir, *url);
 
 		directory = realpath(buff, NULL);
 		free(buff);
@@ -177,8 +175,7 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 
 		/* and update url to full path */
 		free(*url);
-		*url = NULL;
-		*url = concat(*url, directory + strlen(CONF.root_dir));
+		*url = concat(NULL, 1, directory + strlen(CONF.root_dir));
 	}
 
 	buff = err_malloc((size_t)BUFFSIZE_READ);
@@ -203,7 +200,7 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 		goto stop_transfer;
 	}
 
-	bound_buff = concat(concat(bound_buff, "\r\n--"), boundary);
+	bound_buff = concat(bound_buff, 2, "\r\n--", boundary);
 	bound_buff_length = strlen(bound_buff);
 	read_from_socket = recv(sock, buff, (size_t)BUFFSIZE_READ, 0);
 	if (read_from_socket < 0) {
@@ -499,13 +496,10 @@ open_file(char **filename, FILE **fd, char *directory)
 {
 	char *found_filename;
 
-	found_filename = NULL;
 	if (directory[strlen(directory)] == '/') {
-		found_filename = concat(concat(found_filename, directory),
-				    *filename);
+		found_filename = concat(NULL, 2, directory, *filename);
 	} else {
-		found_filename = concat(concat(concat(found_filename,
-				     directory), "/"), *filename);
+		found_filename = concat(NULL, 3, directory, "/", *filename);
 	}
 
 	/* in case file exists */

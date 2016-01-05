@@ -192,9 +192,10 @@ dir_to_table(int http, const char *dir, int upload)
 	char *directory;
 	const char *requ;
 
-	table_buffer = NULL;
 	if (http) {
-		table_buffer = concat(table_buffer, HTTP_TOP);
+		table_buffer = concat(NULL, 1, HTTP_TOP);
+	} else {
+		table_buffer = NULL;
 	}
 
 	if (strcmp(dir, "/") == 0) {
@@ -203,8 +204,7 @@ dir_to_table(int http, const char *dir, int upload)
 		requ = dir;
 	}
 
-	directory = NULL;
-	directory = concat(concat(directory, CONF.root_dir), requ);
+	directory = concat(NULL, 2, CONF.root_dir, requ);
 
 	d = get_dir(directory);
 
@@ -229,7 +229,7 @@ dir_to_table(int http, const char *dir, int upload)
 	    "Size",
 	    "Filename");
 
-	table_buffer = concat(table_buffer, buffer);
+	table_buffer = concat(table_buffer, 1, buffer);
 	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 
 	for (i = 0; i < d->length; i++) {
@@ -243,11 +243,11 @@ dir_to_table(int http, const char *dir, int upload)
 		    requ,
 		    d->files[i]->name,
 		    d->files[i]->is_dir ? "/" : "");
-		table_buffer = concat(table_buffer, buffer);
+		table_buffer = concat(table_buffer, 1, buffer);
 		memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 	}
 
-	table_buffer = concat(table_buffer, table_ptr[2]); /* table end */
+	table_buffer = concat(table_buffer, 1, table_ptr[2]); /* table end */
 
 	free_dir(d);
 	d = NULL;
@@ -261,11 +261,11 @@ dir_to_table(int http, const char *dir, int upload)
 			length = strlen(HTTP_UPLOAD) + strlen(dir) + 1;
 			buff = err_malloc(length);
 			snprintf(buff, length, HTTP_UPLOAD, dir);
-			table_buffer = concat(table_buffer, buff);
+			table_buffer = concat(table_buffer, 1, buff);
 			free(buff);
 			buff = NULL;
 		}
-		table_buffer = concat(table_buffer, HTTP_BOT);
+		table_buffer = concat(table_buffer, 1, HTTP_BOT);
 	}
 
 	free(directory);

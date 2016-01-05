@@ -2,7 +2,6 @@
 fixes and code changes:
     [ ] - convert all int to typedefs of fixed size
     [ ] - quit/cleanup function
-    [ ] - cross plattform Makefile
     [X] - 201 Created read sent Header to avoid connection abbort
     [X] - fix pipe singal
     [X] - fix pthread_create memory leak
