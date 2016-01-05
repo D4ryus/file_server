@@ -103,14 +103,6 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	terminal_width = 0;
 	/* ncurses_organize_windows will rearrange windows */
 	ncurses_organize_windows(1);
-	/* TODO: remove this if and check if it still works */
-	if (win_logging) {
-		scrollok(win_logging, (bool)TRUE);
-	} else {
-		endwin();
-		delwin(stdscr);
-		die("window to small");
-	}
 
 	/* if upload is enabled, handle keys from keyboard */
 	error = pthread_create(thread, attr, &ncurses_handle_keyboard, NULL);
@@ -423,6 +415,7 @@ ncurses_organize_windows(int resized)
 		win_logging = newwin(log_heigth, terminal_width,
 				  terminal_heigth - log_heigth, 0);
 		check(!win_logging, "newwin(win_logging) returned NULL");
+		scrollok(win_logging, (bool)TRUE);
 	} else {
 		wresize(win_logging, log_heigth, terminal_width);
 		werase(win_logging);
