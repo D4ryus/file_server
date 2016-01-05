@@ -8,7 +8,6 @@
 #include "config.h"
 #include "ncurses_msg.h"
 #include "helper.h"
-#include "defines.h"
 
 #define HEADER_COLOR_ID 1
 
@@ -149,7 +148,7 @@ ncurses_handle_keyboard(void *ptr)
 			upload_allowed = !upload_allowed;
 			if (upload_allowed) {
 				memcpy(upload_ip_buff, CONF.upload_ip, 16);
-				memcpy(CONF.upload_ip, "*", 2);
+				memcpy(CONF.upload_ip, "x", 2);
 			} else {
 				memcpy(CONF.upload_ip, upload_ip_buff, 16);
 			}
@@ -283,9 +282,9 @@ ncurses_update_end(uint64_t up, uint64_t down, int clients)
 
 	format_size(uploaded, fmt_uploaded);
 	format_size(downloaded, fmt_downloaded);
-	format_size((uint64_t)((float)up / CONF.update_timeout),
+	format_size((uint64_t)((float)up / UPDATE_TIMEOUT),
 	    fmt_bytes_per_tval_up);
-	format_size((uint64_t)((float)down / CONF.update_timeout),
+	format_size((uint64_t)((float)down / UPDATE_TIMEOUT),
 	    fmt_bytes_per_tval_down);
 
 	snprintf(status_data, (size_t)MSG_BUFFER_SIZE,
@@ -499,7 +498,7 @@ ncurses_draw_header()
 	size_t head_upload_l;
 
 	strcat(tmp, "(");
-	if (!memcmp(CONF.upload_ip, "*", 2)) {
+	if (!memcmp(CONF.upload_ip, "x", 2)) {
 		strcat(tmp, "all");
 	} else if (!memcmp(CONF.upload_ip, "-", 2)) {
 		strcat(tmp, "none");

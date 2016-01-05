@@ -2,7 +2,7 @@
 
 /*
  * default values, these get overwritten if specified on startup
- * ------------------------------------------------------------
+ * -------------------------------------------------------------
  */
 
 struct config CONF = {
@@ -22,12 +22,12 @@ struct config CONF = {
 	.verbosity = 0,
 
 	/*
-	 * default allowed ip, * disables ip blocking.
+	 * default allowed ip, x disables ip blocking (allows all).
 	 */
-	.ip = "*",
+	.ip = "x",
 
 	/*
-	 * default upload IP, - disables upload
+	 * default upload IP, - disables upload (allows none)
 	 */
 	.upload_ip = "-",
 
@@ -35,11 +35,6 @@ struct config CONF = {
 	 * enable coloring
 	 */
 	.color = 0,
-
-	/*
-	 * ncurses status timeout
-	 */
-	.update_timeout = 0.2f,
 
 	/*
 	 * log file, if != NULL it will be used.

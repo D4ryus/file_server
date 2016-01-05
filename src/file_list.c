@@ -10,7 +10,6 @@
 #include "config.h"
 #include "file_list.h"
 #include "helper.h"
-#include "defines.h"
 
 struct file {
 	char *name;
@@ -80,7 +79,7 @@ const char *HTTP_TOP =
  * the body part will be repeaded for each file found inside the directory
  * given values are:
  * "[last modified]" "[filesize]" "[directory]" "[filename]"
- * the buffer limit is defined in defines.h
+ * the buffer limit is defined in config.h
  */
 const char *TABLE_PLAIN[3] = {
 	/* table head */

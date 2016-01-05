@@ -4,9 +4,9 @@
 #include <sys/socket.h>
 #include <inttypes.h>
 
+#include "config.h"
 #include "http.h"
 #include "helper.h"
-#include "defines.h"
 
 static int get_line(int, char**);
 static int parse_GET(struct http_header *, char *);

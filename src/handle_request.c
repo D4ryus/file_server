@@ -8,7 +8,6 @@
 #include "config.h"
 #include "handle_post.h"
 #include "handle_get.h"
-#include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
 #include "msg.h"
@@ -44,14 +43,15 @@ handle_request(void *ptr)
 	snprintf(con_msg, (size_t)128, "connected to port %d.", port);
 	msg_print_log(msg_id, CONNECTED, con_msg);
 
+keep_alive:
+	init_http_header(&request);
+
 	/* check if ip is blocked */
 	if (!ip_matches(CONF.ip, ip)) {
 		error = IP_BLOCKED;
 		goto disconnect;
 	}
 
-keep_alive:
-	init_http_header(&request);
 	error = parse_header(&request, sock);
 	if (error) {
 		goto disconnect;

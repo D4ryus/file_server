@@ -8,7 +8,6 @@
 #include <inttypes.h>
 
 #include "config.h"
-#include "defines.h"
 #include "msg.h"
 #include "helper.h"
 
@@ -59,7 +58,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
-	check(CONF.update_timeout < 0.0f, "CONF.update_timeout < 0.0f");
+	check(UPDATE_TIMEOUT < 0.0f, "UPDATE_TIMEOUT < 0.0f");
 
 #ifdef NCURSES
 	ncurses_init(thread, attr);
@@ -217,8 +216,8 @@ msg_print_loop(void *ignored)
 	struct msg_hook *cur;
 
 	/* will round down, what we want */
-	tsleep.tv_sec = (long)CONF.update_timeout;
-	tsleep.tv_nsec = (long)((CONF.update_timeout - (float)tsleep.tv_sec)
+	tsleep.tv_sec = (long)UPDATE_TIMEOUT;
+	tsleep.tv_nsec = (long)((UPDATE_TIMEOUT - (float)tsleep.tv_sec)
 			* 1000000000L);
 	position = 0;
 
@@ -376,7 +375,7 @@ format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 	size = cur->trans.size;
 	left = size - written;
 	bytes_per_tval = (uint64_t)((float)(written - cur->trans.last_written)
-				/ CONF.update_timeout);
+				/ UPDATE_TIMEOUT);
 
 	/* set last written to inital read value */
 	cur->trans.last_written = written;

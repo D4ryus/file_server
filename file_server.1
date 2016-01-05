@@ -48,8 +48,8 @@ status).
 .IP "-i, --ip ip"
 specify the start of allowed
 .IR ip
-\'s, all others will be blocked. to Limit connections to 1.2.3.* -> -i
-1.2.3.\\*
+\'s, all others will be blocked. to Limit connections to 1.2.3.x -> -i
+1.2.3.x
 .IP "-u, --upload ip"
 enable upload via http POST for users with given
 .IR ip
@@ -64,7 +64,7 @@ see USAGE
 file_server
 start file_server and share `pwd` on port 8283
 .TP
-file_server -i 192.168.1.\\*\\*\\* -u 127.0.0.1
+file_server -i 192.168.1.xxx -u 127.0.0.1
 start file_server and share `pwd` on port 8283, only allow ip's in range form
 192.168.2.{0..255} and upload only from localhost (127.0.0.1).
 .TP

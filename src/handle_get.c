@@ -9,7 +9,6 @@
 #include "config.h"
 #include "handle_request.h"
 #include "handle_get.h"
-#include "defines.h"
 #include "helper.h"
 #include "msg.h"
 #include "file_list.h"

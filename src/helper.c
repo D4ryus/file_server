@@ -12,7 +12,6 @@
 #include "config.h"
 #include "helper.h"
 #include "msg.h"
-#include "defines.h"
 
 /*
  * returns:
@@ -334,7 +333,7 @@ usage_quit(const char *name, const char *msg)
 	    "		and 3 (prints connection and transfer status).\n"
 	    "	-i, --ip ip\n"
 	    "		specify the start of allowed ip's, all others will be blocked.\n"
-	    "		to Limit connections to 1.2.3.* -> -i 1.2.3.*\n"
+	    "		to Limit connections to 1.2.3.x -> -i 1.2.3.x\n"
 	    "	-u, --upload ip\n"
 	    "		enable upload via http POST for users with given ip.\n"
 	    , stdout);
@@ -383,7 +382,7 @@ get_err_msg(enum err_status error)
 /*
  * normalizes given ip, here are examples:
  *   21.32.111.5 -> 021.032.111.005
- * *21.32.111.*5 -> *21.032.111.0*5
+ * x21.32.111.x5 -> x21.032.111.0x5
  *	 1.1.1.1 -> 001.001.001.001
  * functions is used to make ip checking easier.
  * returned pointer will point to dst
@@ -404,8 +403,8 @@ normalize_ip(char *dst, const char *src)
 		return dst;
 	}
 
-	if (strlen(src) == 1 && src[0] == '*') {
-		memcpy(dst, "***.***.***.***", 15);
+	if (strlen(src) == 1 && src[0] == 'x') {
+		memcpy(dst, "xxx.xxx.xxx.xxx", 15);
 		dst[15] = '\0';
 		return dst;
 	}
@@ -436,8 +435,12 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 	check(!ip_allowed, "ip_allowed is NULL");
 	check(!ip_check, "ip_check is NULL");
 
-	if (strlen(ip_allowed) == 1 && ip_allowed[0] == '*') {
-		return 1;
+	if (strlen(ip_allowed) == 1)  {
+		if (ip_allowed[0] == 'x') {
+			return 1;
+		} else if (ip_allowed[0] == '-') {
+			return 0;
+		}
 	}
 
 	if (strlen(ip_allowed) != 15) {
@@ -457,13 +460,13 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 	}
 
 	for (i = 0; i < 15; i++) {
-		/* if i dont see a star -> check if they match, if not return
+		/* if i dont see a x -> check if they match, if not return
 		 *     -> failure.
-		 * if i dont see a star -> check if they match, if they do
+		 * if i dont see a x -> check if they match, if they do
 		 *     -> continue.
-		 * if i see a star -> continue;
+		 * if i see a x -> continue;
 		 */
-		if (ip_allowed_norm[i] != '*'
+		if (ip_allowed_norm[i] != 'x'
 		    && ip_allowed_norm[i] != ip_check_norm[i]) {
 			return 0;
 		}

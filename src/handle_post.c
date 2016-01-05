@@ -6,7 +6,6 @@
 #include <sys/stat.h>
 
 #include "config.h"
-#include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
 #include "msg.h"
