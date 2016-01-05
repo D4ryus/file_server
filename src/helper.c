@@ -166,6 +166,7 @@ concat(char *dest, int count, ...)
 	va_end(ap1);
 
 	dest = realloc(dest, size + 1);
+	memset(dest, 0, size + 1);
 
 	/* concat strings */
 	for (i = 0; i < count; i++) {
