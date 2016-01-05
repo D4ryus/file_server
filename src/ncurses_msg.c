@@ -116,9 +116,7 @@ ncurses_handle_keyboard(void *ptr)
 	char ch;
 	int upload_allowed;
 	int resize_lines;
-	char whitespace[19] = "                  ";
 	char upload_ip_buff[16];
-	char ncurses_msg_buff[19];
 
 	noecho();
 	nodelay(stdscr, (bool)FALSE);
@@ -155,23 +153,8 @@ ncurses_handle_keyboard(void *ptr)
 			} else {
 				memcpy(CONF.upload_ip, upload_ip_buff, 16);
 			}
-			memset(ncurses_msg_buff, 0, 19);
-			strcat(ncurses_msg_buff, whitespace
-						+ strlen(CONF.upload_ip) + 3);
-			strcat(ncurses_msg_buff, "(");
-			strcat(ncurses_msg_buff, CONF.upload_ip);
-			strcat(ncurses_msg_buff, ")-");
 			LOCK_TERM;
-			if ((size_t)terminal_width > strlen(head_data)
-			    + strlen(ncurses_msg_buff)) {
-				mvwaddnstr(stdscr, 0, terminal_width
-				    - (int)(strlen(head_data)
-					+ strlen(ncurses_msg_buff)),
-				    ncurses_msg_buff, -1);
-				mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID,
-				    NULL);
-				refresh();
-			}
+			ncurses_draw_header();
 			UNLOCK_TERM;
 			break;
 		case 'k':
@@ -510,16 +493,24 @@ ncurses_delete_log()
 static void
 ncurses_draw_header()
 {
-	char tmp[19] = "(";
+	char tmp[19] = "";
 	size_t head_info_l;
 	size_t head_data_l;
-	size_t tmp_l;
+	size_t head_upload_l;
 
-	strcat(tmp, CONF.upload_ip);
+	strcat(tmp, "(");
+	if (!memcmp(CONF.upload_ip, "*", 2)) {
+		strcat(tmp, "all");
+	} else if (!memcmp(CONF.upload_ip, "-", 2)) {
+		strcat(tmp, "none");
+	} else {
+		strcat(tmp, CONF.upload_ip);
+	}
 	strcat(tmp, ")-");
+
 	head_info_l = strlen(head_info);
 	head_data_l = strlen(head_data);
-	tmp_l = strlen(tmp);
+	head_upload_l = strlen(tmp);
 
 	/* clear line */
 	move(0, 0);
@@ -532,14 +523,14 @@ ncurses_draw_header()
 	}
 
 	/* upload ip */
-	if ((size_t)terminal_width > head_data_l + tmp_l + 1) {
+	if ((size_t)terminal_width > head_data_l + head_upload_l + 1) {
 		mvwaddnstr(stdscr, 0, terminal_width
-		    - (int)(head_data_l + tmp_l), tmp, -1);
+		    - (int)(head_data_l + head_upload_l), tmp, -1);
 	}
 
 	/* name and version */
-	if ((size_t)terminal_width > head_info_l + head_data_l + tmp_l
-	    + 1) {
+	if ((size_t)terminal_width > head_info_l + head_data_l
+	    + head_upload_l + 1) {
 		mvwaddnstr(stdscr, 0, 0, head_info, -1);
 	}
 
