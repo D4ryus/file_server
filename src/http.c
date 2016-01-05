@@ -695,6 +695,7 @@ print_header(struct http_header *data)
 		    data->range.size);
 		header = concat(header, 1, buf);
 	}
+
 	header = concat(header, 1, "\r\n");
 	free(buf);
 

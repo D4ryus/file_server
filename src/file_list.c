@@ -208,7 +208,6 @@ dir_to_table(int http, const char *dir, int upload)
 	d = get_dir(directory);
 
 	check(!d, "get_dir(\"%s\") returned NULL.", directory);
-
 	check(!d->files, "get_dir(\"%s\")->files is NULL", directory);
 
 	if (http) {
@@ -218,7 +217,7 @@ dir_to_table(int http, const char *dir, int upload)
 	}
 
 	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
-	/* table head, see globals.h */
+
 	snprintf(buffer, (size_t)TABLE_BUFFER_SIZE, table_ptr[0],
 	    "Last_modified",
 	    "Size",

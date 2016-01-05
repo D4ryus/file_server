@@ -127,7 +127,7 @@ parse_arguments(const int argc, const char *argv[])
 				    "user specified -u/--upload without"
 				    " a ip");
 			}
-			normalize_ip(CONF.upload_ip, argv[i]);
+			memcpy(CONF.upload_ip, argv[i], strlen(argv[i]));
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
 			usage_quit(argv[0], NULL);
