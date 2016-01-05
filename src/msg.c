@@ -59,9 +59,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
-	if (CONF.update_timeout < 0.0f) {
-		die(ERR_INFO, "CONF.update_timeout < 0");
-	}
+	check(CONF.update_timeout < 0.0f, "CONF.update_timeout < 0.0f");
 
 #ifdef NCURSES
 	ncurses_init(thread, attr);
@@ -84,9 +82,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 		}
 
 		error = pthread_create(thread, attr, &msg_print_loop, NULL);
-		if (error != 0) {
-			die(ERR_INFO, "pthread_create()");
-		}
+		check(error != 0, "pthread_create() returned %d", error);
 	}
 }
 
@@ -145,9 +141,8 @@ msg_hook_rem(int msg_id)
 	struct msg_hook *cur;
 
 	pthread_mutex_lock(&msg_hooks.mutex);
-	if (msg_id >= msg_hooks.size) {
-		die(ERR_INFO, "given msg_id >= msg_hooks.size");
-	}
+	check(msg_id >= msg_hooks.size,
+	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id, msg_hooks.size);
 
 	cur = &msg_hooks.data[msg_id];
 
@@ -172,9 +167,8 @@ msg_hook_new_transfer(int msg_id, char *name, uint64_t size, char type[3])
 	struct msg_hook *cur;
 
 	pthread_mutex_lock(&msg_hooks.mutex);
-	if (msg_id >= msg_hooks.size) {
-		die(ERR_INFO, "given msg_id >= msg_hooks.size");
-	}
+	check(msg_id >= msg_hooks.size,
+	    "given msg_id (%d) >= msg_hooks.size (%d)", msg_id, msg_hooks.size);
 
 	cur = &msg_hooks.data[msg_id];
 
@@ -201,9 +195,8 @@ void
 msg_hook_update_name(int msg_id, char *name)
 {
 	pthread_mutex_lock(&msg_hooks.mutex);
-	if (msg_id >= msg_hooks.size) {
-		die(ERR_INFO, "given msg_id >= msg_hooks.size");
-	}
+	check(msg_id >= msg_hooks.size, "given msg_id (%d) >= msg_hooks.size (%d)",
+	    msg_id, msg_hooks.size);
 	strncpy(msg_hooks.data[msg_id].trans.name, name, NAME_LENGTH);
 	pthread_mutex_unlock(&msg_hooks.mutex);
 }
@@ -309,20 +302,15 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 	}
 
 	t = time(NULL);
-	if (t == -1) {
-		die(ERR_INFO, "time()");
-	}
+	check(t == -1, "time(NULL) returned -1");
 
 	tmp = err_malloc(sizeof(struct tm));
 	tmp = localtime_r(&t, tmp);
 
-	if (!tmp) {
-		die(ERR_INFO, "localtime()");
-	}
+	check(!tmp, "localtime() returned NULL");
 
-	if (strftime(str_time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0) {
-		die(ERR_INFO, "strftime()");
-	}
+	check(strftime(str_time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp) == 0,
+	    "strftime() returned NULL");
 	free(tmp);
 	tmp = NULL;
 

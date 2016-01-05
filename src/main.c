@@ -39,32 +39,23 @@ main(const int argc, const char *argv[])
 
 	/* init a pthread attribute struct */
 	error = pthread_attr_init(&attr);
-	if (error != 0) {
-		die(ERR_INFO, "pthread_attr_init()");
-	}
+	check(error, "pthread_attr_init() returned %d", error)
 
 	/* set threads to be detached, so they dont need to be joined */
 	error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-	if (error != 0) {
-		die(ERR_INFO,
-		    "pthread_attr_setdetachstate():PTHREAD_CREATE_DETACHED");
-	}
+	check(error != 0, "pthread_attr_setdetachstate():PTHREAD_CREATE_DETACHED");
 
 	msg_init(&thread, &attr);
 
 	/* get a socket */
 	server_socket = socket(AF_INET, SOCK_STREAM, 0);
-	if (server_socket < 0) {
-		die(ERR_INFO, "socket()");
-	}
+	check(server_socket < 0, "socket() returned %d", server_socket);
 
 	on = 1;
 	/* set socket options to make reuse of socket possible */
 	error = setsockopt(server_socket, SOL_SOCKET, SO_REUSEADDR,
 		    (const char *)&on, (socklen_t)sizeof(on));
-	if (error == -1) {
-		die(ERR_INFO, "setsockopt():SO_REUSEADDR");
-	}
+	check(error == -1, "setsockopt():SO_REUSEADDR");
 
 	memset((char *) &serv_addr, '\0', sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
@@ -74,15 +65,11 @@ main(const int argc, const char *argv[])
 	/* bind socket */
 	error = bind(server_socket, (struct sockaddr *) &serv_addr,
 		    (socklen_t)sizeof(serv_addr));
-	if (error < 0) {
-		die(ERR_INFO, "bind()");
-	}
+	check(error < 0, "bind() returned %d", error);
 
 	/* set socket in listen mode */
 	error = listen(server_socket, 5);
-	if (error == -1) {
-		die(ERR_INFO, "listen()");
-	}
+	check(error == -1, "listen() returned %d", error);
 	clilen = sizeof(cli_addr);
 
 	/* put each conn in a new detached thread with its own data_store */
@@ -102,9 +89,8 @@ main(const int argc, const char *argv[])
 		data->port = ntohs(cli_addr.sin_port);
 
 		error = pthread_create(&thread, &attr, &handle_request, data);
-		if (error != 0) {
-			die(ERR_INFO, "pthread_create()");
-		}
+		check(error != 0, "pthread_create(handle_request) returned %d",
+		    error);
 	}
 
 	/* not reached */
@@ -117,6 +103,7 @@ parse_arguments(const int argc, const char *argv[])
 {
 	int i;
 	int root_arg;
+	char *tmp;
 
 	root_arg = 0;
 
@@ -194,21 +181,19 @@ parse_arguments(const int argc, const char *argv[])
 	}
 
 	if (root_arg == 0) {
-		CONF.root_dir = realpath(CONF.root_dir, NULL);
+		tmp = realpath(CONF.root_dir, NULL);
+		check(!tmp, "realpath(\"%s\") returned NULL", CONF.root_dir);
 	} else {
-		CONF.root_dir = realpath(argv[root_arg], NULL);
+		tmp = realpath(argv[root_arg], NULL);
+		check(!tmp, "realpath(\"%s\") returned NULL", argv[root_arg]);
 	}
-	if (!CONF.root_dir) {
-		die(ERR_INFO, "realpath() on CONF.root_dir returned NULL");
-	}
-	if (strlen(CONF.root_dir) == 1 && CONF.root_dir[0] == '/') {
-		die(ERR_INFO, "sharing / is not possible.");
-	}
+	CONF.root_dir = tmp;
+
+	check(strlen(CONF.root_dir) == 1 && CONF.root_dir[0] == '/',
+		"sharing / is not possible.");
 
 	if (CONF.log_file) {
 		CONF.log_file_d = fopen(CONF.log_file, "a+");
-		if (!CONF.log_file_d) {
-			die(ERR_INFO, "could not open logfile");
-		}
+		check(!CONF.log_file_d, "fopen(\"%s\") returned NULL", CONF.log_file);
 	}
 }

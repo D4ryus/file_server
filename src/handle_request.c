@@ -37,9 +37,7 @@ handle_request(void *ptr)
 	free(data);
 	data = NULL;
 
-	if (sock < 0) {;
-		die(ERR_INFO, "socket in handle_request is < 0");
-	}
+	check(sock < 0, "socket in handle_request is %d", sock);
 
 	msg_id = msg_hook_add(ip, port);
 

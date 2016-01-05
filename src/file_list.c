@@ -154,10 +154,9 @@ get_dir(const char *directory)
 
 	dirp = opendir(directory);
 	if (!dirp) {
-		if (errno == EACCES) {
-			return NULL;
-		}
-		die(ERR_INFO, "opendir()");
+		check(errno != EACCES, "opendir(%s) returned NULL",
+		    directory);
+		return NULL;
 	}
 
 	result = (struct dir *)err_malloc(sizeof(struct dir));
@@ -208,13 +207,9 @@ dir_to_table(int http, const char *dir, int upload)
 
 	d = get_dir(directory);
 
-	if (!d) {
-		die(ERR_INFO, "cannot open directory");
-	}
+	check(!d, "get_dir(\"%s\") returned NULL.", directory);
 
-	if (!d->files) {
-		die(ERR_INFO, "get_dir()->files are NULL");
-	}
+	check(!d->files, "get_dir(\"%s\")->files is NULL", directory);
 
 	if (http) {
 		table_ptr = TABLE_HTML;
@@ -318,19 +313,17 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	struct file *new_file;
 	struct tm *tmp;
 
-	if (!file) {
-		die(ERR_INFO, "tried to add file which was NULL");
-		return d;
-	}
+	check(!file, "tried to add file which was NULL");
 
 	combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
 	memcpy(combined_path, directory, strlen(directory) + 1);
 	combined_path[strlen(directory)] = '/';
 	memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
-	if (stat(combined_path, &sb) == -1) {
-		die(ERR_INFO,
-		    "stat() returned -1 (could be a dead symbolic link)");
-	}
+
+	check(stat(combined_path, &sb) == -1,
+	    "stat(%s) returned -1 (could be a dead symbolic link)",
+		    combined_path)
+
 	free(combined_path);
 	combined_path = NULL;
 
@@ -345,12 +338,10 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	}
 
 	tmp = localtime(&sb.st_mtime);
-	if (!tmp) {
-		die(ERR_INFO, "localtime()");
-	}
-	if (!strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp)) {
-		die(ERR_INFO, "strftime()");
-	}
+	check(!tmp, "localtime() returned NULL");
+
+	check(!strftime(new_file->time, (size_t)20, "%Y-%m-%d %H:%M:%S", tmp),
+	    "strftime() returned NULL");
 
 	new_file->size = sb.st_size;
 

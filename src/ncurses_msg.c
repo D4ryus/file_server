@@ -83,9 +83,7 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	initscr();
 
-	if (!stdscr) {
-		die(ERR_INFO, "initscr()");
-	}
+	check(!stdscr, "initscr() failed");
 
 	if (has_colors()) {
 		start_color();
@@ -105,19 +103,19 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	terminal_width = 0;
 	/* ncurses_organize_windows will rearrange windows */
 	ncurses_organize_windows(1);
+	/* TODO: remove this if and check if it still works */
 	if (win_logging) {
 		scrollok(win_logging, (bool)TRUE);
 	} else {
 		endwin();
 		delwin(stdscr);
-		die(ERR_INFO, "window to small");
+		die("window to small");
 	}
 
 	/* if upload is enabled, handle keys from keyboard */
 	error = pthread_create(thread, attr, &ncurses_handle_keyboard, NULL);
-	if (error != 0) {
-		die(ERR_INFO, "pthread_create()");
-	}
+	check(error != 0, "pthread_create(ncurses_handle_keyboard) returned %d",
+	    error);
 }
 
 static void *
@@ -415,9 +413,7 @@ ncurses_organize_windows(int resized)
 	/* check if windows are initialized, if not initialize them */
 	if (!win_status) {
 		win_status = newwin(status_heigth, terminal_width, 1, 0);
-		if (!win_status) {
-			die(ERR_INFO, "newwin()");
-		}
+		check(!win_status, "newwin(win_stats) returned NULL");
 	} else {
 		wresize(win_status, status_heigth, terminal_width);
 		werase(win_status);
@@ -426,9 +422,7 @@ ncurses_organize_windows(int resized)
 	if (!win_logging) {
 		win_logging = newwin(log_heigth, terminal_width,
 				  terminal_heigth - log_heigth, 0);
-		if (!win_logging) {
-			die(ERR_INFO, "newwin()");
-		}
+		check(!win_logging, "newwin(win_logging) returned NULL");
 	} else {
 		wresize(win_logging, log_heigth, terminal_width);
 		werase(win_logging);

@@ -82,9 +82,7 @@ send_file(int sock, const char *filename, uint64_t *written, uint64_t from,
 	error = STAT_OK;
 
 	fd = fopen(filename, "rb");
-	if (!fd) {
-		die(ERR_INFO, "fopen()");
-	}
+	check(!fd, "fopen(\"%s\") returned NULL", filename)
 
 	sending = 1;
 	read_bytes = 0;
@@ -192,10 +190,10 @@ is_directory(const char *path)
 		} else if (s.st_mode & S_IFREG) {
 			return 0;
 		} else {
-			die(ERR_INFO, "stat() has no file nor a directory");
+			die("stat(\"%s\") is not a file nor a directory", path);
 		}
 	} else {
-		die(ERR_INFO, "stat()");
+		die("stat(\"%s\") returned NULL", path);
 	}
 
 	return 0;
@@ -258,9 +256,7 @@ err_malloc(size_t size)
 	void *tmp;
 
 	tmp = malloc(size);
-	if (!tmp) {
-		die(ERR_INFO, "malloc()");
-	}
+	check(!tmp, "could not malloc(%lu)", size)
 
 	return tmp;
 }
@@ -274,9 +270,7 @@ err_calloc(size_t nmemb, size_t size)
 	void *tmp;
 
 	tmp = calloc(nmemb, size);
-	if (!tmp) {
-		die(ERR_INFO, "calloc()");
-	}
+	check(!tmp, "could not calloc(%lu, %lu)", nmemb, size);
 
 	return tmp;
 }
@@ -288,28 +282,9 @@ void *
 err_realloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
-	if (!ptr) {
-		die(ERR_INFO, "realloc()");
-	}
+	check(!ptr, "could not realloc(%p, %lu)", ptr, size);
 
 	return ptr;
-}
-
-/*
- * prints out given information to stderr and exits
- */
-void
-die(const char *file, const int line, const char *function, const char *msg)
-{
-	if (CONF.log_file_d) {
-		fprintf(CONF.log_file_d, "%s:%d:%s: error: %s: %s\n",
-		    file, line, function, msg, strerror(errno));
-		fflush(CONF.log_file_d);
-	} else {
-		fprintf(stderr, "%s:%d:%s: error: %s: %s\n",
-		    file, line, function, msg, strerror(errno));
-	}
-	exit(1);
 }
 
 /*
@@ -419,9 +394,8 @@ normalize_ip(char *dst, const char *src)
 	int src_pos;
 	int dst_pos;
 
-	if (!src || strlen(src) > 15) {
-		die(ERR_INFO, "src NULL or length > 15.");
-	}
+	check(!src, "src is NULL");
+	check(strlen(src) > 15, "src length (%lu) > 15.", strlen(src));
 
 	if (strlen(src) == 15) {
 		memcpy(dst, src, 15);
@@ -458,12 +432,8 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 	char ip_check_norm[16];
 	int i;
 
-	if (!ip_allowed) {
-		die(ERR_INFO, "ip_allowed NULL");
-	}
-	if (!ip_check) {
-		die(ERR_INFO, "ip_check NULL");
-	}
+	check(!ip_allowed, "ip_allowed is NULL");
+	check(!ip_check, "ip_check is NULL");
 
 	if (strlen(ip_allowed) == 1 && ip_allowed[0] == '*') {
 		return 1;

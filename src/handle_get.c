@@ -96,9 +96,8 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 
 		/* in case its a file */
 
-		if (stat(filename, &sb) == -1) {
-			die(ERR_INFO, "stat()");
-		}
+		check(stat(filename, &sb) == -1, "stat(\"%s\") returned -1",
+		    filename);
 
 		switch (response.status) {
 		case _200_OK:
@@ -296,9 +295,8 @@ get_response_status(char **request)
 	}
 
 	/* ok file exists, check if its a directory */
-	if (!(s.st_mode & S_IFDIR) && !(s.st_mode & S_IFREG)) {
-		die(ERR_INFO, "stat() has no file nor a directory.");
-	}
+	check(!(s.st_mode & S_IFDIR) && !(s.st_mode & S_IFREG),
+	    "stat(\"%s\") is not a file nor a directory.", requested_path)
 
 	/* and update request string to a full path */
 	free_me = *request;

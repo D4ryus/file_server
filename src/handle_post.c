@@ -131,10 +131,10 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	struct stat s;
 	uint64_t *written;
 
-	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
-		die(ERR_INFO,
-		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
-	}
+	check(2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ,
+	    "BUFFSIZE_READ (%d) should be"
+	    "> 2 * HTTP_HEADER_LINE_LIMIT (%d)",
+		BUFFSIZE_READ, HTTP_HEADER_LINE_LIMIT)
 
 	boundary_pos = 0;
 	error = STAT_OK;
@@ -372,19 +372,19 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 			rest = NULL;
 			return CLOSED_CON;
 		}
-		if ((size_t)rec != rest_size) {
-			die(ERR_INFO,
-			    "peek did return less than rest_size");
-		}
+		check((size_t)rec != rest_size,
+		    "peek (%ld) did return less than rest_size (%lu)",
+			    rec, rest_size)
+
 		if (!memcmp(rest, needle + needle_matched,
 		        strlen(needle + needle_matched))) {
 			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
 			rest = NULL;
-			if ((rec < 0) || ((size_t)rec != rest_size)) {
-				die(ERR_INFO,
-				    "the data i just peeked is gone");
-			}
+
+			check((rec < 0) || ((size_t)rec != rest_size),
+			    "the data i just peeked is gone")
+
 			*written += (uint64_t)rec;
 			*pos = (ssize_t)(haystack_size - needle_matched);
 			return STAT_OK;
@@ -397,7 +397,7 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 	}
 
 	/* not reached */
-	die(ERR_INFO, "i != haystack_size, should not be possible");
+	die("i != haystack_size, should not be possible");
 
 	return STAT_OK;
 }
@@ -530,9 +530,7 @@ open_file(char **filename, FILE **fd, char *directory)
 	}
 
 	*fd = fopen(found_filename, "w+");
-	if (!*fd) {
-		die(ERR_INFO, "fopen()");
-	}
+	check(!*fd, "fopen(\"%s\") returned NULL", found_filename);
 	free(*filename);
 	*filename = err_malloc(strlen(found_filename) + 1);
 	memcpy(*filename, found_filename, strlen(found_filename) + 1);
