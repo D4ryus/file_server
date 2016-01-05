@@ -24,14 +24,14 @@ fixes and code changes:
     [X] - cross plattform code
 
 ideas:
-    [ ] - add debugging option
-    [ ] - better error handling (die, malloc, check, ...)
-    [ ] - vaargs on concat
     [ ] - debug ncurses screen with data information
     [ ] - combine partial download info (ip + file)
     [ ] - fmt string for status msg
     [ ] - implement max connections/threadpools
     [ ] - add startup information
+    [X] - add debugging option
+    [X] - better error handling (die, malloc, check, ...)
+    [X] - vaargs on concat
     [X] - global config struct instead of global.h (config.[ch])
     [X] - global data struct instead of linked lists (data.[ch])
     [X] - dynamic array
