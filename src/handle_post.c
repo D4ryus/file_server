@@ -374,7 +374,7 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 		}
 		check((size_t)rec != rest_size,
 		    "peek (%ld) did return less than rest_size (%lu)",
-			    rec, rest_size)
+			    (ulong)rec, (ulong)rest_size)
 
 		if (!memcmp(rest, needle + needle_matched,
 		        strlen(needle + needle_matched))) {

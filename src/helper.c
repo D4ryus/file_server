@@ -8,6 +8,7 @@
 #include <limits.h>
 #include <sys/socket.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 #include "config.h"
 #include "helper.h"
@@ -241,8 +242,7 @@ format_size(uint64_t size, char fmt_size[7])
 		type = "b ";
 	}
 
-	snprintf(fmt_size, (size_t)7, "%4llu%s",
-	    (long long unsigned int)new_size, type);
+	snprintf(fmt_size, (size_t)7, "%4" PRId64 "%s", new_size, type);
 
 	return fmt_size;
 }
@@ -256,7 +256,7 @@ err_malloc(size_t size)
 	void *tmp;
 
 	tmp = malloc(size);
-	check(!tmp, "could not malloc(%lu)", size)
+	check(!tmp, "could not malloc(%lu)", (ulong)size)
 
 	return tmp;
 }
@@ -270,7 +270,7 @@ err_calloc(size_t nmemb, size_t size)
 	void *tmp;
 
 	tmp = calloc(nmemb, size);
-	check(!tmp, "could not calloc(%lu, %lu)", nmemb, size);
+	check(!tmp, "could not calloc(%lu, %lu)", (ulong)nmemb, (ulong)size);
 
 	return tmp;
 }
@@ -282,7 +282,7 @@ void *
 err_realloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
-	check(!ptr, "could not realloc(%p, %lu)", ptr, size);
+	check(!ptr, "could not realloc(%p, %lu)", ptr, (ulong)size);
 
 	return ptr;
 }
@@ -395,7 +395,7 @@ normalize_ip(char *dst, const char *src)
 	int dst_pos;
 
 	check(!src, "src is NULL");
-	check(strlen(src) > 15, "src length (%lu) > 15.", strlen(src));
+	check(strlen(src) > 15, "src length (%lu) > 15.", (ulong)strlen(src));
 
 	if (strlen(src) == 15) {
 		memcpy(dst, src, 15);
