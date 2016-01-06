@@ -11,7 +11,7 @@ struct dir {
 };
 
 struct dir *get_dir(const char *);
-char *dir_to_table(enum http_type, const char *);
+char *dir_to_table(int, const char *, int);
 void free_dir(struct dir *);
 
 #endif

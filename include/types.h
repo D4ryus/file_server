@@ -3,27 +3,12 @@
 
 #include <stdint.h>
 
-/*
- * message verbosity
- */
-enum message_type {
-	ERROR = 1,
-	CONNECTED = 2,
-	FINISHED = 2
-};
-
 enum response_type {
 	FILE_200,
 	DIR_200,
 	TXT_403,
 	TXT_404,
 	FILE_206
-};
-
-enum transfer_type {
-	UPLOAD,
-	DOWNLOAD,
-	PARTIAL
 };
 
 /*
@@ -56,33 +41,18 @@ enum err_status {
 	INV_RANGE,
 	INV_POST_PATH,
 	INV_CONNECTION,
-	INV_HOST
+	INV_HOST,
+	IP_BLOCKED
 };
 
 /*
- * per request a data store is generated and then during execution filled
+ * per request a data store
  */
 struct client_info {
 	/* will be set by main thread */
-	char     ip[16];		/* ip from client */
-	int      port;			/* port from client */
-	int      sock;			/* socket descriptor */
-	/* set by handle request thread */
-	uint64_t size;			/* file size */
-	uint64_t written;		/* written data */
-	uint64_t last_written;		/* will be updated by print thread */
-	char     *requested_path;	/* requested path */
-	enum     transfer_type type;    /* PLAIN or HTTP */
-};
-
-/*
- * Linked list containing all client_info structs which should be printed
- * as status information, see messages.[ch]
- */
-struct status_list_node {
-	struct client_info *data;
-	struct status_list_node *next;
-	uint8_t remove_me;
+	char ip[16]; /* ip from client */
+	int port; /* port from client */
+	int sock; /* socket descriptor */
 };
 
 #endif

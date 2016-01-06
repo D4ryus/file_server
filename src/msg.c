@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/types.h>
+#include <inttypes.h>
 
 #include "globals.h"
 #include "defines.h"
@@ -15,14 +16,37 @@
 #include "ncurses_msg.h"
 #endif
 
-static struct status_list_node *first = NULL;
-static pthread_mutex_t status_list_mutex;
-static pthread_mutex_t print_mutex;
-static int msg_enabled = 0;
+#define NAME_LENGTH 128
 
+static pthread_mutex_t print_mutex;
+
+static void msg_print_status(const char *, int);
 static void *msg_print_loop(void *);
-static void format_status_msg(char *, size_t, struct status_list_node *, int);
-static void msg_hook_delete(void);
+static void format_status_msg(char *, size_t, int, int);
+
+struct msg_hook {
+	uint8_t in_use : 1;
+	char ip[16];
+	int port;
+	/* dynamic array of transfer_hooks */
+	struct {
+		char name[NAME_LENGTH];
+		char type[3]; /* tx, px or rx */
+		uint64_t size;
+		uint64_t written;
+		uint64_t last_written;
+	} trans;
+};
+
+/* dynamic array of msg_hooks */
+static struct {
+	pthread_mutex_t mutex;
+	uint64_t left_over_tx;
+	uint64_t left_over_rx;
+	int used;
+	int size;
+	struct msg_hook *data;
+} msg_hooks;
 
 /*
  * initialize messages subsystem, which will create its own thread
@@ -46,9 +70,19 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 #else
 	if (VERBOSITY >= 3) {
 #endif
-		msg_enabled = 1;
-		pthread_mutex_init(&status_list_mutex, NULL);
+		int i;
+
 		pthread_mutex_init(&print_mutex, NULL);
+		pthread_mutex_init(&msg_hooks.mutex, NULL);
+
+		msg_hooks.left_over_tx = 0;
+		msg_hooks.left_over_rx = 0;
+		msg_hooks.used = 0;
+		msg_hooks.size = 3;
+		msg_hooks.data = err_calloc(sizeof(struct msg_hook), 3);
+		for (i = 0; i < msg_hooks.size; i++) {
+			msg_hooks.data[i].in_use = 0;
+		}
 
 		error = pthread_create(thread, attr, &msg_print_loop, NULL);
 		if (error != 0) {
@@ -57,20 +91,122 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 	}
 }
 
-/*
- * wont end, will print every UPDATE_TIMEOUT seconds
- * each element from the linkedlist
- */
+int
+msg_hook_add(char ip[16], int port)
+{
+	int i;
+	int msg_id;
+
+	msg_id = 0;
+	i = 0;
+	pthread_mutex_lock(&msg_hooks.mutex);
+	if (msg_hooks.used >= msg_hooks.size) {
+		int next_free;
+
+		/* if full, realloc new space and start search (i) there */
+		next_free = msg_hooks.size;
+		msg_hooks.size += 10;
+		msg_hooks.data = err_realloc(msg_hooks.data,
+		    sizeof(struct msg_hook) * (size_t)msg_hooks.size);
+		for (i = next_free; i < msg_hooks.size; i++) {
+			msg_hooks.data[i].in_use = 0;
+		}
+		i = next_free;
+	}
+
+	/* search for free spot */
+	for (; i < msg_hooks.size; i++) {
+		struct msg_hook *cur;
+
+		if (msg_hooks.data[i].in_use) {
+			continue;
+		}
+		msg_hooks.used++;
+		msg_id = i;
+		cur = &msg_hooks.data[msg_id];
+
+		cur->in_use = 1;
+		strncpy(cur->ip, ip, 16);
+		cur->port = port;
+		cur->trans.name[0] = '\0';
+		cur->trans.size = 0;
+		cur->trans.written = 0;
+		cur->trans.last_written = 0;
+		break;
+	}
+	pthread_mutex_unlock(&msg_hooks.mutex);
+
+	return msg_id;
+}
+
+void
+msg_hook_rem(int msg_id)
+{
+	struct msg_hook *cur;
+
+	pthread_mutex_lock(&msg_hooks.mutex);
+	if (msg_id >= msg_hooks.size) {
+		die(ERR_INFO, "given msg_id >= msg_hooks.size");
+	}
+
+	cur = &msg_hooks.data[msg_id];
+
+	if (cur->trans.size != 0) {
+		if (cur->trans.type[0] == 'r') {
+			msg_hooks.left_over_rx +=
+			    cur->trans.written - cur->trans.last_written;
+		} else {
+			msg_hooks.left_over_tx +=
+			    cur->trans.written - cur->trans.last_written;
+		}
+	}
+
+	cur->in_use = 0;
+	msg_hooks.used--;
+	pthread_mutex_unlock(&msg_hooks.mutex);
+}
+
+uint64_t *
+msg_hook_new_transfer(int msg_id, char *name, uint64_t size, char type[3])
+{
+	struct msg_hook *cur;
+
+	pthread_mutex_lock(&msg_hooks.mutex);
+	if (msg_id >= msg_hooks.size) {
+		die(ERR_INFO, "given msg_id >= msg_hooks.size");
+	}
+
+	cur = &msg_hooks.data[msg_id];
+
+	/* in case there are leftovers */
+	if (cur->trans.size != 0) {
+		if (cur->trans.type[0] == 'r') {
+			msg_hooks.left_over_rx +=
+			    cur->trans.written - cur->trans.last_written;
+		} else {
+			msg_hooks.left_over_tx +=
+			    cur->trans.written - cur->trans.last_written;
+		}
+	}
+	strncpy(cur->trans.name, name, NAME_LENGTH);
+	cur->trans.size = size;
+	memcpy(cur->trans.type, type, 3);
+	pthread_mutex_unlock(&msg_hooks.mutex);
+
+	return &cur->trans.written;
+}
+
 static void *
 msg_print_loop(void *ignored)
 {
-	struct status_list_node *cur;
 	int position;
 	uint64_t last_written;
 	uint64_t tx;
 	uint64_t rx;
 	char msg_buffer[MSG_BUFFER_SIZE];
 	struct timespec tsleep;
+	int i;
+	struct msg_hook *cur;
 
 	/* will round down, what we want */
 	tsleep.tv_sec = (long)UPDATE_TIMEOUT;
@@ -79,47 +215,61 @@ msg_print_loop(void *ignored)
 	position = 0;
 
 	while (1) {
-		pthread_mutex_lock(&status_list_mutex);
+		pthread_mutex_lock(&msg_hooks.mutex);
 #ifdef NCURSES
 		ncurses_update_begin(position);
 #endif
 		position = 0;
 		tx = 0;
 		rx = 0;
-		for (cur = first; cur; cur = cur->next, position++) {
-			last_written = cur->data->last_written;
+		for (i = 0; i < msg_hooks.size; i++) {
+			if (!msg_hooks.data[i].in_use) {
+				continue;
+			}
 
+			cur = &msg_hooks.data[i];
+			last_written = cur->trans.last_written;
+
+			/* format_status_msg will update cur->trans.last_written */
 			format_status_msg(msg_buffer, (size_t)MSG_BUFFER_SIZE,
-			    cur, position);
+			    i, position);
 			msg_print_status(msg_buffer, position);
 
-			switch (cur->data->type) {
-				case DOWNLOAD:
-				case PARTIAL:
-					tx += cur->data->last_written
-						- last_written;
-					break;
-				case UPLOAD:
-					rx += cur->data->last_written
-						- last_written;
-					break;
-				default:
-					/* not reached */
-					break;
+			if (cur->trans.type[0] == 'r') {
+				rx += cur->trans.last_written - last_written;
+			} else {
+				tx += cur->trans.last_written - last_written;
 			}
+
+			/* finished */
+			if (cur->trans.last_written == cur->trans.size) {
+				cur->trans.size = 0;
+				cur->trans.last_written = 0;
+				cur->trans.written = 0;
+				cur->trans.name[0] = '\0';
+			}
+			position++;
 		}
-		pthread_mutex_unlock(&status_list_mutex);
+		if (msg_hooks.left_over_rx) {
+			rx += msg_hooks.left_over_rx;
+			msg_hooks.left_over_rx = 0;
+		}
+		if (msg_hooks.left_over_tx) {
+			tx += msg_hooks.left_over_tx;
+			msg_hooks.left_over_tx = 0;
+		}
+		pthread_mutex_unlock(&msg_hooks.mutex);
 #ifdef NCURSES
 		ncurses_update_end(rx, tx, position);
 #endif
-		msg_hook_delete();
+		/* TODO: CLEANUP HERE */
 		nanosleep(&tsleep, NULL);
 	}
 	/* not reached */
 #ifdef NCURSES
 	// ncurses_terminate();
 #endif
-	// pthread_mutex_destroy(&status_list_mutex);
+	// pthread_mutex_destroy(&msg_hooks.mutex);
 	// pthread_mutex_destroy(&print_mutex);
 
 	return NULL;
@@ -129,8 +279,7 @@ msg_print_loop(void *ignored)
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-msg_print_log(struct client_info *data, const enum message_type type,
-    const char *message)
+msg_print_log(int msg_id, const enum message_type type, const char *message)
 {
 	char str_time[20];
 	FILE *stream;
@@ -167,7 +316,7 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	snprintf(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 	    "%-19s [%15s]: %s",
 	    str_time,
-	    data->ip,
+	    msg_hooks.data[msg_id].ip,
 	    message ? message : "");
 
 #ifdef NCURSES
@@ -194,72 +343,14 @@ msg_print_log(struct client_info *data, const enum message_type type,
 	pthread_mutex_unlock(&print_mutex);
 }
 
-/*
- * adds a hook to the status_list_node
- */
-void
-msg_hook_add(struct client_info *new_data)
-{
-	struct status_list_node *cur;
-	struct status_list_node *new_node;
-
-	if (!msg_enabled) {
-		return;
-	}
-
-	new_node = err_malloc(sizeof(struct status_list_node));
-	new_node->remove_me = 0;
-	new_node->data = new_data;
-	new_node->next = NULL;
-
-	pthread_mutex_lock(&status_list_mutex);
-	if (!first) {
-		first = new_node;
-	} else {
-		for (cur = first; cur->next; cur = cur->next)
-			; /* nothing */
-		cur->next = new_node;
-	}
-	pthread_mutex_unlock(&status_list_mutex);
-
-	return;
-}
-
-/*
- * flags given data object for deletion (delete_me)
- */
-void
-msg_hook_cleanup(struct client_info *rem_data)
-{
-	struct status_list_node *cur;
-	int found;
-
-	found = 0;
-
-	for (cur = first; cur; cur = cur->next) {
-		if (cur->data == rem_data) {
-			cur->remove_me = 1;
-			found = 1;
-		}
-	}
-
-	if (!found) {
-		if (rem_data->requested_path) {
-			free(rem_data->requested_path);
-			rem_data->requested_path = NULL;
-		}
-		free(rem_data);
-		rem_data = NULL;
-	}
-}
 
 /*
  * formats a data_list_node and calls print_info
  */
 static void
-format_status_msg(char *msg_buffer, size_t buff_size,
-    struct status_list_node *cur, int position)
+format_status_msg(char *msg_buffer, size_t buff_size, int msg_id, int position)
 {
+	struct msg_hook *cur;
 	/*
 	 * later last_written is set and the initial written value is needed,
 	 * to not read multiple times this value holds the inital value
@@ -274,50 +365,33 @@ format_status_msg(char *msg_buffer, size_t buff_size,
 	char fmt_size[7];
 	char fmt_bytes_per_tval[7];
 
-	char *fmt_type;
-
+	cur = &msg_hooks.data[msg_id];
 	/* read value only once from struct */
-	written = cur->data->written;
-	left = cur->data->size - written;
-	size = cur->data->size;
-	bytes_per_tval = (uint64_t)((float)(written - cur->data->last_written)
+	written = cur->trans.written;
+	size = cur->trans.size;
+	left = size - written;
+	bytes_per_tval = (uint64_t)((float)(written - cur->trans.last_written)
 				/ UPDATE_TIMEOUT);
 
 	/* set last written to inital read value */
-	cur->data->last_written = written;
+	cur->trans.last_written = written;
 
 	format_size(written, fmt_written);
 	format_size(left, fmt_left);
 	format_size(size, fmt_size);
 	format_size(bytes_per_tval, fmt_bytes_per_tval);
 
-	switch (cur->data->type) {
-		case DOWNLOAD:
-			fmt_type = "tx";
-			break;
-		case PARTIAL:
-			fmt_type = "px";
-			break;
-		case UPLOAD:
-			fmt_type = "rx";
-			break;
-		default:
-			/* not reached */
-			fmt_type = "er";
-			break;
-	}
-
 	snprintf(msg_buffer, buff_size,
 	    "[%15s]: %3u%% %s [%6s/%6s (%6s)] %6s/s %s",
-	    cur->data->ip,
+	    cur->ip,
 	    (unsigned int)(written * 100 /
-		(cur->data->size > 0 ? cur->data->size : 1)),
-	    fmt_type,
+		(cur->trans.size > 0 ? cur->trans.size : 1)),
+	    cur->trans.type,
 	    fmt_written,
 	    fmt_size,
 	    fmt_left,
 	    fmt_bytes_per_tval,
-	    cur->data->requested_path ? cur->data->requested_path : "-");
+	    cur->trans.name);
 
 	return;
 }
@@ -357,48 +431,4 @@ msg_print_status(const char *msg, int position)
 		fflush(LOG_FILE_D);
 	}
 	pthread_mutex_unlock(&print_mutex);
-}
-
-/*
- * removes all flagged (remove_me) data hooks
- */
-static void
-msg_hook_delete()
-{
-	struct status_list_node *cur;
-	struct status_list_node *tmp;
-	struct status_list_node *last;
-
-	if (first == NULL) {
-		return;
-	}
-
-	last = NULL;
-
-	pthread_mutex_lock(&status_list_mutex);
-	for (cur = first; cur;) {
-		if (cur->remove_me) {
-			if (cur == first) {
-				first = cur->next;
-			} else {
-				last->next = cur->next;
-			}
-			tmp = cur;
-			cur = cur->next;
-			if (tmp->data->requested_path) {
-				free(tmp->data->requested_path);
-				tmp->data->requested_path = NULL;
-			}
-			free(tmp->data);
-			tmp->data = NULL;
-			free(tmp);
-			tmp = NULL;
-		} else {
-			last = cur;
-			cur = cur->next;
-		}
-	}
-	pthread_mutex_unlock(&status_list_mutex);
-
-	return;
 }

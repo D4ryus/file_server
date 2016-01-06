@@ -7,188 +7,12 @@
 #include <errno.h>
 #include <limits.h>
 #include <sys/socket.h>
+#include <stdarg.h>
 
 #include "globals.h"
 #include "helper.h"
 #include "msg.h"
 #include "defines.h"
-
-static char *mime_types[][2] = {
-	{ "txt",     "text/plain" },
-	{ "htm",     "text/html" },
-	{ "html",    "text/html" },
-	{ "shtml",   "text/html" },
-	{ "jpeg",    "image/jpeg" },
-	{ "jpg",     "image/jpeg" },
-	{ "jpe",     "image/jpeg" },
-	{ "png",     "image/png" },
-	{ "mp3",     "audio/mpeg"},
-	{ "webm",    "video/webm" },
-	{ "mp4",     "video/mp4" },
-	{ "m4v",     "video/mp4" },
-	{ "m4a",     "audio/mp4" },
-	{ "ogv",     "video/ogg" },
-	{ "ogg",     "audio/ogg" },
-	{ "oga",     "audio/ogg" },
-	{ "gif",     "image/gif" },
-	{ "tar",     "application/x-tar" },
-	{ "gz",      "application/gzip" },
-	{ "zip",     "application/zip" },
-	{ "pdf",     "application/pdf" },
-	{ "mpeg",    "video/mpeg" },
-	{ "mpg",     "video/mpeg" },
-	{ "mpe",     "video/mpeg" },
-	{ "dwg",     "application/acad" },
-	{ "asd",     "application/astound" },
-	{ "asn",     "application/astound" },
-	{ "tsp",     "application/dsptype" },
-	{ "dxf",     "application/dxf" },
-	{ "spl",     "application/futuresplash" },
-	{ "ptlk",    "application/listenup" },
-	{ "hqx",     "application/mac-binhex40" },
-	{ "mbd",     "application/mbedlet" },
-	{ "mif",     "application/mif" },
-	{ "xls",     "application/msexcel" },
-	{ "xla",     "application/msexcel" },
-	{ "hlp",     "application/mshelp" },
-	{ "chm",     "application/mshelp" },
-	{ "ppt",     "application/mspowerpoint" },
-	{ "ppz",     "application/mspowerpoint" },
-	{ "pps",     "application/mspowerpoint" },
-	{ "doc",     "application/msword" },
-	{ "dot",     "application/msword" },
-	{ "bin",     "application/octet-stream" },
-	{ "exe",     "application/octet-stream" },
-	{ "com",     "application/octet-stream" },
-	{ "dll",     "application/octet-stream" },
-	{ "oda",     "application/oda" },
-	{ "ai",      "application/postscript" },
-	{ "eps",     "application/postscript" },
-	{ "rtc",     "application/rtc" },
-	{ "rtf",     "application/rtf" },
-	{ "smp",     "application/studiom" },
-	{ "tbk",     "application/toolbook" },
-	{ "vmd",     "application/vocaltec-media-desc" },
-	{ "vmf",     "application/vocaltec-media-file" },
-	{ "htm",     "application/xhtml+xml" },
-	{ "html",    "application/xhtml+xml" },
-	{ "shtml",   "application/xhtml+xml" },
-	{ "xhtml",   "application/xhtml+xml" },
-	{ "xml",     "application/xml" },
-	{ "bcpio",   "application/x-bcpio" },
-	{ "z",       "application/x-compress" },
-	{ "cpio",    "application/x-cpio" },
-	{ "csh",     "application/x-csh" },
-	{ "dcr",     "application/x-director" },
-	{ "dir",     "application/x-director" },
-	{ "dxr",     "application/x-director" },
-	{ "dvi",     "application/x-dvi" },
-	{ "evy",     "application/x-envoy" },
-	{ "gtar",    "application/x-gtar" },
-	{ "hdf",     "application/x-hdf" },
-	{ "php",     "application/x-httpd-php" },
-	{ "phtml",   "application/x-httpd-php" },
-	{ "js",      "application/x-javascript" },
-	{ "latex",   "application/x-latex" },
-	{ "bin",     "application/x-macbinary" },
-	{ "mif",     "application/x-mif" },
-	{ "nc",      "application/x-netcdf" },
-	{ "cdf",     "application/x-netcdf" },
-	{ "nsc",     "application/x-nschat" },
-	{ "sh",      "application/x-sh" },
-	{ "shar",    "application/x-shar" },
-	{ "swf",     "application/x-shockwave-flash" },
-	{ "cab",     "application/x-shockwave-flash" },
-	{ "spr",     "application/x-sprite" },
-	{ "sprite",  "application/x-sprite" },
-	{ "sit",     "application/x-stuffit" },
-	{ "sca",     "application/x-supercard" },
-	{ "sv4cpio", "application/x-sv4cpio" },
-	{ "sv4crc",  "application/x-sv4crc" },
-	{ "tcl",     "application/x-tcl" },
-	{ "tex",     "application/x-tex" },
-	{ "texinfo", "application/x-texinfo" },
-	{ "texi",    "application/x-texinfo" },
-	{ "t",       "application/x-troff" },
-	{ "tr",      "application/x-troff" },
-	{ "man",     "application/x-troff-man" },
-	{ "troff",   "application/x-troff-man" },
-	{ "me",      "application/x-troff-me" },
-	{ "troff",   "application/x-troff-me" },
-	{ "ms",      "application/x-troff-ms" },
-	{ "troff",   "application/x-troff-ms" },
-	{ "ustar",   "application/x-ustar" },
-	{ "src",     "application/x-wais-source" },
-	{ "au",      "audio/basic" },
-	{ "snd",     "audio/basic" },
-	{ "es",      "audio/echospeech" },
-	{ "tsi",     "audio/tsplayer" },
-	{ "vox",     "audio/voxware" },
-	{ "aif",     "audio/x-aiff" },
-	{ "aiff",    "audio/x-aiff" },
-	{ "aifc",    "audio/x-aiff" },
-	{ "dus",     "audio/x-dspeeh" },
-	{ "cht",     "audio/x-dspeeh" },
-	{ "mid",     "audio/x-midi" },
-	{ "midi",    "audio/x-midi" },
-	{ "mp2",     "audio/x-mpeg" },
-	{ "ram",     "audio/x-pn-realaudio" },
-	{ "ra",      "audio/x-pn-realaudio" },
-	{ "rpm",     "audio/x-pn-realaudio-plugin" },
-	{ "stream",  "audio/x-qt-stream" },
-	{ "wav",     "audio/x-wav" },
-	{ "dwf",     "drawing/x-dwf" },
-	{ "cod",     "image/cis-cod" },
-	{ "ras",     "image/cmu-raster" },
-	{ "fif",     "image/fif" },
-	{ "ief",     "image/ief" },
-	{ "tiff",    "image/tiff" },
-	{ "tif",     "image/tiff" },
-	{ "mcf",     "image/vasa" },
-	{ "wbmp",    "image/vnd.wap.wbmp" },
-	{ "fh4",     "image/x-freehand" },
-	{ "fh5",     "image/x-freehand" },
-	{ "fhc",     "image/x-freehand" },
-	{ "ico",     "image/x-icon" },
-	{ "pnm",     "image/x-portable-anymap" },
-	{ "pbm",     "image/x-portable-bitmap" },
-	{ "pgm",     "image/x-portable-graymap" },
-	{ "ppm",     "image/x-portable-pixmap" },
-	{ "rgb",     "image/x-rgb" },
-	{ "xwd",     "image/x-windowdump" },
-	{ "xbm",     "image/x-xbitmap" },
-	{ "xpm",     "image/x-xpixmap" },
-	{ "wrl",     "model/vrml" },
-	{ "csv",     "text/comma-separated-values" },
-	{ "css",     "text/css" },
-	{ "js",      "text/javascript" },
-	{ "rtx",     "text/richtext" },
-	{ "rtf",     "text/rtf" },
-	{ "tsv",     "text/tab-separated-values" },
-	{ "wml",     "text/vnd.wap.wml" },
-	{ "wmlc",    "application/vnd.wap.wmlc" },
-	{ "wmls",    "text/vnd.wap.wmlscript" },
-	{ "wmlsc",   "application/vnd.wap.wmlscriptc" },
-	{ "xml",     "text/xml" },
-	{ "etx",     "text/x-setext" },
-	{ "sgm",     "text/x-sgml" },
-	{ "sgml",    "text/x-sgml" },
-	{ "talk",    "text/x-speech" },
-	{ "spc",     "text/x-speech" },
-	{ "qt",      "video/quicktime" },
-	{ "mov",     "video/quicktime" },
-	{ "viv",     "video/vnd.vivo" },
-	{ "vivo",    "video/vnd.vivo" },
-	{ "avi",     "video/x-msvideo" },
-	{ "movie",   "video/x-sgi-movie" },
-	{ "vts",     "workbook/formulaone" },
-	{ "vtts",    "workbook/formulaone" },
-	{ "3dmf",    "x-world/x-3dmf" },
-	{ "3dm",     "x-world/x-3dmf" },
-	{ "qd3d",    "x-world/x-3dmf" },
-	{ "qd3",     "x-world/x-3dmf" },
-	{ "wrl",     "x-world/x-vrml" },
-};
 
 /*
  * returns:
@@ -239,7 +63,6 @@ send_data(int sock, const char *data, uint64_t length)
 }
 
 /*
- * if negative number is return, error occured
  * STAT_OK      : everything went fine.
  * WRITE_CLOSED : could not write, client closed connection
  * ZERO_WRITTEN : could not write, 0 bytes written
@@ -252,18 +75,13 @@ send_file(int sock, const char *filename, uint64_t *written, uint64_t from,
 	char *buffer;
 	size_t read_bytes;
 	FILE *fd;
-	char *full_path;
 	enum err_status error;
 	uint64_t max;
 
 	buffer = err_malloc((size_t)BUFFSIZE_READ);
 	error = STAT_OK;
-	full_path = NULL;
-	full_path = concat(concat(full_path, ROOT_DIR), filename);
 
-	fd = fopen(full_path, "rb");
-	free(full_path);
-	full_path = NULL;
+	fd = fopen(filename, "rb");
 	if (!fd) {
 		die(ERR_INFO, "fopen()");
 	}
@@ -429,6 +247,22 @@ err_malloc(size_t size)
 }
 
 /*
+ * callocs given size but also checks if succeded, if not exits
+ */
+void *
+err_calloc(size_t nmemb, size_t size)
+{
+	void *tmp;
+
+	tmp = calloc(nmemb, size);
+	if (!tmp) {
+		die(ERR_INFO, "calloc()");
+	}
+
+	return tmp;
+}
+
+/*
  * reallocs given size but also checks if succeded, if not exits
  */
 void *
@@ -512,39 +346,6 @@ usage_quit(const char *name, const char *msg)
 	exit(1);
 }
 
-/*
- * returns content type of given file type
- * given "html" returns  "text/html"
- * given "gz"	returns  "application/gzip"
- * if type is not recognized, NULL will be returned
- */
-char *
-get_content_encoding(const char *file_name)
-{
-	char *type;
-	size_t i;
-	size_t elements;
-
-	type = strrchr(file_name, '.');
-	if (!type|| strlen(type) == 1) {
-		return "application/octet-stream";
-	}
-	type = type + 1; // move over dot
-
-	if (!type|| !strcmp(type, "")) {
-		return "application/octet-stream";
-	}
-
-	elements = sizeof(mime_types) / sizeof(mime_types[0]);
-	for (i = 0; i < elements; i++) {
-		if (!strcmp(type, mime_types[i][0])) {
-			return mime_types[i][1];
-		}
-	}
-
-	return "text/plain";
-}
-
 const char *
 get_err_msg(enum err_status error)
 {
@@ -577,7 +378,8 @@ get_err_msg(enum err_status error)
 	/* INV_RANGE          */ "error - invalid Range",
 	/* INV_POST_PATH      */ "error - invalid POST path specified",
 	/* INV_CONNECTION     */ "error - invalid connection type",
-	/* INV_HOST           */ "error - invalid host"
+	/* INV_HOST           */ "error - invalid host",
+	/* IP_BLOCKED         */ "error - ip blocked"
 	};
 
 	return err_msg[error];
@@ -587,7 +389,7 @@ get_err_msg(enum err_status error)
  * normalizes given ip, here are examples:
  *   21.32.111.5 -> 021.032.111.005
  * *21.32.111.*5 -> *21.032.111.0*5
- *       1.1.1.1 -> 001.001.001.001
+ *	 1.1.1.1 -> 001.001.001.001
  * functions is used to make ip checking easier.
  * returned pointer will point to dst
  * dst must be allocated memory (16 bytes).
@@ -679,4 +481,35 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 
 	/* if we came this far, return a success! */
 	return 1;
+}
+
+/*
+ * prints to socket
+ * returns:
+ * STAT_OK      : everything went fine.
+ * WRITE_CLOSED : could not write, client closed connection
+ * ZERO_WRITTEN : could not write, 0 bytes written
+ */
+int
+s_printf(int sock, const char *fmt, ...)
+{
+	int err;
+	size_t size;
+	char *buf;
+	va_list args;
+
+	va_start(args, fmt);
+
+	/* get size */
+	size = (size_t)vsnprintf(0, 0, fmt, args);
+
+	buf = (char *)err_malloc(size + 1);
+
+	va_start(args, fmt);
+	vsnprintf(buf, size, fmt, args);
+
+	err = send_data(sock, buf, size);
+	free(buf);
+
+	return err;
 }

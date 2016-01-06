@@ -4,6 +4,6 @@
 #include "types.h"
 #include "parse_http.h"
 
-int handle_get(struct client_info *, struct http_header *);
+int handle_get(int, int, struct http_header *, int);
 
 #endif

@@ -60,6 +60,7 @@ FILE *LOG_FILE_D = NULL;
  */
 const char *HTTP_TOP =
 	"<!DOCTYPE html>"
+	"<meta http-equiv='Content-Type' content='text/html; charset=utf-8'>"
 	"<style>"
 		"html, body, tbody {"
 			"background-color: #303030;"

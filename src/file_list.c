@@ -63,7 +63,7 @@ get_dir(const char *directory)
  * returns given directory as formated string
  */
 char *
-dir_to_table(const enum http_type type, const char *dir)
+dir_to_table(int http, const char *dir, int upload)
 {
 	int i;
 	char buffer[TABLE_BUFFER_SIZE];
@@ -73,6 +73,11 @@ dir_to_table(const enum http_type type, const char *dir)
 	char *table_buffer;
 	char *directory;
 	const char *requ;
+
+	table_buffer = NULL;
+	if (http) {
+		table_buffer = concat(table_buffer, HTTP_TOP);
+	}
 
 	if (strcmp(dir, "/") == 0) {
 		requ = "";
@@ -96,7 +101,7 @@ dir_to_table(const enum http_type type, const char *dir)
 		die(ERR_INFO, "get_dir()->files are NULL");
 	}
 
-	if (type == HTTP) {
+	if (http) {
 		table_ptr = TABLE_HTML;
 	} else {
 		table_ptr = TABLE_PLAIN;
@@ -109,7 +114,6 @@ dir_to_table(const enum http_type type, const char *dir)
 	    "Size",
 	    "Filename");
 
-	table_buffer = NULL;
 	table_buffer = concat(table_buffer, buffer);
 	memset(buffer, '\0', (size_t)TABLE_BUFFER_SIZE);
 
@@ -132,6 +136,22 @@ dir_to_table(const enum http_type type, const char *dir)
 
 	free_dir(d);
 	d = NULL;
+
+	if (http) {
+		/* if upload allowed, print upload form */
+		if (upload) {
+			char *buff;
+			size_t length;
+
+			length = strlen(HTTP_UPLOAD) + strlen(directory) + 1;
+			buff = err_malloc(length);
+			snprintf(buff, length, HTTP_UPLOAD, directory);
+			table_buffer = concat(table_buffer, buff);
+			free(buff);
+			buff = NULL;
+		}
+		table_buffer = concat(table_buffer, HTTP_BOT);
+	}
 
 	return table_buffer;
 }

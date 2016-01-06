@@ -9,43 +9,63 @@
 #include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
-#include "http_response.h"
 #include "msg.h"
 #include "handle_post.h"
 
-static int parse_post_body(int, const char *, char **, uint64_t *, uint64_t *);
+static int parse_post_body(int, int, const char *, char **, uint64_t);
 static int buff_contains(int, const char *, size_t, const char *, size_t,
     ssize_t *);
 static int parse_file_header(const char *, size_t, size_t *, char **);
 static int open_file(char **, FILE **, char *);
 
 int
-handle_post(struct client_info *data, struct http_header *http_head)
+handle_post(int msg_id, int sock, struct http_header *request)
 {
 	enum err_status error;
-	uint64_t tmp;
 	char message_buffer[MSG_BUFFER_SIZE];
 	char fmt_size[7];
+	struct http_header response;
+	size_t len;
 
 	error = STAT_OK;
 
-	data->size = http_head->content_length;
-
-	if (!http_head->url) {
+	if (!request->url) {
 		return INV_POST_PATH;
 	}
 
-	data->requested_path = err_malloc(strlen(http_head->url) + 1);
-	memcpy(data->requested_path, http_head->url,
-	    strlen(http_head->url) + 1);
-
-	error = parse_post_body(data->sock, http_head->boundary,
-	    &(data->requested_path), &(data->written), &(data->size));
+	error = parse_post_body(msg_id, sock, request->boundary, &request->url,
+		    request->content_length);
 	if (error) {
 		return error;
 	}
 
-	error = send_201(data->sock, HTTP, &tmp);
+	len = strlen(RESPONSE_201);
+	init_http_header(&response);
+	response.method = RESPONSE;
+	response.status = _201_Created;
+	response.content_length = len;
+	if (request->flags.keep_alive) {
+		response.flags.keep_alive = 1;
+	}
+	if (request->flags.http) {
+		response.content_type = TEXT_HTML;
+		response.flags.http = 1;
+	} else {
+		response.content_type = TEXT_PLAIN;
+		response.flags.http = 0;
+	}
+
+	if (request->flags.http) {
+		char *header;
+
+		header = print_header(&response);
+		error = send_data(sock, header, strlen(header));
+		free(header);
+		if (error) {
+			return error;
+		}
+	}
+	error = send_data(sock, RESPONSE_201, len);
 	if (error) {
 		return error;
 	}
@@ -53,16 +73,16 @@ handle_post(struct client_info *data, struct http_header *http_head)
 	snprintf(message_buffer,
 	    (size_t)MSG_BUFFER_SIZE,
 	    "%s rx: %s",
-	    format_size(data->size, fmt_size),
-	    data->requested_path);
-	msg_print_log(data, FINISHED, message_buffer);
+	    format_size(request->content_length, fmt_size),
+	    request->url);
+	msg_print_log(msg_id, FINISHED, message_buffer);
 
 	return STAT_OK;
 }
 
 static int
-parse_post_body(int sock, const char *boundary, char **requested_path,
-    uint64_t *written, uint64_t *max_size)
+parse_post_body(int msg_id, int sock, const char *boundary, char **url,
+    uint64_t max_size)
 {
 	enum err_status error;
 	char *buff;
@@ -79,11 +99,15 @@ parse_post_body(int sock, const char *boundary, char **requested_path,
 	size_t file_written;
 	ssize_t offset;
 	struct stat s;
+	uint64_t *written;
+	uint64_t wtmp;
 
 	if (2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ) {
 		die(ERR_INFO,
 		    "BUFFSIZE_READ should be > 2 * HTTP_HEADER_LINE_LIMIT");
 	}
+
+	written = err_malloc(sizeof(uint64_t));
 
 	boundary_pos = 0;
 	error = STAT_OK;
@@ -94,12 +118,12 @@ parse_post_body(int sock, const char *boundary, char **requested_path,
 	*written = 0;
 	directory = NULL;
 
-	if (memcmp(*requested_path, "/\0", (size_t)2) == 0) {
+	if (memcmp(*url, "/\0", (size_t)2) == 0) {
 		directory = concat(concat(directory, ROOT_DIR), "/");
 	} else {
 		/* in case requested path is not / */
 		buff = NULL;
-		buff = concat(concat(buff, ROOT_DIR), *requested_path);
+		buff = concat(concat(buff, ROOT_DIR), *url);
 
 		directory = realpath(buff, NULL);
 		free(buff);
@@ -127,9 +151,9 @@ parse_post_body(int sock, const char *boundary, char **requested_path,
 		}
 
 		/* and update request string to a full path */
-		free_me = *requested_path;
-		*requested_path = NULL;
-		*requested_path = concat(*requested_path, directory
+		free_me = *url;
+		*url = NULL;
+		*url = concat(*url, directory
 					+ strlen(ROOT_DIR));
 		free(free_me);
 		free_me = NULL;
@@ -175,18 +199,23 @@ file_head:
 		goto stop_transfer;
 	}
 
+	wtmp = *written;
+	written = msg_hook_new_transfer(msg_id, filename, max_size, "rx");
+	*written = wtmp;
+
 	error = open_file(&filename, &fd, directory);
 	if (error) {
 		goto stop_transfer;
 	}
 
-	/* now move unread buff content to front and fill up with new data */
+	/* now move unread buff content to front and fill up with
+	 * new data */
 	offset = (read_from_socket - (ssize_t)file_head_size);
 	memmove(buff, buff + file_head_size, (size_t)offset);
 	read_from_socket = offset;
 
 	/* buff contains file_content */
-	while (*written <= (*max_size)) {
+	while (*written <= max_size) {
 		/* check buffer for boundry */
 		error = buff_contains(sock, buff, (size_t)read_from_socket,
 			    bound_buff, bound_buff_length, &boundary_pos);
@@ -242,7 +271,7 @@ file_head:
 			goto file_head;
 		}
 	}
-	if (*written > *max_size) {
+	if (*written > max_size) {
 		error = CONTENT_LENGTH_EXT;
 		goto stop_transfer;
 	}

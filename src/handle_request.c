@@ -11,11 +11,8 @@
 #include "defines.h"
 #include "helper.h"
 #include "handle_request.h"
-#include "http_response.h"
 #include "msg.h"
 #include "parse_http.h"
-
-static void init_client_info(struct client_info *);
 
 /*
  * function where each thread starts execution with given client_info
@@ -26,100 +23,77 @@ handle_request(void *ptr)
 	struct client_info *data;
 	enum err_status error;
 	char con_msg[128];
-	struct http_header http_head;
-	size_t length;
+	struct http_header request;
+	int msg_id;
+	int sock;
+	int port;
+	char ip[16];
 
+	/* move values to stack and delete memory from heap */
 	data = (struct client_info *)ptr;
+	sock = data->sock;
+	port = data->port;
+	strncpy(ip, data->ip, 16);
+	free(data);
+	data = NULL;
 
-	if (data->sock < 0) {
+	if (sock < 0) {;
 		die(ERR_INFO, "socket in handle_request is < 0");
 	}
-	snprintf(con_msg, (size_t)128, "connected to port %d.",
-			data->port);
-	msg_print_log(data, CONNECTED, con_msg);
 
-	init_client_info(data);
+	msg_id = msg_hook_add(ip, port);
+
+	snprintf(con_msg, (size_t)128, "connected to port %d.", port);
+	msg_print_log(msg_id, CONNECTED, con_msg);
 
 	/* check if ip is blocked */
-	if (!ip_matches(IP, data->ip)) {
-		shutdown(data->sock, SHUT_RDWR);
-		close(data->sock);
-		msg_print_log(data, ERROR, "ip blocked");
-		msg_hook_cleanup(data);
-
-		return NULL;
+	if (!ip_matches(IP, ip)) {
+		error = IP_BLOCKED;
+		goto disconnect;
 	}
-
-	msg_hook_add(data);
 
 keep_alive:
-
-	error = parse_header(&http_head, data->sock);
+	init_http_header(&request);
+	error = parse_header(&request, sock);
 	if (error) {
-		shutdown(data->sock, SHUT_RDWR);
-		close(data->sock);
-		msg_print_log(data, ERROR, get_err_msg(error));
-		msg_hook_cleanup(data);
-
-		return NULL;
+		goto disconnect;
 	}
 
-	switch (http_head.method) {
-	case MISSING:
-		error = INV_REQ_TYPE;
-		break;
+	switch (request.method) {
 	case GET:
-		if (http_head.range) {
-			data->type = PARTIAL;
-		} else {
-			data->type = DOWNLOAD;
-		}
-		length = strlen(http_head.url);
-		data->requested_path = err_malloc(length + 1);
-		memcpy(data->requested_path, http_head.url, length + 1);
-		error = handle_get(data, &http_head);
+		error = handle_get(msg_id, sock, &request,
+			    ip_matches(UPLOAD_IP, ip));
 		break;
 	case POST:
-		if (!ip_matches(UPLOAD_IP, data->ip)) {
+		if (!ip_matches(UPLOAD_IP, ip)) {
 			error = POST_DISABLED;
 			break;
 		}
-		data->type = UPLOAD;
-		error = handle_post(data, &http_head);
+		error = handle_post(msg_id, sock, &request);
 		break;
 	default:
 		/* not reached */
+		error = INV_REQ_TYPE;
 		break;
 	}
 	if (error) {
-		msg_print_log(data, ERROR, get_err_msg(error));
+		msg_print_log(msg_id, ERROR, get_err_msg(error));
+		error = STAT_OK;
 	}
 
-	if (data->sock != 0 && http_head.con == KEEP_ALIVE) {
-		/* clean up data struct and reinitialize it */
-		if (data->requested_path) {
-			free(data->requested_path);
-			data->requested_path = NULL;
-		}
-		init_client_info(data);
-		delete_http_header(&http_head);
+	if (sock != 0 && request.flags.keep_alive) {
+		delete_http_header(&request);
 		goto keep_alive;
 	}
 
-	delete_http_header(&http_head);
-	shutdown(data->sock, SHUT_RDWR);
-	close(data->sock);
-	msg_hook_cleanup(data);
+disconnect:
+	if (error) {
+		msg_print_log(msg_id, ERROR, get_err_msg(error));
+	}
+	delete_http_header(&request);
+	shutdown(sock, SHUT_RDWR);
+	close(sock);
+	msg_hook_rem(msg_id);
 
 	return NULL;
-}
-
-static void
-init_client_info(struct client_info *data)
-{
-	data->size = 0;
-	data->written = 0;
-	data->last_written = 0;
-	data->requested_path = NULL;
-	data->type = PLAIN;
 }
