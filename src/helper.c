@@ -185,20 +185,18 @@ is_directory(const char *path)
 {
 	struct stat s;
 
-	if (stat(path, &s) == 0) {
-		if (s.st_mode & S_IFDIR) {
-			return 1;
-		} else if (s.st_mode & S_IFREG) {
-			return 0;
-		} else {
-			die("stat(\"%s\") is not a file nor a directory",
-			    path);
-		}
-	} else {
+	if (stat(path, &s) != 0) {
 		die("stat(\"%s\") returned NULL", path);
 	}
 
-	return 0;
+	if (s.st_mode & S_IFDIR) {
+		return 1;
+	} else if (s.st_mode & S_IFREG) {
+		return 0;
+	} else {
+		die("stat(\"%s\") is not a file nor a directory",
+		    path);
+	}
 }
 
 /*
@@ -359,13 +357,13 @@ normalize_ip(char *dst, const char *src)
 	check(strlen(src) > 15, "src length (%lu) > 15.", (ulong)strlen(src));
 
 	if (strlen(src) == 15) {
-		memcpy(dst, src, 15);
+		memcpy(dst, src, (size_t)15);
 		dst[15] = '\0';
 		return dst;
 	}
 
 	if (strlen(src) == 1 && src[0] == 'x') {
-		memcpy(dst, "xxx.xxx.xxx.xxx", 15);
+		memcpy(dst, "xxx.xxx.xxx.xxx", (size_t)15);
 		dst[15] = '\0';
 		return dst;
 	}
@@ -407,17 +405,17 @@ ip_matches(const char *ip_allowed, const char *ip_check)
 	if (strlen(ip_allowed) != 15) {
 		char ip_tmp[16];
 		normalize_ip(ip_tmp, ip_allowed);
-		memcpy(ip_allowed_norm, ip_tmp, 16);
+		memcpy(ip_allowed_norm, ip_tmp, (size_t)16);
 	} else {
-		memcpy(ip_allowed_norm, ip_allowed, 16);
+		memcpy(ip_allowed_norm, ip_allowed, (size_t)16);
 	}
 
 	if (strlen(ip_check) != 15) {
 		char ip_tmp[16];
 		normalize_ip(ip_tmp, ip_check);
-		memcpy(ip_check_norm, ip_tmp, 16);
+		memcpy(ip_check_norm, ip_tmp, (size_t)16);
 	} else {
-		memcpy(ip_check_norm, ip_check, 16);
+		memcpy(ip_check_norm, ip_check, (size_t)16);
 	}
 
 	for (i = 0; i < 15; i++) {

@@ -148,10 +148,12 @@ ncurses_handle_keyboard(void *ptr)
 			/* enable upload for all ip's */
 			upload_allowed = !upload_allowed;
 			if (upload_allowed) {
-				memcpy(upload_ip_buff, CONF.upload_ip, 16);
-				memcpy(CONF.upload_ip, "x", 2);
+				memcpy(upload_ip_buff, CONF.upload_ip,
+				    (size_t)16);
+				memcpy(CONF.upload_ip, "x", (size_t)2);
 			} else {
-				memcpy(CONF.upload_ip, upload_ip_buff, 16);
+				memcpy(CONF.upload_ip, upload_ip_buff,
+				    (size_t)16);
 			}
 			LOCK_TERM;
 			ncurses_draw_header();
@@ -501,9 +503,9 @@ ncurses_draw_header()
 	size_t head_upload_l;
 
 	strcat(tmp, "(");
-	if (!memcmp(CONF.upload_ip, "x", 2)) {
+	if (!memcmp(CONF.upload_ip, "x", (size_t)2)) {
 		strcat(tmp, "all");
-	} else if (!memcmp(CONF.upload_ip, "-", 2)) {
+	} else if (!memcmp(CONF.upload_ip, "-", (size_t)2)) {
 		strcat(tmp, "none");
 	} else {
 		strcat(tmp, CONF.upload_ip);

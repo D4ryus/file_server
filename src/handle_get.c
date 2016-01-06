@@ -137,7 +137,7 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 
 		switch (response.status) {
 		case _200_OK:
-			error = send_file(sock, filename, written, 0,
+			error = send_file(sock, filename, written, (uint64_t)0,
 				    response.content_length - 1);
 			break;
 		case _206_Partial_Content:

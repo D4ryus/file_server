@@ -130,11 +130,6 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	struct stat s;
 	uint64_t *written;
 
-	check(2 * HTTP_HEADER_LINE_LIMIT > BUFFSIZE_READ,
-	    "BUFFSIZE_READ (%d) should be"
-	    "> 2 * HTTP_HEADER_LINE_LIMIT (%d)",
-		BUFFSIZE_READ, HTTP_HEADER_LINE_LIMIT)
-
 	boundary_pos = 0;
 	error = STAT_OK;
 	bound_buff = NULL;
@@ -400,8 +395,6 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 
 	/* not reached */
 	die("i != haystack_size, should not be possible");
-
-	return STAT_OK;
 }
 
 /*

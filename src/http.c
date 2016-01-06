@@ -370,9 +370,9 @@ parse_url(struct http_header *data, char *line)
 
 	/* in case / */
 	if (length == 1 && line[0] == '/') {
-		data->url = malloc(2);
+		data->url = malloc((size_t)2);
 		check_mem(data->url);
-		memcpy(data->url, "/\0", 2);
+		memcpy(data->url, "/\0", (size_t)2);
 
 		return STAT_OK;
 	}
@@ -485,9 +485,9 @@ parse_connection(struct http_header *data, char *line)
 		return INV_CONNECTION;
 	}
 
-	if (length == 5 && !memcmp(line, "close", 5)) {
+	if (length == 5 && !memcmp(line, "close", (size_t)5)) {
 		data->flags.keep_alive = 0;
-	} else if (length == 10 && !memcmp(line, "keep-alive", 10)) {
+	} else if (length == 10 && !memcmp(line, "keep-alive", (size_t)10)) {
 		data->flags.keep_alive = 1;
 	} else {
 		return INV_CONNECTION;
@@ -644,18 +644,18 @@ print_header(struct http_header *data)
 	};
 
 	header = NULL;
-	buf = malloc(HTTP_HEADER_LINE_LIMIT);
+	buf = malloc((size_t)HTTP_HEADER_LINE_LIMIT);
 	check_mem(buf);
 
 	if (data->method == RESPONSE) {
 		/* http reponse */
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
+		snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 		    "HTTP/1.1 %d %s\r\n",
 		    status_table[data->status].id,
 		    status_table[data->status].msg);
 	} else {
 		/* http request (POST or GET) */
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
+		snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 		    "%s %s%s\r\n",
 		    http_method_str[data->method], data->url,
 		    data->flags.http ? " HTTP/1.1" : "");
@@ -671,11 +671,12 @@ print_header(struct http_header *data)
 	} else {
 		tmp = "Connection: close\r\n";
 	}
-	header = concat(header, 2, "Accept-Ranges: bytes\r\n", tmp);
+	header = concat(header, 1, tmp);
+	/* header = concat(header, 2, "Accept-Ranges: bytes\r\n", tmp); */
 
 	if (data->content_type) {
 		if (data->boundary) {
-			snprintf(buf, HTTP_HEADER_LINE_LIMIT,
+			snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 			    "; boundary=%s\r\n",
 			    data->boundary);
 			tmp = buf;
@@ -687,14 +688,14 @@ print_header(struct http_header *data)
 	}
 
 	if (data->content_length) {
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
+		snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 		    "Content-Length: %" PRId64 "\r\n",
 		    data->content_length);
 		header = concat(header, 1, buf);
 	}
 
 	if (data->flags.range) {
-		snprintf(buf, HTTP_HEADER_LINE_LIMIT,
+		snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 		    "Content-Range: "
 			"bytes=%" PRId64 "-%" PRId64 "/%" PRId64 "\r\n",
 		    data->range.from,

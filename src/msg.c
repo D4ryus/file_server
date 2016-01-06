@@ -58,8 +58,6 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	error = 0;
 
-	check(UPDATE_TIMEOUT < 0.0f, "UPDATE_TIMEOUT < 0.0f");
-
 #ifdef NCURSES
 	ncurses_init(thread, attr);
 	if (USE_NCURSES || CONF.verbosity >= 3) {
@@ -75,7 +73,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 		msg_hooks.left_over_rx = 0;
 		msg_hooks.used = 0;
 		msg_hooks.size = 3;
-		msg_hooks.data = calloc(sizeof(struct msg_hook), 3);
+		msg_hooks.data = calloc(sizeof(struct msg_hook), (size_t)3);
 		check_mem(msg_hooks.data);
 		for (i = 0; i < msg_hooks.size; i++) {
 			msg_hooks.data[i].in_use = 0;
@@ -122,7 +120,7 @@ msg_hook_add(char ip[16], int port)
 		cur = &msg_hooks.data[msg_id];
 
 		cur->in_use = 1;
-		strncpy(cur->ip, ip, 16);
+		strncpy(cur->ip, ip, (size_t)16);
 		cur->port = port;
 		cur->trans.name[0] = '\0';
 		cur->trans.type[0] = '\0';
@@ -185,9 +183,9 @@ msg_hook_new_transfer(int msg_id, char *name, uint64_t size, char type[3])
 			    cur->trans.written - cur->trans.last_written;
 		}
 	}
-	strncpy(cur->trans.name, name, NAME_LENGTH);
+	strncpy(cur->trans.name, name, (size_t)NAME_LENGTH);
 	cur->trans.size = size;
-	memcpy(cur->trans.type, type, 3);
+	memcpy(cur->trans.type, type, (size_t)3);
 	cur->trans.written = 0;
 	pthread_mutex_unlock(&msg_hooks.mutex);
 
@@ -201,7 +199,7 @@ msg_hook_update_name(int msg_id, char *name)
 	check(msg_id >= msg_hooks.size,
 	    "given msg_id (%d) >= msg_hooks.size (%d)",
 	    msg_id, msg_hooks.size);
-	strncpy(msg_hooks.data[msg_id].trans.name, name, NAME_LENGTH);
+	strncpy(msg_hooks.data[msg_id].trans.name, name, (size_t)NAME_LENGTH);
 	pthread_mutex_unlock(&msg_hooks.mutex);
 }
 
