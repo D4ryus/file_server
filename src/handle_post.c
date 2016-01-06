@@ -177,7 +177,8 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 		*url = concat(NULL, 1, directory + strlen(CONF.root_dir));
 	}
 
-	buff = err_malloc((size_t)BUFFSIZE_READ);
+	buff = malloc((size_t)BUFFSIZE_READ);
+	check_mem(buff);
 	memset(buff, '\0', (size_t)BUFFSIZE_READ);
 
 	written = msg_hook_new_transfer(msg_id, *url, max_size, "rx");
@@ -365,7 +366,8 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 	/* if we found parts of the needle at the end of haystack */
 	if ((i == haystack_size) && needle_matched) {
 		rest_size = needle_size - needle_matched;
-		rest = err_malloc(rest_size);
+		rest = malloc(rest_size);
+		check_mem(rest);
 		rec = recv(sock, rest, rest_size, MSG_PEEK);
 		if (rec < 0) {
 			free(rest);
@@ -424,7 +426,8 @@ parse_file_header(const char *buff, size_t buff_size, size_t *file_head_size,
 	str_len = 0;
 
 	/* copy the buffer and terminate it with a \0 */
-	header = err_malloc(buff_size + 1);
+	header = malloc(buff_size + 1);
+	check_mem(header);
 	memcpy(header, buff, buff_size);
 	header[buff_size] = '\0';
 
@@ -479,7 +482,8 @@ parse_file_header(const char *buff, size_t buff_size, size_t *file_head_size,
 	if (*filename) {
 		free(*filename);
 	}
-	*filename = err_malloc(str_len + 1);
+	*filename = malloc(str_len + 1);
+	check_mem(*filename);
 	memset(*filename, '\0', str_len + 1);
 	memcpy(*filename, filename_start, str_len);
 
@@ -508,8 +512,9 @@ open_file(char **filename, FILE **fd, char *directory)
 		size_t filename_length;
 
 		filename_length = strlen(found_filename);
-		found_filename = err_realloc(found_filename,
+		found_filename = realloc(found_filename,
 				     filename_length + 3);
+		check_mem(found_filename);
 		found_filename[filename_length] = '.';
 		found_filename[filename_length + 2] = '\0';
 		/* count up until a free filename is found */
@@ -532,7 +537,8 @@ open_file(char **filename, FILE **fd, char *directory)
 	*fd = fopen(found_filename, "w+");
 	check(!*fd, "fopen(\"%s\") returned NULL", found_filename);
 	free(*filename);
-	*filename = err_malloc(strlen(found_filename) + 1);
+	*filename = malloc(strlen(found_filename) + 1);
+	check_mem(*filename);
 	memcpy(*filename, found_filename, strlen(found_filename) + 1);
 	free(found_filename);
 	found_filename = NULL;

@@ -84,7 +84,8 @@ main(const int argc, const char *argv[])
 		}
 #endif
 
-		data = err_malloc(sizeof(struct client_info));
+		data = malloc(sizeof(struct client_info));
+		check_mem(data);
 		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
 		data->port = ntohs(cli_addr.sin_port);
@@ -140,7 +141,8 @@ parse_arguments(const int argc, const char *argv[])
 				    "user specified -l/--log_file without a "
 				    "file");
 			}
-			CONF.log_file = err_malloc(strlen(argv[i]) + 1);
+			CONF.log_file = malloc(strlen(argv[i]) + 1);
+			check_mem(CONF.log_file);
 			strncpy(CONF.log_file, argv[i], strlen(argv[i]) + 1);
 #ifdef NCURSES
 		} else if ((strcmp(argv[i], "-n") == 0)

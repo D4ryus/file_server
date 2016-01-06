@@ -96,7 +96,7 @@ $(OBJ_PATH)%.o: $(SRC_PATH)%.c
 
 .PHONY : clean
 clean :
-	rm $(OBJS) $(EXECUTABLE) .depend
+	rm $(OBJ_PATH)*.o $(EXECUTABLE) .depend
 
 perf :
 	gprof $(EXECUTABLE) gmon.out > $(GPROF_FILE)

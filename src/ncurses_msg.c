@@ -94,7 +94,8 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 
 	ncurses_init_log();
 
-	head_data = (char *)err_malloc(strlen(CONF.root_dir) + 11);
+	head_data = (char *)malloc(strlen(CONF.root_dir) + 11);
+	check_mem(head_data);
 	snprintf(head_data, strlen(CONF.root_dir) + 11,
 	    "(%s)-(%d)", CONF.root_dir, CONF.port);
 
@@ -432,7 +433,8 @@ ncurses_init_log()
 	pthread_mutex_init(&log_buf.mutex, NULL);
 	log_buf.pos = 0;
 	for (i = 0; i < LOG_LINES; i++) {
-		log_buf.data[i] = err_malloc(sizeof(char));
+		log_buf.data[i] = malloc(sizeof(char));
+		check_mem(log_buf.data[i]);
 		log_buf.data[i][0] = '\0';
 	}
 }
@@ -454,7 +456,8 @@ ncurses_push_log(const char *new_msg)
 		free_me = NULL;
 	}
 
-	log_buf.data[log_buf.pos] = err_malloc(strlen(new_msg) + 1);
+	log_buf.data[log_buf.pos] = malloc(strlen(new_msg) + 1);
+	check_mem(log_buf.data[log_buf.pos]);
 	memset(log_buf.data[log_buf.pos], '\0', strlen(new_msg) + 1);
 	strncpy(log_buf.data[log_buf.pos], new_msg, strlen(new_msg));
 

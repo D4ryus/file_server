@@ -160,9 +160,11 @@ get_dir(const char *directory)
 		return NULL;
 	}
 
-	result = (struct dir *)err_malloc(sizeof(struct dir));
+	result = (struct dir *)malloc(sizeof(struct dir));
+	check_mem(result);
 	result->length = 0;
-	result->name = err_malloc(strlen(directory) + 1);
+	result->name = malloc(strlen(directory) + 1);
+	check_mem(result->name);
 	strncpy(result->name, directory, strlen(directory) + 1);
 
 	for (i = 0; (dp = (struct dirent *)readdir(dirp)); i++) {
@@ -254,7 +256,8 @@ dir_to_table(int http, const char *dir, int upload)
 			size_t length;
 
 			length = strlen(HTTP_UPLOAD) + strlen(dir) + 1;
-			buff = err_malloc(length);
+			buff = malloc(length);
+			check_mem(buff);
 			snprintf(buff, length, HTTP_UPLOAD, dir);
 			table_buffer = concat(table_buffer, 1, buff);
 			free(buff);
@@ -315,7 +318,8 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 
 	check(!file, "tried to add file which was NULL");
 
-	combined_path = err_malloc(strlen(directory) + strlen(file) + 2);
+	combined_path = malloc(strlen(directory) + strlen(file) + 2);
+	check_mem(combined_path);
 	memcpy(combined_path, directory, strlen(directory) + 1);
 	combined_path[strlen(directory)] = '/';
 	memcpy(combined_path + strlen(directory) + 1, file, strlen(file) + 1);
@@ -327,8 +331,10 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	free(combined_path);
 	combined_path = NULL;
 
-	new_file = err_malloc(sizeof(struct file));
-	new_file->name = err_malloc(strlen(file) + 1);
+	new_file = malloc(sizeof(struct file));
+	check_mem(new_file);
+	new_file->name = malloc(strlen(file) + 1);
+	check_mem(new_file->name);
 	strncpy(new_file->name, file, strlen(file) + 1);
 
 	if ((sb.st_mode & S_IFMT) == S_IFDIR) {
@@ -346,8 +352,9 @@ add_file_to_dir(struct dir *d, const char *file, const char *directory)
 	new_file->size = sb.st_size;
 
 	/* remalloc directory struct to fit the new filepointer */
-	d = (struct dir *)err_realloc(d, sizeof(struct dir) +
+	d = (struct dir *)realloc(d, sizeof(struct dir) +
 			    ((size_t)(d->length + 1) * sizeof(struct file *)));
+	check_mem(d);
 
 	/* set new ptr to new_file */
 	d->files[d->length] = new_file;

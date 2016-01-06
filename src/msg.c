@@ -75,7 +75,8 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 		msg_hooks.left_over_rx = 0;
 		msg_hooks.used = 0;
 		msg_hooks.size = 3;
-		msg_hooks.data = err_calloc(sizeof(struct msg_hook), 3);
+		msg_hooks.data = calloc(sizeof(struct msg_hook), 3);
+		check_mem(msg_hooks.data);
 		for (i = 0; i < msg_hooks.size; i++) {
 			msg_hooks.data[i].in_use = 0;
 		}
@@ -100,8 +101,9 @@ msg_hook_add(char ip[16], int port)
 		/* if full, realloc new space and start search (i) there */
 		next_free = msg_hooks.size;
 		msg_hooks.size += 10;
-		msg_hooks.data = err_realloc(msg_hooks.data,
+		msg_hooks.data = realloc(msg_hooks.data,
 		    sizeof(struct msg_hook) * (size_t)msg_hooks.size);
+		check_mem(msg_hooks.data);
 		for (i = next_free; i < msg_hooks.size; i++) {
 			msg_hooks.data[i].in_use = 0;
 		}
@@ -306,7 +308,8 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 	t = time(NULL);
 	check(t == -1, "time(NULL) returned -1");
 
-	tmp = err_malloc(sizeof(struct tm));
+	tmp = malloc(sizeof(struct tm));
+	check_mem(tmp);
 	tmp = localtime_r(&t, tmp);
 
 	check(!tmp, "localtime() returned NULL");

@@ -281,7 +281,7 @@ get_mime_type(const char *file_name)
 
 /*
  * gets a line from socket, and writes it to buffer
- * buffer will be err_malloc'ed by get_line.
+ * buffer will be alloced by get_line.
  * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be free'd and set to NULL on error
  * buffer will always be terminated with \0
@@ -295,7 +295,8 @@ get_line(int sock, char **buff)
 	char cur_char;
 
 	buf_size = 256;
-	*buff = (char *)err_malloc(buf_size);
+	*buff = (char *)malloc(buf_size);
+	check_mem(*buff);
 	memset(*buff, '\0', buf_size);
 
 	for (bytes_read = 0 ;; bytes_read++) {
@@ -313,7 +314,8 @@ get_line(int sock, char **buff)
 				*buff = NULL;
 				return HTTP_HEAD_LINE_EXT;
 			}
-			*buff = err_realloc((*buff), buf_size);
+			*buff = realloc((*buff), buf_size);
+			check_mem(*buff);
 			memset(*buff + buf_size - 128, '\0', (size_t)128);
 		}
 
@@ -368,7 +370,8 @@ parse_url(struct http_header *data, char *line)
 
 	/* in case / */
 	if (length == 1 && line[0] == '/') {
-		data->url = err_malloc(2);
+		data->url = malloc(2);
+		check_mem(data->url);
 		memcpy(data->url, "/\0", 2);
 
 		return STAT_OK;
@@ -380,7 +383,8 @@ parse_url(struct http_header *data, char *line)
 		length = length - 1;
 	}
 
-	data->url = err_malloc(length + 1);
+	data->url = malloc(length + 1);
+	check_mem(data->url);
 
 	/* go over request and replace http codes */
 	for (i = 0, url_pos = 0; i < length; i++, url_pos++) {
@@ -501,7 +505,8 @@ parse_host(struct http_header *data, char *line)
 	if (!length) {
 		return INV_HOST;
 	}
-	data->host = err_malloc(length + 1);
+	data->host = malloc(length + 1);
+	check_mem(data->host);
 	memcpy(data->host, line, length + 1);
 
 	return STAT_OK;
@@ -599,7 +604,8 @@ parse_content_type(struct http_header *data, char *line)
 	if (length < 1) {
 		return BOUNDARY_MISSING;
 	}
-	data->boundary = err_malloc(length + 1);
+	data->boundary = malloc(length + 1);
+	check_mem(data->boundary);
 	memcpy(data->boundary, tmp, length + 1);
 
 	return STAT_OK;
@@ -638,7 +644,8 @@ print_header(struct http_header *data)
 	};
 
 	header = NULL;
-	buf = err_malloc(HTTP_HEADER_LINE_LIMIT);
+	buf = malloc(HTTP_HEADER_LINE_LIMIT);
+	check_mem(buf);
 
 	if (data->method == RESPONSE) {
 		/* http reponse */

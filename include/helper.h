@@ -22,6 +22,11 @@
 	die(fmt, ##__VA_ARGS__); \
     }
 
+#define check_mem(ptr) \
+    if (!(ptr)) { \
+	die("Out of memory.") \
+    }
+
 /* prints the given message as warning + FILE LINE func */
 #define warn(fmt, ...) \
     fprintf(stderr, "%s:%d:%s: warning: " fmt "\n", \
@@ -39,9 +44,6 @@ uint64_t err_string_to_val(const char *);
 char *concat(char *, int, ...);
 int is_directory(const char *);
 char *format_size(uint64_t, char[7]);
-void *err_malloc(size_t);
-void *err_calloc(size_t, size_t);
-void *err_realloc(void *, size_t);
 void usage_quit(const char *, const char *);
 const char *get_err_msg(enum err_status);
 char *normalize_ip(char *, const char *);
