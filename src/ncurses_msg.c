@@ -117,15 +117,34 @@ ncurses_handle_keyboard(void *ptr)
 	int upload_allowed;
 	int resize_lines;
 	char upload_ip_buff[16];
+	int ret;
+	struct timespec tsleep;
+
+	/* will round down, what we want */
+	tsleep.tv_sec = (long)KEYBOARD_TIMEOUT;
+	tsleep.tv_nsec = (long)((KEYBOARD_TIMEOUT - (float)tsleep.tv_sec)
+			* 1000000000L);
 
 	noecho();
-	nodelay(stdscr, (bool)FALSE);
+	nodelay(stdscr, (bool)TRUE);
 
 	upload_allowed = 0;
 	resize_lines = 0;
 	while (1) {
 		ch = 0;
-		ch = (char)getch();
+		LOCK_TERM;
+		if (!stdscr) {
+			ret = ERR;
+		} else {
+			ret = (char)wgetch(stdscr);
+		}
+		UNLOCK_TERM;
+		if (ret == ERR) {
+			/* sleep here */
+			nanosleep(&tsleep, NULL);
+			continue;
+		}
+		ch = (char)ret;
 		switch (ch) {
 		case '0':
 		case '1':

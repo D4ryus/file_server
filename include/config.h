@@ -25,9 +25,14 @@ extern struct config CONF;
 #define VERSION "0.4"
 
 /*
- * ncurses status timeout
+ * ncurses status update timeout
  */
 #define UPDATE_TIMEOUT 0.2f
+
+/*
+ * ncurses keyboard pull timeout
+ */
+#define KEYBOARD_TIMEOUT 0.1f
 
 /*
  * maximum characters per header field
