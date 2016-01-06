@@ -14,7 +14,7 @@
 
 static int parse_post_body(int, int, const char *, char **, uint64_t);
 static int buff_contains(int, const char *, size_t, const char *, size_t,
-    ssize_t *);
+    ssize_t *, uint64_t *);
 static int parse_file_header(const char *, size_t, size_t *, char **);
 static int open_file(char **, FILE **, char *);
 
@@ -91,7 +91,6 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	char *filename;
 	char *directory;
 	size_t file_head_size;
-	char *free_me;
 	FILE *fd;
 	size_t bound_buff_length;
 	ssize_t boundary_pos;
@@ -110,7 +109,6 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 	error = STAT_OK;
 	bound_buff = NULL;
 	filename = NULL;
-	free_me = NULL;
 	fd = NULL;
 	directory = NULL;
 
@@ -146,13 +144,10 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 			return INV_POST_PATH;
 		}
 
-		/* and update request string to a full path */
-		free_me = *url;
+		/* and update url to full path */
+		free(*url);
 		*url = NULL;
-		*url = concat(*url, directory
-					+ strlen(ROOT_DIR));
-		free(free_me);
-		free_me = NULL;
+		*url = concat(*url, directory + strlen(ROOT_DIR));
 	}
 
 	buff = err_malloc((size_t)BUFFSIZE_READ);
@@ -188,6 +183,7 @@ parse_post_body(int msg_id, int sock, const char *boundary, char **url,
 file_head:
 	/* buff contains file head */
 	if ((read_from_socket == 4) && !memcmp(buff, "--\r\n", (size_t)4)) {
+		/* upload finished */
 		error = STAT_OK;
 		goto stop_transfer;
 	}
@@ -214,7 +210,7 @@ file_head:
 	while (*written <= max_size) {
 		/* check buffer for boundry */
 		error = buff_contains(sock, buff, (size_t)read_from_socket,
-			    bound_buff, bound_buff_length, &boundary_pos);
+			    bound_buff, bound_buff_length, &boundary_pos, written);
 		if (error) {
 			goto stop_transfer;
 		}
@@ -305,7 +301,7 @@ stop_transfer:
  */
 static int
 buff_contains(int sock, const char *haystack, size_t haystack_size,
-    const char *needle, size_t needle_size, ssize_t *pos)
+    const char *needle, size_t needle_size, ssize_t *pos, uint64_t *written)
 {
 	size_t i;
 	size_t needle_matched;
@@ -339,7 +335,7 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 	}
 
 	/* if we found parts of the needle at the end of haystack */
-	if ((i == haystack_size) && (needle_matched != 0)) {
+	if ((i == haystack_size) && needle_matched) {
 		rest_size = needle_size - needle_matched;
 		rest = err_malloc(rest_size);
 		rec = recv(sock, rest, rest_size, MSG_PEEK);
@@ -352,8 +348,8 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 			die(ERR_INFO,
 			    "peek did return less than rest_size");
 		}
-		if (memcmp(rest, needle + needle_matched,
-		        strlen(needle + needle_matched)) == 0) {
+		if (!memcmp(rest, needle + needle_matched,
+		        strlen(needle + needle_matched))) {
 			rec = recv(sock, rest, rest_size, 0);
 			free(rest);
 			rest = NULL;
@@ -361,6 +357,7 @@ buff_contains(int sock, const char *haystack, size_t haystack_size,
 				die(ERR_INFO,
 				    "the data i just peeked is gone");
 			}
+			*written += (uint64_t)rec;
 			*pos = (ssize_t)(haystack_size - needle_matched);
 			return STAT_OK;
 		} else {
