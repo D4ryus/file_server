@@ -155,8 +155,8 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 
 		format_size(response.content_length, fmt_size);
 		snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-		    "%s tx: %s",
-		    fmt_size, request->url);
+		    "%s %s: %s",
+		    fmt_size, tmp, request->url);
 		break;
 	case _403_Forbidden:
 	case _404_Not_Found:
