@@ -5,18 +5,24 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/* config struct, these value may change if specified as args */
 struct config {
-	char        *root_dir;
-	uint16_t    port;
-	uint8_t     verbosity;
-	char        ip[16];
-	char        upload_ip[16];
-	int         color;
-	char        *log_file;
-	FILE        *log_file_d;
+	char     *root_dir;
+	uint16_t port;
+	uint8_t  verbosity;
+	char     ip[16];
+	char     upload_ip[16];
+	int      color;
+	char     *log_file;
+	FILE     *log_file_d;
 };
 
 extern struct config CONF;
+
+/*
+ * version string
+ */
+#define VERSION "0.4"
 
 /*
  * ncurses status timeout

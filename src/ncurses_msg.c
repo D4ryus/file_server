@@ -33,7 +33,7 @@ static int log_heigth;
 
 static char *head_body_status = "Current connections: ";
 static char *head_body_log = "Log messages: ";
-static char *head_info = "File Server version 0.3";
+static char *head_info = "File Server version " VERSION;
 
 /* contains header string with rootpath and port */
 static char *head_data;
