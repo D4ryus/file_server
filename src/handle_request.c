@@ -128,6 +128,11 @@ keep_alive:
 		goto disconnect;
 	}
 
+	if (request.method == RESPONSE) {
+		error = INV_REQ_TYPE;
+		goto disconnect;
+	}
+
 	init_http_header(&response);
 	generate_response_header(&request, &response);
 
