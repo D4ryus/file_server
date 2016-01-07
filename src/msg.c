@@ -123,7 +123,7 @@ msg_hook_add(char ip[16], int port)
 		strncpy(cur->ip, ip, (size_t)16);
 		cur->port = port;
 		cur->trans.name[0] = '\0';
-		cur->trans.type[0] = '\0';
+		strncpy(cur->trans.type, "--", 3);
 		cur->trans.size = 0;
 		cur->trans.written = 0;
 		cur->trans.last_written = 0;
@@ -255,6 +255,7 @@ msg_print_loop(void *ignored)
 				cur->trans.last_written = 0;
 				cur->trans.written = 0;
 				cur->trans.name[0] = '\0';
+				memcpy(cur->trans.type, "--", (size_t)3);
 			}
 			position++;
 		}
