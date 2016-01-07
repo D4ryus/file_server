@@ -97,10 +97,8 @@ ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 	/* ncurses_organize_windows will rearrange windows */
 	ncurses_organize_windows(1);
 
-	/* if upload is enabled, handle keys from keyboard */
 	error = pthread_create(thread, attr, &ncurses_handle_keyboard, NULL);
-	check(error != 0,
-	    "pthread_create(ncurses_handle_keyboard) returned %d", error);
+	check(error, "pthread_create(ncurses_handle_keyboard)");
 }
 
 static void *

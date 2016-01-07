@@ -60,7 +60,7 @@ main(const int argc, const char *argv[])
 
 	/* start extra thread to handle signals */
 	error = pthread_create(&thread, &attr, &sig_handler, (void *)&set);
-	check(error, "pthread_create(ncurses_resize_handler)");
+	check(error, "pthread_create(sig_handler)");
 
 	msg_init(&thread, &attr);
 
@@ -107,8 +107,7 @@ main(const int argc, const char *argv[])
 		data->port = ntohs(cli_addr.sin_port);
 
 		error = pthread_create(&thread, &attr, &handle_request, data);
-		check(error != 0, "pthread_create(handle_request) returned %d",
-		    error);
+		check(error, "pthread_create(handle_request)");
 	}
 
 	/* not reached */

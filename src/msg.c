@@ -80,7 +80,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 		}
 
 		error = pthread_create(thread, attr, &msg_print_loop, NULL);
-		check(error != 0, "pthread_create() returned %d", error);
+		check(error, "pthread_create(msg_print_loop)");
 	}
 }
 
