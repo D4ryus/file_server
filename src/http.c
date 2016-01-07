@@ -184,7 +184,8 @@ parse_header(struct http_header *data, int sock)
 	char *line;
 	int err;
 	int i;
-	size_t length;
+	size_t key_length;
+	size_t line_length;
 	int table_size;
 
 	struct http_keyword {
@@ -210,13 +211,17 @@ parse_header(struct http_header *data, int sock)
 	if (err) {
 		return err;
 	}
+	line_length = strlen(line);
 
-	while (strlen(line) != 0) {
+	while (line_length != 0) {
 		for (i = 0; i < table_size; i++) {
-			length = strlen(parse_table[i].key);
-			if (strncmp(parse_table[i].key, line, length) == 0) {
+			key_length = strlen(parse_table[i].key);
+			if (line_length < key_length) {
+				continue;
+			}
+			if (!memcmp(parse_table[i].key, line, key_length)) {
 				err = parse_table[i].parse(data,
-					  line + length);
+					  line + key_length);
 				if (err) {
 					delete_http_header(data);
 					return err;
@@ -230,6 +235,7 @@ parse_header(struct http_header *data, int sock)
 			delete_http_header(data);
 			return err;
 		}
+		line_length = strlen(line);
 	}
 	free(line);
 	line = NULL;
