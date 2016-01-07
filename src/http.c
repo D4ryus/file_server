@@ -487,7 +487,9 @@ parse_connection(struct http_header *data, char *line)
 
 	if (length == 5 && !memcmp(line, "close", (size_t)5)) {
 		data->flags.keep_alive = 0;
-	} else if (length == 10 && !memcmp(line, "keep-alive", (size_t)10)) {
+	} else if (length == 10
+	    && (!memcmp(line, "keep-alive", (size_t)10)
+	        || !memcmp(line, "Keep-Alive", (size_t)10))) {
 		data->flags.keep_alive = 1;
 	} else {
 		return INV_CONNECTION;
