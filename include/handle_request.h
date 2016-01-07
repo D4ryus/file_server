@@ -7,7 +7,6 @@
 struct client_info {
 	/* will be set by main thread */
 	char ip[16]; /* ip from client */
-	int port; /* port from client */
 	int sock; /* socket descriptor */
 };
 

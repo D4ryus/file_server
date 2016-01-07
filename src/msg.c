@@ -25,7 +25,6 @@ static const char *get_status_bar(uint8_t);
 struct msg_hook {
 	uint8_t in_use : 1;
 	char ip[16];
-	int port;
 	/* dynamic array of transfer_hooks */
 	struct {
 		char name[NAME_LENGTH];
@@ -85,7 +84,7 @@ msg_init(pthread_t *thread, const pthread_attr_t *attr)
 }
 
 int
-msg_hook_add(char ip[16], int port)
+msg_hook_add(char ip[16])
 {
 	int i;
 	int msg_id;
@@ -121,7 +120,6 @@ msg_hook_add(char ip[16], int port)
 
 		cur->in_use = 1;
 		strncpy(cur->ip, ip, (size_t)16);
-		cur->port = port;
 		cur->trans.name[0] = '\0';
 		strncpy(cur->trans.type, "--", 3);
 		cur->trans.size = 0;

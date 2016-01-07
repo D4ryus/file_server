@@ -103,7 +103,6 @@ main(const int argc, const char *argv[])
 		check_mem(data);
 		data->sock = client_socket;
 		strncpy(data->ip, inet_ntoa(cli_addr.sin_addr), (size_t)16);
-		data->port = ntohs(cli_addr.sin_port);
 
 		error = pthread_create(&thread, &attr, &handle_request, data);
 		check(error, "pthread_create(handle_request)");

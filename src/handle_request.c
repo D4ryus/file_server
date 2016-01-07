@@ -25,22 +25,20 @@ handle_request(void *ptr)
 	struct http_header request;
 	int msg_id;
 	int sock;
-	int port;
 	char ip[16];
 
 	/* move values to stack and delete memory from heap */
 	data = (struct client_info *)ptr;
 	sock = data->sock;
-	port = data->port;
 	strncpy(ip, data->ip, (size_t)16);
 	free(data);
 	data = NULL;
 
 	check(sock < 0, "socket in handle_request is %d", sock);
 
-	msg_id = msg_hook_add(ip, port);
+	msg_id = msg_hook_add(ip);
 
-	snprintf(con_msg, (size_t)128, "connected to port %d.", port);
+	snprintf(con_msg, (size_t)128, "client connected.");
 	msg_print_log(msg_id, CONNECTED, con_msg);
 
 keep_alive:
