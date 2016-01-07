@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "file_list.h"
-#include "helper.h"
+#include "misc.h"
 
 struct file {
 	char *name;

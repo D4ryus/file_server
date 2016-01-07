@@ -1,5 +1,5 @@
-#ifndef HELPER_H
-#define HELPER_H
+#ifndef MISC_H
+#define MISC_H
 
 #include <stdint.h>
 

@@ -13,7 +13,7 @@ TMP_DEPEND=$(EXECUTABLE)_depend
 OBJS = $(OBJ_PATH)file_list.o \
        $(OBJ_PATH)config.o \
        $(OBJ_PATH)handle_request.o \
-       $(OBJ_PATH)helper.o \
+       $(OBJ_PATH)misc.o \
        $(OBJ_PATH)main.o \
        $(OBJ_PATH)msg.o \
        $(OBJ_PATH)http.o \

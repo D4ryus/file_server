@@ -8,7 +8,7 @@
 #include "config.h"
 #include "handle_post.h"
 #include "handle_get.h"
-#include "helper.h"
+#include "misc.h"
 #include "handle_request.h"
 #include "msg.h"
 #include "http.h"

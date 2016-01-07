@@ -13,7 +13,7 @@
 #include "handle_request.h"
 #include "msg.h"
 #include "types.h"
-#include "helper.h"
+#include "misc.h"
 
 #ifdef NCURSES
 #include "ncurses_msg.h"

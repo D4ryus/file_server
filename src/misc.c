@@ -11,7 +11,7 @@
 #include <inttypes.h>
 
 #include "config.h"
-#include "helper.h"
+#include "misc.h"
 #include "msg.h"
 
 /*

@@ -6,7 +6,7 @@
 
 #include "config.h"
 #include "http.h"
-#include "helper.h"
+#include "misc.h"
 
 static int get_line(int, char**);
 static int parse_GET(struct http_header *, char *);
@@ -18,7 +18,7 @@ static int parse_range(struct http_header *, char *);
 static int parse_content_length(struct http_header *, char *);
 static int parse_content_type(struct http_header *, char *);
 
-/* sorted and match mime enum in helper.h */
+/* sorted and match mime enum in misc.h */
 static const char *mime_string[] = {
 	"application/gzip",
 	"application/msexcel",

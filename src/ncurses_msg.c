@@ -6,7 +6,7 @@
 
 #include "config.h"
 #include "ncurses_msg.h"
-#include "helper.h"
+#include "misc.h"
 
 #define HEADER_COLOR_ID 1
 

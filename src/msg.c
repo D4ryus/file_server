@@ -9,7 +9,7 @@
 
 #include "config.h"
 #include "msg.h"
-#include "helper.h"
+#include "misc.h"
 
 #ifdef NCURSES
 #include "ncurses_msg.h"
