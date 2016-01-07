@@ -673,8 +673,7 @@ print_header(struct http_header *data)
 	} else {
 		tmp = "Connection: close\r\n";
 	}
-	header = concat(header, 1, tmp);
-	/* header = concat(header, 2, "Accept-Ranges: bytes\r\n", tmp); */
+	header = concat(header, 2, "Accept-Ranges: bytes\r\n", tmp);
 
 	if (data->content_type) {
 		if (data->boundary) {
