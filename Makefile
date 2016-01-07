@@ -16,9 +16,7 @@ OBJS = $(OBJ_PATH)file_list.o \
        $(OBJ_PATH)misc.o \
        $(OBJ_PATH)main.o \
        $(OBJ_PATH)msg.o \
-       $(OBJ_PATH)http.o \
-       $(OBJ_PATH)handle_post.o \
-       $(OBJ_PATH)handle_get.o
+       $(OBJ_PATH)http.o
 
 GPROF_FILE = performance.txt
 

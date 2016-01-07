@@ -119,7 +119,6 @@ main(const int argc, const char *argv[])
 static void *
 sig_handler(void *arg)
 {
-	// DEBUG
 	sigset_t *set;
 	int sig;
 	int err;

@@ -61,7 +61,6 @@ enum err_status {
 	NO_CONTENT_DISP,
 	FILENAME_ERR,
 	CONTENT_LENGTH_EXT,
-	POST_DISABLED,
 	HEADER_LINES_EXT,
 	INV_CONTENT_TYPE,
 	INV_RANGE,
@@ -71,7 +70,7 @@ enum err_status {
 	IP_BLOCKED
 };
 
-int send_data(int, const char *, uint64_t);
+int send_data(int, const char *, uint64_t, uint64_t *);
 int send_file(int, const char *, uint64_t *, uint64_t, uint64_t);
 uint64_t err_string_to_val(const char *);
 char *concat(char *, int, ...);

@@ -21,7 +21,7 @@
  * ZERO_WRITTEN : could not write, 0 bytes written
  */
 int
-send_data(int sock, const char *data, uint64_t length)
+send_data(int sock, const char *data, uint64_t length, uint64_t *written)
 {
 	int sending;
 	size_t max;
@@ -55,6 +55,9 @@ send_data(int sock, const char *data, uint64_t length)
 				return ZERO_WRITTEN;
 			}
 			sent_bytes += (size_t)write_res;
+			if (written) {
+				*written += (uint64_t)write_res;
+			}
 		}
 		cur_pos += (uint64_t)buff_size;
 	}
@@ -108,11 +111,10 @@ send_file(int sock, const char *filename, uint64_t *written, uint64_t from,
 			read_bytes = (size_t)(max - *written);
 			sending = 0;
 		}
-		error = send_data(sock, buffer, (uint64_t)read_bytes);
+		error = send_data(sock, buffer, (uint64_t)read_bytes, written);
 		if (error) {
 			break;
 		}
-		*written += read_bytes;
 	}
 	fclose(fd);
 	free(buffer);
@@ -323,7 +325,6 @@ get_err_msg(enum err_status error)
 	/* NO_CONTENT_DISP    */ "Content-Disposition missing",
 	/* FILENAME_ERR       */ "could not parse filename",
 	/* CONTENT_LENGTH_EXT */ "content length extended",
-	/* POST_DISABLED      */ "post is disabled",
 	/* HEADER_LINES_EXT   */ "too many headerlines",
 	/* INV_CONTENT_TYPE   */ "invalid Content-Type",
 	/* INV_RANGE          */ "invalid Range",

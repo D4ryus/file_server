@@ -591,7 +591,7 @@ parse_content_type(struct http_header *data, char *line)
 	char *tmp;
 	size_t length;
 
-	/* TODO: this will for now just support multipar/form-data */
+	/* TODO: this will for now just support multipart/form-data */
 	tmp = line;
 	if (memcmp(tmp, "multipart/form-data", (size_t)19) != 0) {
 		return INV_CONTENT_TYPE;
