@@ -39,14 +39,14 @@ static const char *RESPONSE_405 =
 int
 handle_get(int msg_id, int sock, struct http_header *request, int upload)
 {
-	char message_buffer[MSG_BUFFER_SIZE];
 	enum err_status error;
 	char fmt_size[7];
 	struct http_header response;
 	char *filename;
 	struct stat sb;
 	uint64_t *written;
-	char *tmp;
+	char *type;
+	char *name;
 
 	filename = NULL;
 	error = STAT_OK;
@@ -54,173 +54,159 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 	init_http_header(&response);
 	generate_response_header(request, &response);
 
-	switch (response.status) {
-	case _200_OK:
-	case _206_Partial_Content:
-		filename = concat(filename, 2, CONF.root_dir, request->url);
+	filename = concat(filename, 2, CONF.root_dir, request->url);
 
-		/* in case its a directory */
-		if (response.status == _200_OK && is_directory(filename)) {
-			char *body;
+	/* in case its a directory */
+	if (response.status == _200_OK && is_directory(filename)) {
+		char *body;
 
-			free(filename);
-			response.content_type = TEXT_HTML;
-			body = dir_to_table(response.flags.http, request->url,
-				   upload);
-			response.content_length = strlen(body);
-			if (request->flags.http) {
-				char *header;
-
-				header = print_header(&response);
-				error = send_data(sock, header,
-					    strlen(header));
-				free(header);
-				if (error) {
-					free(body);
-					return error;
-				}
-			}
-			error = send_data(sock, body, response.content_length);
-			free(body);
-			if (error) {
-				return error;
-			}
-			format_size(response.content_length, fmt_size);
-			snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-			    "%s tx: %s",
-			    fmt_size, request->url);
-
-			break;
-		}
-
-		/* in case its a file */
-
-		check(stat(filename, &sb) == -1, "stat(\"%s\") returned -1",
-		    filename);
-
-		switch (response.status) {
-		case _200_OK:
-			response.content_length = (uint64_t)sb.st_size;
-			tmp = "tx";
-			break;
-		case _206_Partial_Content:
-			if (response.range.to == 0) {
-				response.range.to = (uint64_t)(sb.st_size - 1);
-			}
-			if (response.range.size == 0) {
-				response.range.size = (uint64_t)sb.st_size;
-			}
-			response.content_length = response.range.to
-						- response.range.from + 1;
-			response.range.size = (uint64_t)sb.st_size;
-			tmp = "px";
-			break;
-		default:
-			tmp = "er";
-			/* not reached */
-			break;
-		}
-
+		free(filename);
+		filename = NULL;
+		response.content_type = TEXT_HTML;
+		body = dir_to_table(response.flags.http, request->url,
+			   upload);
+		response.content_length = strlen(body);
 		if (request->flags.http) {
 			char *header;
 
 			header = print_header(&response);
-			error = send_data(sock, header, strlen(header));
+			error = send_data(sock, header,
+				    strlen(header));
 			free(header);
 			if (error) {
-				free(filename);
+				free(body);
 				return error;
 			}
 		}
+		type = "tx";
 		written = msg_hook_new_transfer(msg_id, request->url,
-			      response.content_length, tmp);
-
-		switch (response.status) {
-		case _200_OK:
-			error = send_file(sock, filename, written, (uint64_t)0,
-				    response.content_length - 1);
-			break;
-		case _206_Partial_Content:
-			error = send_file(sock, filename, written,
-				    response.range.from, response.range.to);
-			break;
-		default:
-			/* not reached */
-			break;
-		}
-		free(filename);
+			      response.content_length, type);
+		error = send_data(sock, body, response.content_length);
+		free(body);
 		if (error) {
 			return error;
+		} else {
+			*written = response.content_length;
 		}
 
 		format_size(response.content_length, fmt_size);
-		snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE,
-		    "%s %s: %s",
-		    fmt_size, tmp, request->url);
+		msg_print_log(msg_id, 1, "%s %s: %s", fmt_size, type,
+		    request->url);
+
+		return STAT_OK;
+	}
+
+	/* set resposne.content_length, name and type */
+	switch (response.status) {
+	case _200_OK:
+		check(stat(filename, &sb) == -1, "stat(\"%s\") returned -1",
+		    filename);
+		response.content_length = (uint64_t)sb.st_size;
+		name = request->url;
+		type = "tx";
+		break;
+	case _206_Partial_Content:
+		check(stat(filename, &sb) == -1, "stat(\"%s\") returned -1",
+		    filename);
+		if (response.range.to == 0) {
+			response.range.to = (uint64_t)(sb.st_size - 1);
+		}
+		if (response.range.size == 0) {
+			response.range.size = (uint64_t)sb.st_size;
+		}
+		response.content_length = response.range.to
+					- response.range.from + 1;
+		response.range.size = (uint64_t)sb.st_size;
+		name = request->url;
+		type = "px";
 		break;
 	case _403_Forbidden:
+		response.content_length = strlen(RESPONSE_403);
+		name = "403";
+		type = "tx";
+		break;
 	case _404_Not_Found:
+		response.content_length = strlen(RESPONSE_404);
+		name = "404";
+		type = "tx";
+		break;
 	case _405_Method_Not_Allowed:
-		switch (response.status) {
-		case _403_Forbidden:
-			response.content_length = strlen(RESPONSE_403);
-			break;
-		case _404_Not_Found:
-			response.content_length = strlen(RESPONSE_404);
-			break;
-		case _405_Method_Not_Allowed:
-			response.content_length = strlen(RESPONSE_405);
-			break;
-		default:
-			/* not reached */
-			break;
-		}
-
-		if (request->flags.http) {
-			char *header;
-
-			header = print_header(&response);
-			error = send_data(sock, header, strlen(header));
-			free(header);
-			if (error) {
-				return error;
-			}
-		}
-
-		switch (response.status) {
-		case _403_Forbidden:
-			error = send_data(sock, RESPONSE_403,
-				    response.content_length);
-			tmp = "403";
-			break;
-		case _404_Not_Found:
-			error = send_data(sock, RESPONSE_404,
-				    response.content_length);
-			tmp = "404";
-			break;
-		case _405_Method_Not_Allowed:
-			error = send_data(sock, RESPONSE_404,
-				    response.content_length);
-			tmp = "405";
-			break;
-		default:
-			/* not reached */
-			tmp = "-";
-			break;
-		}
-		if (error) {
-			return error;
-		}
-
-		snprintf(message_buffer, (size_t)MSG_BUFFER_SIZE, "err %s",
-		    tmp);
+		response.content_length = strlen(RESPONSE_405);
+		name = "405";
+		type = "tx";
 		break;
 	default:
 		/* not reached */
+		die("this should not happen, resposne.status: %d",
+		    response.status);
 		break;
 	}
 
-	msg_print_log(msg_id, 2, message_buffer);
+	if (request->flags.http) {
+		char *header;
+
+		header = print_header(&response);
+		error = send_data(sock, header, strlen(header));
+		free(header);
+		if (error) {
+			free(filename);
+			filename = NULL;
+			return error;
+		}
+	}
+
+	written = msg_hook_new_transfer(msg_id, name,
+		      response.content_length, type);
+
+	/* send data */
+	switch (response.status) {
+	case _200_OK:
+		error = send_file(sock, filename, written, (uint64_t)0,
+			    response.content_length - 1);
+		break;
+	case _206_Partial_Content:
+		error = send_file(sock, filename, written,
+			    response.range.from, response.range.to);
+		break;
+	case _403_Forbidden:
+		error = send_data(sock, RESPONSE_403,
+			    response.content_length);
+		break;
+	case _404_Not_Found:
+		error = send_data(sock, RESPONSE_404,
+			    response.content_length);
+		break;
+	case _405_Method_Not_Allowed:
+		error = send_data(sock, RESPONSE_404,
+			    response.content_length);
+		break;
+	default:
+		die("this should not happen, resposne.status: %d",
+		    response.status);
+		break;
+	}
+
+	free(filename);
+	filename = NULL;
+
+	if (error) {
+		return error;
+	} else {
+		/* if there was no error set *written on 403, 404 and 405,
+		 * on 200 and 206 it will be set by send_file() */
+		switch (response.status) {
+		case _403_Forbidden:
+		case _404_Not_Found:
+		case _405_Method_Not_Allowed:
+			*written = response.content_length;
+		default:
+			break;
+		}
+	}
+
+	format_size(response.content_length, fmt_size);
+	msg_print_log(msg_id, 1, "%s %s: %s",
+	    fmt_size, type, name);
 
 	return STAT_OK;
 }

@@ -52,7 +52,6 @@ int
 handle_post(int msg_id, int sock, struct http_header *request)
 {
 	enum err_status error;
-	char message_buffer[MSG_BUFFER_SIZE];
 	char fmt_size[7];
 	struct http_header response;
 	size_t len;
@@ -100,12 +99,9 @@ handle_post(int msg_id, int sock, struct http_header *request)
 		return error;
 	}
 
-	snprintf(message_buffer,
-	    (size_t)MSG_BUFFER_SIZE,
-	    "%s rx: %s",
-	    format_size(request->content_length, fmt_size),
-	    request->url);
-	msg_print_log(msg_id, 2, message_buffer);
+	format_size(request->content_length, fmt_size);
+	msg_print_log(msg_id, 1, "%s rx: %s",
+	    fmt_size, request->url);
 
 	return STAT_OK;
 }

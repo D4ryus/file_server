@@ -286,13 +286,15 @@ msg_print_loop(void *ignored)
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-msg_print_log(int msg_id, int verbosity, const char *message)
+msg_print_log(int msg_id, int verbosity, const char *fmt, ...)
 {
 	char str_time[20];
 	FILE *stream;
 	time_t t;
 	struct tm *tmp;
 	char msg_buffer[MSG_BUFFER_SIZE];
+	char arg_buffer[MSG_BUFFER_SIZE];
+	va_list ap;
 
 #ifdef NCURSES
 	if (!USE_NCURSES && verbosity > CONF.verbosity) {
@@ -316,11 +318,15 @@ msg_print_log(int msg_id, int verbosity, const char *message)
 	free(tmp);
 	tmp = NULL;
 
+	va_start(ap, fmt);
+	vsnprintf(arg_buffer, (size_t)MSG_BUFFER_SIZE, fmt, ap);
+	va_end(ap);
+
 	snprintf(msg_buffer, (size_t)MSG_BUFFER_SIZE,
 	    "%-19s [%15s]: %s",
 	    str_time,
 	    msg_hooks.data[msg_id].ip,
-	    message ? message : "");
+	    arg_buffer);
 
 #ifdef NCURSES
 	ncurses_print_log(msg_buffer);

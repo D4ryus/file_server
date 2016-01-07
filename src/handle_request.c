@@ -21,7 +21,6 @@ handle_request(void *ptr)
 {
 	struct client_info *data;
 	enum err_status error;
-	char con_msg[128];
 	struct http_header request;
 	int msg_id;
 	int sock;
@@ -38,8 +37,7 @@ handle_request(void *ptr)
 
 	msg_id = msg_hook_add(ip);
 
-	snprintf(con_msg, (size_t)128, "client connected.");
-	msg_print_log(msg_id, 2, con_msg);
+	msg_print_log(msg_id, 2, "connected.");
 
 keep_alive:
 	init_http_header(&request);
@@ -73,8 +71,7 @@ keep_alive:
 		break;
 	}
 	if (error) {
-		msg_print_log(msg_id, 1, get_err_msg(error));
-		error = STAT_OK;
+		goto disconnect;
 	}
 
 	if (sock != 0 && request.flags.keep_alive) {
@@ -84,7 +81,10 @@ keep_alive:
 
 disconnect:
 	if (error) {
-		msg_print_log(msg_id, 1, get_err_msg(error));
+		msg_print_log(msg_id, 2, "disconnected. (%s)",
+		    get_err_msg(error));
+	} else {
+		msg_print_log(msg_id, 2, "disconnected.");
 	}
 	delete_http_header(&request);
 	shutdown(sock, SHUT_RDWR);
