@@ -2,9 +2,7 @@
 #define MISC_H
 
 #include <stdint.h>
-
-#include "errno.h"
-#include "types.h"
+#include <errno.h>
 
 /* prints error message + FILE, LINE, func and errno string */
 #define die(fmt, ...) \
@@ -37,6 +35,41 @@
     if ((cond)) { \
 	warn(fmt, ##__VA_ARGS__); \
     }
+
+/*
+ * intern error enum, used as return value from functions
+ * see misc.c get_err_msg() for mapping to string values.
+ */
+enum err_status {
+	STAT_OK = 0,
+	WRITE_CLOSED,
+	ZERO_WRITTEN,
+	CLOSED_CON,
+	EMPTY_MESSAGE,
+	INV_REQ_TYPE,
+	INV_GET,
+	INV_POST,
+	CON_LENGTH_MISSING,
+	BOUNDARY_MISSING,
+	FILESIZE_ZERO,
+	WRONG_BOUNDRY,
+	HTTP_HEAD_LINE_EXT,
+	FILE_HEAD_LINE_EXT,
+	POST_NO_FILENAME,
+	NO_FREE_SPOT,
+	FILE_ERROR,
+	NO_CONTENT_DISP,
+	FILENAME_ERR,
+	CONTENT_LENGTH_EXT,
+	POST_DISABLED,
+	HEADER_LINES_EXT,
+	INV_CONTENT_TYPE,
+	INV_RANGE,
+	INV_POST_PATH,
+	INV_CONNECTION,
+	INV_HOST,
+	IP_BLOCKED
+};
 
 int send_data(int, const char *, uint64_t);
 int send_file(int, const char *, uint64_t *, uint64_t, uint64_t);

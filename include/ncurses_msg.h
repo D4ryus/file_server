@@ -1,8 +1,6 @@
 #ifndef MESSAGES_NCURSES_H
 #define MESSAGES_NCURSES_H
 
-#include "types.h"
-
 void ncurses_init(pthread_t *, const pthread_attr_t *);
 void ncurses_print_log(const char *);
 void ncurses_print_status(const char *message, int position);

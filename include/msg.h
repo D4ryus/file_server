@@ -3,8 +3,6 @@
 
 #include <pthread.h>
 
-#include "types.h"
-
 /*
  * message verbosity
  */

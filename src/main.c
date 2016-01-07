@@ -12,7 +12,6 @@
 #include "config.h"
 #include "handle_request.h"
 #include "msg.h"
-#include "types.h"
 #include "misc.h"
 
 #ifdef NCURSES

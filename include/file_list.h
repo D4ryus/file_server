@@ -1,7 +1,6 @@
 #ifndef FILE_LIST_H
 #define FILE_LIST_H
 
-#include "types.h"
 #include "http.h"
 
 struct dir {
