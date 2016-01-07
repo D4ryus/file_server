@@ -133,6 +133,7 @@ keep_alive:
 
 	switch (request.method) {
 	case GET:
+	case HEAD:
 		filename = concat(filename, 2, CONF.root_dir, request.url);
 		break;
 	case POST:
@@ -230,7 +231,14 @@ keep_alive:
 		      type);
 
 	/* and send the actual response (body) */
-	if (is_dir) {
+	if (request.method == HEAD) {
+		/* if method HEAD, dont send body, but dont forget to
+		 * cleanup dir_body if it is a dir*/
+		if (is_dir) {
+			free(dir_body);
+			dir_body = NULL;
+		}
+	} else if (is_dir) {
 		error = send_data(sock, dir_body, response.content_length,
 		    written);
 		free(dir_body);
@@ -244,7 +252,6 @@ keep_alive:
 	} else if (response.status ==_206_Partial_Content) {
 		error = send_file(sock, filename, written, response.range.from,
 			    response.range.to);
-
 	} else if (response.status ==_403_Forbidden) {
 		error = send_data(sock, RESPONSE_403, response.content_length,
 		    written);
@@ -732,7 +739,8 @@ generate_response_header(struct http_header *request,
     struct http_header *response)
 {
 	response->method = RESPONSE;
-	if (request->method == GET) {
+	if (request->method == GET
+	    || request->method == HEAD) {
 		response->status = get_response_status(&request->url);
 	}
 	response->content_type = get_mime_type(request->url);

@@ -11,6 +11,7 @@
 static int get_line(int, char**);
 static int parse_GET(struct http_header *, char *);
 static int parse_POST(struct http_header *, char *);
+static int parse_HEAD(struct http_header *, char *);
 static int parse_url(struct http_header *, char *);
 static int parse_host(struct http_header *, char *);
 static int parse_connection(struct http_header *, char *);
@@ -194,6 +195,7 @@ parse_header(struct http_header *data, int sock)
 	static struct http_keyword parse_table[] = {
 		{ "GET ",             parse_GET },
 		{ "POST ",            parse_POST },
+		{ "HEAD ",            parse_HEAD },
 		{ "Host: ",           parse_host },
 		{ "Connection: ",     parse_connection },
 		{ "Range: ",          parse_range },
@@ -344,6 +346,13 @@ static int
 parse_POST(struct http_header *data, char *line)
 {
 	data->method = POST;
+	return parse_url(data, line);
+}
+
+static int
+parse_HEAD(struct http_header *data, char *line)
+{
+	data->method = HEAD;
 	return parse_url(data, line);
 }
 

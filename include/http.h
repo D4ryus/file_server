@@ -5,6 +5,7 @@
 
 enum http_method {
 	RESPONSE = 0,
+	HEAD,
 	GET,
 	POST
 };
