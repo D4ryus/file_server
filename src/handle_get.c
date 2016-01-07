@@ -220,7 +220,7 @@ handle_get(int msg_id, int sock, struct http_header *request, int upload)
 		break;
 	}
 
-	msg_print_log(msg_id, FINISHED, message_buffer);
+	msg_print_log(msg_id, 2, message_buffer);
 
 	return STAT_OK;
 }

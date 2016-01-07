@@ -39,7 +39,7 @@ handle_request(void *ptr)
 	msg_id = msg_hook_add(ip);
 
 	snprintf(con_msg, (size_t)128, "client connected.");
-	msg_print_log(msg_id, CONNECTED, con_msg);
+	msg_print_log(msg_id, 2, con_msg);
 
 keep_alive:
 	init_http_header(&request);
@@ -73,7 +73,7 @@ keep_alive:
 		break;
 	}
 	if (error) {
-		msg_print_log(msg_id, ERROR, get_err_msg(error));
+		msg_print_log(msg_id, 1, get_err_msg(error));
 		error = STAT_OK;
 	}
 
@@ -84,7 +84,7 @@ keep_alive:
 
 disconnect:
 	if (error) {
-		msg_print_log(msg_id, ERROR, get_err_msg(error));
+		msg_print_log(msg_id, 1, get_err_msg(error));
 	}
 	delete_http_header(&request);
 	shutdown(sock, SHUT_RDWR);

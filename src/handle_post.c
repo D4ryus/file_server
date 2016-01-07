@@ -105,7 +105,7 @@ handle_post(int msg_id, int sock, struct http_header *request)
 	    "%s rx: %s",
 	    format_size(request->content_length, fmt_size),
 	    request->url);
-	msg_print_log(msg_id, FINISHED, message_buffer);
+	msg_print_log(msg_id, 2, message_buffer);
 
 	return STAT_OK;
 }

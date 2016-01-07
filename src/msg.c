@@ -286,7 +286,7 @@ msg_print_loop(void *ignored)
  * prints info (ip port socket) + given type and message to stdout
  */
 void
-msg_print_log(int msg_id, const enum message_type type, const char *message)
+msg_print_log(int msg_id, int verbosity, const char *message)
 {
 	char str_time[20];
 	FILE *stream;
@@ -295,9 +295,9 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 	char msg_buffer[MSG_BUFFER_SIZE];
 
 #ifdef NCURSES
-	if (!USE_NCURSES && type > CONF.verbosity) {
+	if (!USE_NCURSES && verbosity > CONF.verbosity) {
 #else
-	if (type > CONF.verbosity) {
+	if (verbosity > CONF.verbosity) {
 #endif
 		return;
 	}
@@ -327,7 +327,7 @@ msg_print_log(int msg_id, const enum message_type type, const char *message)
 #endif
 
 	/* ncurses printed, check again if we also print to logfile */
-	if (type > CONF.verbosity) {
+	if (verbosity > CONF.verbosity) {
 		return;
 	}
 
