@@ -121,7 +121,7 @@ msg_hook_add(char ip[16])
 		cur->in_use = 1;
 		strncpy(cur->ip, ip, (size_t)16);
 		cur->trans.name[0] = '\0';
-		strncpy(cur->trans.type, "--", 3);
+		strncpy(cur->trans.type, "--", (size_t)3);
 		cur->trans.size = 0;
 		cur->trans.written = 0;
 		cur->trans.last_written = 0;

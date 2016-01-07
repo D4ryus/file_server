@@ -548,7 +548,7 @@ ncurses_draw_header()
 		mvwaddnstr(stdscr, 0, 0, head_info, -1);
 	}
 
-	mvchgat(0, 0, -1, A_NORMAL, HEADER_COLOR_ID, NULL);
+	mvchgat(0, 0, -1, A_NORMAL, (short)HEADER_COLOR_ID, NULL);
 	refresh();
 }
 
