@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <signal.h>
 #include <curses.h>
 #include <string.h>
 #include <pthread.h>
@@ -59,7 +58,6 @@ static void *ncurses_handle_keyboard(void *);
 static void ncurses_draw_header(void);
 static void ncurses_draw_logging_box(void);
 static void ncurses_draw_status_box(void);
-static void ncurses_resize_handler(int);
 
 /*
  * initialises ncurses
@@ -67,16 +65,11 @@ static void ncurses_resize_handler(int);
 void
 ncurses_init(pthread_t *thread, const pthread_attr_t *attr)
 {
-	struct sigaction sa;
 	enum err_status error;
 
 	if (!USE_NCURSES) {
 		return;
 	}
-
-	memset(&sa, 0, sizeof(struct sigaction));
-	sa.sa_handler = ncurses_resize_handler;
-	sigaction(SIGWINCH, &sa, NULL);
 
 	pthread_mutex_init(&ncurses_mutex, NULL);
 
@@ -584,13 +577,4 @@ ncurses_draw_status_box()
 	    + strlen(head_body_status) + 4) {
 		mvwaddstr(win_status, 0, 2, head_body_status);
 	}
-}
-
-/*
- * handles resize signal
- */
-static void
-ncurses_resize_handler(int sig)
-{
-	ncurses_organize_windows(1);
 }

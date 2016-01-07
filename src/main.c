@@ -19,6 +19,7 @@
 #include "ncurses_msg.h"
 #endif
 
+static void *sig_handler(void *);
 static void parse_arguments(int, const char **);
 
 int
@@ -34,8 +35,19 @@ main(const int argc, const char *argv[])
 	struct sockaddr_in serv_addr;
 	struct sockaddr_in cli_addr;
 	struct client_info *data;
+	sigset_t set;
 
 	parse_arguments(argc, argv);
+
+	/* block all specified signals, they will also be blocked on all created
+	 * pthreads. handle these signals @sig_handler below */
+	sigemptyset(&set);
+#ifdef NCURSES
+	sigaddset(&set, SIGWINCH);
+#endif
+	sigaddset(&set, SIGKILL);
+	error = pthread_sigmask(SIG_BLOCK, &set, NULL);
+	check(error, "pthread_sigmask(SIG_BLOCK)");
 
 	/* init a pthread attribute struct */
 	error = pthread_attr_init(&attr);
@@ -45,6 +57,10 @@ main(const int argc, const char *argv[])
 	error = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 	check(error != 0, "pthread_attr_setdetachstate(\"%s\")",
 	    "PTHREAD_CREATE_DETACHED");
+
+	/* start extra thread to handle signals */
+	error = pthread_create(&thread, &attr, &sig_handler, (void *)&set);
+	check(error, "pthread_create(ncurses_resize_handler)");
 
 	msg_init(&thread, &attr);
 
@@ -98,6 +114,40 @@ main(const int argc, const char *argv[])
 	/* not reached */
 	// free(CONF.root_dir);
 	// close(server_socket);
+}
+
+/*
+ * handles all signals
+ */
+static void *
+sig_handler(void *arg)
+{
+	// DEBUG
+	sigset_t *set;
+	int sig;
+	int err;
+
+	set = (sigset_t *)arg;
+	for (;;) {
+		err = sigwait(set, &sig);
+		check(err, "sigwait");
+		printf("sig: %d\n", sig);
+		switch (sig) {
+#ifdef NCURSES
+		case SIGWINCH:
+			ncurses_organize_windows(1);
+			break;
+#endif
+		case SIGKILL:
+#ifdef NCURSES
+			ncurses_terminate();
+#endif
+			exit(EXIT_SUCCESS);
+			break;
+		default:
+			break;
+		}
+	}
 }
 
 static void

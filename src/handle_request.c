@@ -32,7 +32,7 @@ handle_request(void *ptr)
 	data = (struct client_info *)ptr;
 	sock = data->sock;
 	port = data->port;
-	strncpy(ip, data->ip, 16);
+	strncpy(ip, data->ip, (size_t)16);
 	free(data);
 	data = NULL;
 
