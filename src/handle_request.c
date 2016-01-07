@@ -227,8 +227,10 @@ keep_alive:
 	}
 
 	/* now add a transfer hook */
-	written = msg_hook_new_transfer(msg_id, name, response.content_length,
-		      type);
+	if (request.method != HEAD) {
+		written = msg_hook_new_transfer(msg_id, name,
+		    response.content_length, type);
+	}
 
 	/* and send the actual response (body) */
 	if (request.method == HEAD) {
