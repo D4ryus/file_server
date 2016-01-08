@@ -10,7 +10,6 @@ struct client_info {
 	int sock; /* socket descriptor */
 };
 
-
 void *handle_request(void *);
 
 #endif

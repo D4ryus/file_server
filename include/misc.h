@@ -13,8 +13,8 @@
     exit(1);
 
 /* check(condition, error_fmt_string, ...):
- * checks the given condition, if TRUE error message will be printed and program
- * terminated */
+ * checks the given condition, if TRUE error message will be printed and
+ * program terminated */
 #define check(cond, fmt, ...) \
     if ((cond)) { \
 	die(fmt, ##__VA_ARGS__); \

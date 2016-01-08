@@ -269,7 +269,6 @@ dir_to_table(int http, const char *dir, int upload)
 	free(directory);
 	directory = NULL;
 
-
 	return table_buffer;
 }
 

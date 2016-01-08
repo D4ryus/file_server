@@ -352,7 +352,6 @@ msg_print_log(int msg_id, int verbosity, const char *fmt, ...)
 	pthread_mutex_unlock(&print_mutex);
 }
 
-
 /*
  * formats a data_list_node and calls print_info
  */

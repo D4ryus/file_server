@@ -46,8 +46,8 @@ extern struct config CONF;
 
 /*
  * the TABLE_BUFFER_SIZE is the size of the buffer where the table contents
- * will be filled in with snprintf(). so if table is getting bigger change value
- * accordingly.
+ * will be filled in with snprintf(). so if table is getting bigger change
+ * value accordingly.
  */
 #define TABLE_BUFFER_SIZE 1024
 

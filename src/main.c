@@ -38,8 +38,8 @@ main(const int argc, const char *argv[])
 
 	parse_arguments(argc, argv);
 
-	/* block all specified signals, they will also be blocked on all created
-	 * pthreads. handle these signals @sig_handler below */
+	/* block all specified signals, they will also be blocked on all
+	 * created pthreads. handle these signals @sig_handler below */
 	sigemptyset(&set);
 #ifdef NCURSES
 	sigaddset(&set, SIGWINCH);
