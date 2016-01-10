@@ -641,6 +641,7 @@ print_header(struct http_header *data)
 
 	static char *http_method_str[] = {
 		"response",
+		"HEAD",
 		"GET",
 		"POST"
 	};
