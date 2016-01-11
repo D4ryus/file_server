@@ -252,7 +252,7 @@ format_size(uint64_t size, char fmt_size[7])
  * prints usage and quits
  */
 void
-usage_quit(const char *name, const char *msg)
+usage(const char *name, const char *msg)
 {
 	if (msg) {
 		fprintf(stderr, "error: %s\n", msg);
@@ -298,7 +298,6 @@ usage_quit(const char *name, const char *msg)
 	    "	-u, --upload ip\n"
 	    "		enable upload via http POST for users with given ip.\n"
 	    , stdout);
-	exit(1);
 }
 
 const char *

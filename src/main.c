@@ -163,29 +163,33 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--dir") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0],
+				usage(argv[0],
 				    "user specified -d/--dir without a path");
+				exit(EXIT_FAILURE);
 			}
 			root_arg = i;
 		} else if ((strcmp(argv[i], "-u") == 0)
 		    || (strcmp(argv[i], "--upload") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0],
+				usage(argv[0],
 				    "user specified -u/--upload without"
 				    " a ip");
+				exit(EXIT_FAILURE);
 			}
 			memcpy(CONF.upload_ip, argv[i], strlen(argv[i]));
 		} else if ((strcmp(argv[i], "-h") == 0)
 		    || (strcmp(argv[i], "--help") == 0)) {
-			usage_quit(argv[0], NULL);
+			usage(argv[0], NULL);
+			exit(EXIT_SUCCESS);
 		} else if ((strcmp(argv[i], "-l") == 0)
 		    || (strcmp(argv[i], "--log_file") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0],
+				usage(argv[0],
 				    "user specified -l/--log_file without a "
 				    "file");
+				exit(EXIT_FAILURE);
 			}
 			CONF.log_file = malloc(strlen(argv[i]) + 1);
 			check_mem(CONF.log_file);
@@ -199,33 +203,38 @@ parse_arguments(const int argc, const char *argv[])
 		    || (strcmp(argv[i], "--port") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0],
+				usage(argv[0],
 				    "user specified -p/--port without a port");
+				exit(EXIT_FAILURE);
 			}
 			CONF.port = (uint16_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-v") == 0)
 		    || (strcmp(argv[i], "--verbosity") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0], "user specified "
+				usage(argv[0], "user specified "
 				    "-v/--verbosity without a number (values "
 				    "are [0] 1 2 3)");
+				exit(EXIT_FAILURE);
 			}
 			CONF.verbosity = (uint8_t)atoi(argv[i]);
 		} else if ((strcmp(argv[i], "-i") == 0)
 		    || (strcmp(argv[i], "--ip") == 0)) {
 			i++;
 			if (argc <= i) {
-				usage_quit(argv[0], "user specified "
+				usage(argv[0], "user specified "
 				    "-i/--ip without a ip");
+				exit(EXIT_FAILURE);
 			}
 			if (strlen(argv[i]) > 15) {
-				usage_quit(argv[0], "user specified "
+				usage(argv[0], "user specified "
 				    "-i/--ip with ip length > 15.");
+				exit(EXIT_FAILURE);
 			}
 			normalize_ip(CONF.ip, argv[i]);
 		} else {
-			usage_quit(argv[0], "unknown argument specified");
+			usage(argv[0], "unknown argument specified");
+			exit(EXIT_FAILURE);
 		}
 	}
 

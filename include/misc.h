@@ -10,7 +10,7 @@
 	__FILE__, __LINE__, __func__, \
 	errno ? strerror(errno) : "-", \
 	##__VA_ARGS__); \
-    exit(1);
+    exit(EXIT_FAILURE);
 
 /* check(condition, error_fmt_string, ...):
  * checks the given condition, if TRUE error message will be printed and
@@ -76,7 +76,7 @@ uint64_t err_string_to_val(const char *);
 char *concat(char *, int, ...);
 int is_directory(const char *);
 char *format_size(uint64_t, char[7]);
-void usage_quit(const char *, const char *);
+void usage(const char *, const char *);
 const char *get_err_msg(enum err_status);
 char *normalize_ip(char *, const char *);
 int ip_matches(const char *, const char *);

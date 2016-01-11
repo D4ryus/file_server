@@ -200,7 +200,7 @@ ncurses_handle_keyboard(void *ptr)
 		case 'q':
 			/* quit */
 			ncurses_terminate();
-			exit(0);
+			exit(EXIT_SUCCESS);
 			break;
 		default:
 			break;
