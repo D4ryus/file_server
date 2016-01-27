@@ -700,7 +700,7 @@ print_header(struct http_header *data)
 		} else {
 			tmp = "\r\n";
 		}
-		header = concat(header, 3, "Content_Type: ",
+		header = concat(header, 3, "Content-Type: ",
 			     mime_string[data->content_type], tmp);
 	}
 
