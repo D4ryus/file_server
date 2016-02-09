@@ -1,6 +1,8 @@
 #ifndef MISC_H
 #define MISC_H
 
+#include <stdlib.h>
+#include <string.h>
 #include <stdint.h>
 #include <errno.h>
 
