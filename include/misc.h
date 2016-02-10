@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
+#include <sys/time.h>
 
 /* prints error message + FILE, LINE, func and errno string */
 #define die(fmt, ...) \
@@ -36,6 +37,23 @@
 #define check_warn(cond, fmt, ...) \
     if ((cond)) { \
 	warn(fmt, ##__VA_ARGS__); \
+    }
+
+#define dbg(fmt, ...) \
+    fprintf(stderr, "debug: %s:%d:%s: " fmt, \
+	__FILE__, __LINE__, __func__, \
+	##__VA_ARGS__);
+
+#define dbg_time(fn) \
+    { \
+	struct timeval _s_, _e_, _r_; \
+	gettimeofday(&_s_, NULL); \
+	fn; \
+	gettimeofday(&_e_, NULL); \
+	timersub(&_e_, &_s_, &_r_); \
+	dbg("time: %ld.%06ld\n", \
+	    (long int)_r_.tv_sec, \
+	    (long int)_r_.tv_usec); \
     }
 
 /*
