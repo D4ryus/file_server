@@ -185,6 +185,7 @@ keep_alive:
 		type = "tx";
 	} else if (response.status ==_201_Created) {
 		response.content_length = strlen(RESPONSE_201);
+		response.content_type = TEXT_HTML;
 		name = "201";
 		type = "tx";
 	} else if (response.status ==_206_Partial_Content) {
@@ -203,14 +204,17 @@ keep_alive:
 		type = "px";
 	} else if (response.status ==_403_Forbidden) {
 		response.content_length = strlen(RESPONSE_403);
+		response.content_type = TEXT_PLAIN;
 		name = "403";
 		type = "tx";
 	} else if (response.status ==_404_Not_Found) {
 		response.content_length = strlen(RESPONSE_404);
+		response.content_type = TEXT_PLAIN;
 		name = "404";
 		type = "tx";
 	} else if (response.status ==_405_Method_Not_Allowed) {
 		response.content_length = strlen(RESPONSE_405);
+		response.content_type = TEXT_PLAIN;
 		name = "405";
 		type = "tx";
 	} else {
@@ -749,8 +753,10 @@ generate_response_header(struct http_header *request,
 	if (request->method == GET
 	    || request->method == HEAD) {
 		response->status = get_response_status(&request->url);
+		response->content_type = get_mime_type(request->url);
+	} else {
+		response->content_type = TEXT_HTML;
 	}
-	response->content_type = get_mime_type(request->url);
 
 	if (request->flags.range) {
 		if (response->status == _200_OK) {
