@@ -131,11 +131,10 @@ ncurses_handle_keyboard(void *ptr)
 		}
 		UNLOCK_TERM;
 		if (ret == ERR) {
-			/* sleep here */
-			nanosleep(&tsleep, NULL);
-			continue;
+			ch = 0;
+		} else {
+			ch = (char)ret;
 		}
-		ch = (char)ret;
 		switch (ch) {
 		case '0':
 		case '1':
@@ -202,7 +201,9 @@ ncurses_handle_keyboard(void *ptr)
 			ncurses_terminate();
 			exit(EXIT_SUCCESS);
 			break;
+		case 0:
 		default:
+			nanosleep(&tsleep, NULL);
 			break;
 		}
 	}
