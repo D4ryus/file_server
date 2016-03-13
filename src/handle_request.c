@@ -47,9 +47,6 @@ static const char *RESPONSE_201=
 		"<h1>its done!</h1>"
 		"<body>"
 		"<a href='/'>back to Main page</a><br>"
-		"<a href='#' onclick='history.back()'>"
-			"load up another file"
-		"</a>"
 		"</body>"
 	"</center>"
 "</html>";
