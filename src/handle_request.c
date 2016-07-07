@@ -165,8 +165,9 @@ keep_alive:
 		is_dir = 0;
 	}
 
-	/* this big if construct will set the correct response.content_length,
-	 * name and type, switch wont work cause of is_dir :( */
+	/* this big _if_ statement will set the correct
+	 * response.content_length, name and type, switch wont work
+	 * cause of is_dir :( */
 	if (is_dir) {
 		response.content_type = TEXT_HTML;
 		dir_body = dir_to_table(response.flags.http, request.url,
@@ -283,10 +284,6 @@ keep_alive:
 
 	format_size(response.content_length, fmt_size);
 	msg_print_log(msg_id, 1, "%s %s: %s", fmt_size, type, name);
-
-	if (error) {
-		goto disconnect;
-	}
 
 	if (sock != 0 && request.flags.keep_alive) {
 		delete_http_header(&request);

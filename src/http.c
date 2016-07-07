@@ -292,7 +292,7 @@ get_mime_type(const char *file_name)
  * buffer will be alloced by get_line.
  * returns STAT_OK CLOSED_CON or HTTP_HEAD_LINE_EXT
  * buff will be free'd and set to NULL on error
- * buffer will always be terminated with \0
+ * buff will always be terminated with \0
  */
 static int
 get_line(int sock, char **buff)
