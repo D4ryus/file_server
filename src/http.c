@@ -714,7 +714,7 @@ print_header(struct http_header *data)
 	if (data->flags.range) {
 		snprintf(buf, (size_t)HTTP_HEADER_LINE_LIMIT,
 		    "Content-Range: "
-			"bytes=%" PRId64 "-%" PRId64 "/%" PRId64 "\r\n",
+			"bytes %" PRId64 "-%" PRId64 "/%" PRId64 "\r\n",
 		    data->range.from,
 		    data->range.to,
 		    data->range.size);
