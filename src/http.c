@@ -559,29 +559,15 @@ parse_range(struct http_header *data, char *line)
 	}
 
 	/* to */
-	tmp = strtok_r(NULL, "/", &str_tok_ident);
+	tmp = strtok_r(NULL, "\r\n", &str_tok_ident);
 	if (tmp) {
 		data->range.to = err_string_to_val(tmp);
 		if (data->range.to == 0) {
 			return INV_RANGE;
 		}
+		data->range.size = data->range.to - data->range.from;
 	} else {
 		data->range.to = 0;
-	}
-
-	/* size */
-	tmp = strtok_r(NULL, "\r\n", &str_tok_ident);
-	if (tmp) {
-		if (strlen(tmp) == 1 && tmp[0] == '*') {
-			/* TODO: if * is found transfer is streaming */
-			data->range.size = 0;
-		} else {
-			data->range.size = err_string_to_val(tmp);
-			if (data->range.size == 0) {
-				return INV_RANGE;
-			}
-		}
-	} else {
 		data->range.size = 0;
 	}
 
