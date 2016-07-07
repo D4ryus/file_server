@@ -29,6 +29,7 @@ ideas:
     [ ] - fmt string for status msg
     [ ] - implement max connections/threadpools
     [ ] - add startup information
+    [ ] - guile as scripting extension (generate hp with sxml)
     [X] - add debugging option
     [X] - better error handling (die, malloc, check, ...)
     [X] - vaargs on concat
