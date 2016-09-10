@@ -19,7 +19,7 @@ fi
 
 # check if a name is given, if not generate one
 if [ "${IMAGE}" == "" ]; then
-        IMAGE="ss_`date +%F:%T | md5sum - | dd bs=1 count=5 status=none`.jpg"
+        IMAGE="ss_`date +%F_%H-%M-%S`_`date +%F:%T | md5sum - | dd bs=1 count=5 status=none`.jpg"
 fi
 
 # set the full path to image
