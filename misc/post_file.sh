@@ -3,7 +3,7 @@
 # if xclip is installed the link is copied to clipboard
 
 # server is the address curl will post to
-SERVER="http://d4ryus.h4ck.me:8283/upload"
+SERVER="http://address:port/folder"
 # FILE contains the filename, just in case a path is specified
 FILE=$(basename "$1")
 

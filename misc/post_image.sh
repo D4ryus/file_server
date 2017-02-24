@@ -3,7 +3,7 @@
 # imagemagick, if xclip is installed the link is copied to clipboard
 
 # server is the address curl will post to
-SERVER="http://d4ryus.h4ck.me:8283/ss"
+SERVER="http://address:port/folder"
 # TMP is a local directoy where the images are getting saved
 TMP="/tmp/upload"
 IMAGE="$1"
